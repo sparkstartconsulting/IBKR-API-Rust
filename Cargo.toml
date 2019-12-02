@@ -6,4 +6,16 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "twsapi"
+path = "src/lib.rs"
+
+[[bin]]
+name = "twsapi_client"
+path = "src/bin.rs"
+
 [dependencies]
+log = "0.4.6"
+log4rs = "0.8.1"
+bytebuffer = "0.2.1"
+# error-chain = "0.12.1"

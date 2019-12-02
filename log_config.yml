@@ -1,0 +1,34 @@
+appenders:
+  console:
+    kind: console
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} {M} {f} {l} - {m}\n"
+    filters:
+      - kind: threshold
+        level: error
+  file:
+    kind: file
+    path: log/output.log
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} {M} {f} {l} - {m}\n"
+    filters:
+      - kind: threshold
+        level: error
+
+root:
+  level: error
+  appenders:
+    - console
+    - file
+
+loggers:
+  test::a:
+    level: info
+    appenders:
+      - console
+    additive: true
+  test::b:
+    level: info
+    appenders:
+      - file
+    additive: true
