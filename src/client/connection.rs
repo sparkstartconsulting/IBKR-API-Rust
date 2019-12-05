@@ -72,7 +72,7 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn send_msg(&self, msg: &str) -> Result<usize, Error> {
-        if self.is_connected() {
+        if !self.is_connected() {
             debug!("send_msg attempted while not connected");
             Err(Error::new(
                 ErrorKind::NotConnected,
@@ -106,7 +106,7 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn recv_msg(&mut self) -> Vec<u8> {
-        if self.is_connected() {
+        if !self.is_connected() {
             debug!("recvMsg attempted while not connected, releasing lock");
             ByteBuffer::from_bytes(b"").to_bytes()
         } else {
