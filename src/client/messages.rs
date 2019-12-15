@@ -1,3 +1,19 @@
+use crate::bytebuffer::ByteBuffer;
+use crate::client::common::{UNSET_DOUBLE, UNSET_INTEGER, UNSET_LONG};
+use crate::client::decoder::Builder;
+use std::any::Any;
+use std::convert::TryFrom;
+use std::convert::TryInto;
+use std::io::Write;
+use std::ops::Deref;
+use std::string::String;
+use std::vec::Vec;
+
+trait EClientMsgSink {
+    fn server_version(version: i32, time: &str);
+    fn redirect(host: &str);
+}
+
 pub enum FAMessageDataTypes {
     // FA msg data types
     Groups = 1,
@@ -163,4 +179,84 @@ pub enum OutgoingMessageIds {
     ReqTickByTickData = 97,
     CancelTickByTickData = 98,
     ReqCompletedOrders = 99,
+}
+
+pub struct EMessage {
+    buffer: ByteBuffer,
+}
+
+trait NewEmessageFrom<T> {
+    fn new(buf: T) -> EMessage;
+}
+
+impl NewEmessageFrom<&[u8]> for EMessage {
+    fn new(buf: &[u8]) -> EMessage {
+        let mut msg = EMessage::new();
+        msg.buffer.write(buf);
+        msg
+    }
+}
+
+impl NewEmessageFrom<&Builder> for EMessage {
+    fn new(builder: &Builder) -> EMessage {
+        let mut msg = EMessage::new();
+        builder.write_out(&mut msg.buffer);
+        msg
+    }
+}
+
+impl EMessage {
+    pub fn new() -> Self {
+        EMessage {
+            buffer: ByteBuffer::new(),
+        }
+    }
+    pub fn get_stream(&self) -> &ByteBuffer {
+        &self.buffer
+    }
+    pub fn get_raw_data(&self) -> Vec<u8> {
+        self.buffer.to_bytes()
+    }
+}
+
+pub fn read_msg(buf: &[u8]) -> (usize, String, Vec<u8>) {
+    // first the size prefix and then the corresponding msg payload ""
+    let mut text: String = "".to_string();
+    if buf.len() < 4 {
+        return (0, text, buf.to_vec());
+    }
+    let size = usize::from_ne_bytes(buf[0..4].try_into().unwrap());
+    //logger.debug("read_msg: size: %d", size)
+    //logger.error("read_msg: Message: %s", str(buf, 'utf-8'))
+    if buf.len() - 4 >= size {
+        text = String::from_utf8(Vec::from(&buf[4..4 + size])).unwrap();
+        (size, text, buf[4 + size..].to_vec())
+    } else {
+        (size, text, buf.to_vec())
+    }
+}
+
+pub fn read_fields(buf: &str) -> Vec<String> {
+    //msg payload is made of fields terminated/separated by NULL chars """
+    let mut fields: Vec<&str> = buf.split('\0').collect::<Vec<&str>>();
+    //last one is empty; this may slow dow things though, TODO
+    fields.remove(fields.len() - 1);
+
+    fields
+        .iter()
+        .map(|x| String::from(*x))
+        .collect::<Vec<String>>()
+}
+
+pub fn make_field(val: &mut dyn Any) -> String {
+    // adds the NULL string terminator """
+
+    // bool type is encoded as int
+    if let Some(boolval) = val.downcast_mut::<bool>() {
+        format!("{}\0", *boolval as i32)
+    } else if let Some(stringval) = val.downcast_mut::<String>() {
+        format!("{}\0", stringval)
+    } else {
+        "".to_string()
+    }
 }

@@ -1,7 +1,11 @@
+use std::collections::vec_deque::VecDeque;
+
 use crate::client::decoder::Decoder;
+use crate::client::reader::Reader;
 use crate::client::wrapper::Wrapper;
 use crate::connection::Connection;
-use std::collections::vec_deque::VecDeque;
+use std::sync::atomic::AtomicBool;
+
 enum ConnStatus {
     DISCONNECTED,
     CONNECTING,
@@ -13,4 +17,35 @@ pub struct EClient<'a, T> {
     msg_queue: VecDeque<&'a str>,
     wrapper: T,
     decoder: Option<Decoder<Box<dyn Wrapper>>>,
+    done: bool,
+    n_keyb_int_hard: i32,
+    conn: Connection<'a, T>,
+    host: &'a str,
+    port: i32,
+    extra_auth: bool,
+    client_id: i32,
+    server_version: i32,
+    conn_time: &'a str,
+    conn_state: ConnStatus,
+    opt_capab: &'a str,
+    asynchronous: bool,
+    //reader: Reader<T>,
+    /*
+    self.setConnState(EClient.DISCONNECTED)
+            self.done = False
+            self.n_keyb_int_hard = 0
+            self.conn = None
+            self.host = None
+            self.port = None
+            self.extra_auth = False
+            self.client_id = None
+            self.serverVersion_ = None
+            self.conn_time = None
+            self.conn_state = None
+            self.opt_capab = ""
+            self.asynchronous = False
+            self.reader = None
+            self.decode = None
+            self.setConnState(EClient.DISCONNECTED)
+            */
 }

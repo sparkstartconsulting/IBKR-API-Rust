@@ -5,7 +5,7 @@ appenders:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} {M} {f} {l} - {m}\n"
     filters:
       - kind: threshold
-        level: error
+        level: debug
   file:
     kind: file
     path: log/output.log
@@ -13,7 +13,7 @@ appenders:
       pattern: "{d(%Y-%m-%d %H:%M:%S)} {M} {f} {l} - {m}\n"
     filters:
       - kind: threshold
-        level: error
+        level: debug
 
 root:
   level: error

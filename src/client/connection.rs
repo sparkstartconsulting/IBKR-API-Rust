@@ -1,11 +1,13 @@
-use crate::client::wrapper::Wrapper;
-use bytebuffer::ByteBuffer;
-use log;
-use log4rs;
 use std::io::{Error, ErrorKind};
 use std::io::{Read, Write};
 use std::net::{Shutdown, TcpStream};
 use std::str;
+
+use bytebuffer::ByteBuffer;
+use log;
+use log4rs;
+
+use crate::client::wrapper::Wrapper;
 
 //--------------------------------------------------------------------------------------------------
 pub struct Connection<'a, T> {
@@ -25,7 +27,7 @@ where
             host,
             port,
             socket: None,
-            wrapper: wrapper,
+            wrapper,
         }
     }
 
