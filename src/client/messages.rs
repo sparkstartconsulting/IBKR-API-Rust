@@ -219,6 +219,14 @@ impl EMessage {
     }
 }
 
+pub fn make_message(msg: &str) -> ByteBuffer {
+    let mut buffer = ByteBuffer::new();
+    //add the length header
+    buffer.write_i32(msg.len() as i32);
+    buffer.write_string(msg);
+    buffer
+}
+
 pub fn read_msg(buf: &[u8]) -> (usize, String, Vec<u8>) {
     // first the size prefix and then the corresponding msg payload ""
     let mut text: String = "".to_string();
@@ -226,6 +234,7 @@ pub fn read_msg(buf: &[u8]) -> (usize, String, Vec<u8>) {
         return (0, text, buf.to_vec());
     }
     let size = usize::from_ne_bytes(buf[0..4].try_into().unwrap());
+    usize::to_ne_bytes(0);
     //logger.debug("read_msg: size: %d", size)
     //logger.error("read_msg: Message: %s", str(buf, 'utf-8'))
     if buf.len() - 4 >= size {

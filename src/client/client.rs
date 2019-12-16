@@ -1,9 +1,12 @@
 use std::collections::vec_deque::VecDeque;
 
 use crate::client::decoder::Decoder;
+use crate::client::messages::make_message;
 use crate::client::reader::Reader;
 use crate::client::wrapper::Wrapper;
 use crate::connection::Connection;
+use std::io::Write;
+use std::net::TcpStream;
 use std::sync::atomic::AtomicBool;
 
 enum ConnStatus {
@@ -19,7 +22,7 @@ pub struct EClient<'a, T> {
     decoder: Option<Decoder<Box<dyn Wrapper>>>,
     done: bool,
     n_keyb_int_hard: i32,
-    conn: Connection<'a, T>,
+    stream: TcpStream,
     host: &'a str,
     port: i32,
     extra_auth: bool,
@@ -48,4 +51,11 @@ pub struct EClient<'a, T> {
             self.decode = None
             self.setConnState(EClient.DISCONNECTED)
             */
+}
+
+impl<'a, T> EClient<'a, T> {
+    fn send_sequest(&mut self, request: &str) {
+        let bytes = make_message(request);
+        self.stream.write(bytes.to_bytes().as_slice());
+    }
 }
