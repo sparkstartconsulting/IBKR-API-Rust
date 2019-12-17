@@ -2,8 +2,10 @@ extern crate bytebuffer;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
+extern crate num;
 extern crate twsapi;
-
+#[macro_use]
+extern crate num_derive;
 use client::connection;
 use std::io::Read;
 

@@ -8,9 +8,11 @@ use std::convert::TryInto;
 use std::io::BufReader;
 use std::io::Read;
 use std::net::{Shutdown, TcpStream};
+use std::ops::Deref;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
 
 pub struct Reader {
     stream: TcpStream,
@@ -22,7 +24,7 @@ impl Reader {
         Reader { stream, messages }
     }
 
-    fn recv_packet(&mut self) -> Vec<u8> {
+    pub fn recv_packet(&mut self) -> Vec<u8> {
         let buf = self._recv_all_msg();
 
         // receiving 0 bytes outside a timeout means the connection is either
@@ -53,7 +55,7 @@ impl Reader {
         allbuf
     }
 
-    pub fn run(&mut self) {
+    fn run(&mut self) {
         loop {
             /// grab a packet of messages from the socket
             let mut message_packet = self.recv_packet();
@@ -62,6 +64,8 @@ impl Reader {
             /// Read messages from the packet until there are no more.
             /// When this loop ends, break into the outer loop and grab another packet.  
             /// Repeat until the connection is closed
+            ///
+            let mut msg = "".to_string();
             while message_packet.len() > 0 {
                 /// Read a message from the packet then add it to the message queue below.
                 let (size, msg, remaining_messages) = read_msg(message_packet.as_slice());
@@ -80,7 +84,7 @@ impl Reader {
                     String::from_utf8(message_packet.to_owned()).unwrap()
                 );
 
-                if msg != "" {
+                if msg.as_str() != "" {
                     self.messages.send(msg).unwrap();
                 } else {
                     ///Break to the outer loop and get another packet of messages.
@@ -92,7 +96,9 @@ impl Reader {
         debug!("EReader thread finished")
     }
 
-    /*fn read(&self,buf: [u8], off: i32, len: i32) throws IOException {
-        return m_dis.read(buf, off, len);
-    }*/
+    pub fn start(&'static mut self) {
+        thread::spawn(move || {
+            self.run();
+        });
+    }
 }

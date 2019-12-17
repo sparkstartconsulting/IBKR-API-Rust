@@ -1,7 +1,10 @@
 use crate::bytebuffer::ByteBuffer;
 use crate::client::common::{UNSET_DOUBLE, UNSET_INTEGER, UNSET_LONG};
 use crate::client::decoder::Builder;
+use crate::client::wrapper::Wrapper;
 use std::any::Any;
+use std::borrow::Borrow;
+use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::io::Write;
@@ -21,7 +24,12 @@ pub enum FAMessageDataTypes {
     Aliases = 3,
 }
 
+trait IncomingMessageProcessor {
+    fn process(wrapper: &mut dyn Wrapper, params: &Vec<String>);
+}
+
 // incoming msg id's
+#[derive(FromPrimitive)]
 pub enum IncomingMessageIds {
     TickPrice = 1,
     TickSize = 2,
@@ -227,21 +235,22 @@ pub fn make_message(msg: &str) -> ByteBuffer {
     buffer
 }
 
-pub fn read_msg(buf: &[u8]) -> (usize, String, Vec<u8>) {
+pub fn read_msg<'a>(buf: &[u8]) -> (usize, String, Vec<u8>) {
     // first the size prefix and then the corresponding msg payload ""
-    let mut text: String = "".to_string();
+    let mut text = "".to_string();
     if buf.len() < 4 {
-        return (0, text, buf.to_vec());
+        return (0, "".to_string(), buf.to_vec());
     }
     let size = usize::from_ne_bytes(buf[0..4].try_into().unwrap());
     usize::to_ne_bytes(0);
     //logger.debug("read_msg: size: %d", size)
     //logger.error("read_msg: Message: %s", str(buf, 'utf-8'))
+
     if buf.len() - 4 >= size {
         text = String::from_utf8(Vec::from(&buf[4..4 + size])).unwrap();
         (size, text, buf[4 + size..].to_vec())
     } else {
-        (size, text, buf.to_vec())
+        (size, "".to_string(), buf.to_vec())
     }
 }
 
@@ -250,7 +259,7 @@ pub fn read_fields(buf: &str) -> Vec<String> {
     let mut fields: Vec<&str> = buf.split('\0').collect::<Vec<&str>>();
     //last one is empty; this may slow dow things though, TODO
     fields.remove(fields.len() - 1);
-
+    //fields
     fields
         .iter()
         .map(|x| String::from(*x))
