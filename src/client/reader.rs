@@ -25,8 +25,9 @@ impl Reader {
     }
 
     pub fn recv_packet(&mut self) -> Vec<u8> {
+        println!("_recv_all_msg");
         let buf = self._recv_all_msg();
-
+        println!("What did we get?");
         // receiving 0 bytes outside a timeout means the connection is either
         // closed or broken
         if buf.len() == 0 {
@@ -44,7 +45,9 @@ impl Reader {
 
         while cont {
             let mut buf: [u8; 4096] = [0; 4096];
+            println!("Getting bytes");
             let bytes_read = self.stream.read(&mut buf).unwrap();
+            println!("got bytes: {}", bytes_read);
             allbuf.extend_from_slice(&buf);
             //logger.debug("len %d raw:%s|", len(buf), buf)
 
@@ -55,11 +58,13 @@ impl Reader {
         allbuf
     }
 
-    fn run(&mut self) {
+    pub fn run(&mut self) {
         loop {
+            println!("starting readr loop");
             /// grab a packet of messages from the socket
             let mut message_packet = self.recv_packet();
             debug!("reader loop, recvd size {}", message_packet.len());
+            println!("reader loop, recvd size {}", message_packet.len());
 
             /// Read messages from the packet until there are no more.
             /// When this loop ends, break into the outer loop and grab another packet.  
@@ -84,21 +89,30 @@ impl Reader {
                     String::from_utf8(message_packet.to_owned()).unwrap()
                 );
 
+                println!(
+                    "size:{} msg.size:{} msg:|{}| buf:{:?}|",
+                    size,
+                    msg.len(),
+                    msg,
+                    String::from_utf8(message_packet.to_owned()).unwrap()
+                );
+
                 if msg.as_str() != "" {
                     self.messages.send(msg).unwrap();
                 } else {
                     ///Break to the outer loop and get another packet of messages.
                     debug!("more incoming packet(s) are needed ");
+                    println!("more incoming packet(s) are needed ");
                     break;
                 }
             }
         }
-        debug!("EReader thread finished")
+        //debug!("EReader thread finished")
     }
 
-    pub fn start(&'static mut self) {
-        thread::spawn(move || {
-            self.run();
-        });
-    }
+    //    pub fn start(&mut self) {
+    //        thread::spawn(move || {
+    //            self.run();
+    //        });
+    //    }
 }

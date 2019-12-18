@@ -123,7 +123,7 @@ pub trait Wrapper {
     //        EEClientSocket object has been called.
     fn update_account_value(&self, key: &str, val: &str, currency: &str, account_name: &str);
 
-    /// This function is called only when reqAccountUpdates on
+    /// This function is called only when req_account_updates on
     //        EEClientSocket object has been called.
     fn update_portfolio(
         &self,
@@ -349,7 +349,7 @@ pub trait Wrapper {
     fn position_end(&self);
 
     /// Returns the data from the TWS Account Window Summary tab in
-    /// response to reqAccountSummary().
+    /// response to req_account_summary().
     fn account_summary(&self, req_id: i32, account: &str, tag: &str, value: &str, currency: &str);
 
     /// This method is called once all account summary data for a

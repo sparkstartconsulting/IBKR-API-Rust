@@ -3,9 +3,10 @@ use crate::client::common::{UNSET_DOUBLE, UNSET_INTEGER, UNSET_LONG};
 use crate::client::decoder::Builder;
 use crate::client::wrapper::Wrapper;
 use std::any::Any;
-use std::borrow::Borrow;
-use std::borrow::Cow;
-use std::convert::TryFrom;
+
+use ascii;
+use ascii::AsciiStr;
+use byteorder::{BigEndian, ByteOrder};
 use std::convert::TryInto;
 use std::io::Write;
 use std::ops::Deref;
@@ -230,8 +231,18 @@ impl EMessage {
 pub fn make_message(msg: &str) -> ByteBuffer {
     let mut buffer = ByteBuffer::new();
     //add the length header
-    buffer.write_i32(msg.len() as i32);
-    buffer.write_string(msg);
+    //let mut big_endian_u32: [u8; 4] = [0u8, 0u8, 0u8, 0u8];
+    //BigEndian::write_u32(&mut big_endian_u32, msg.len() as u32);
+    //let intstring = format!("{}", msg.len() as u32);
+    buffer.write_u32(msg.len() as u32);
+    println!("message length: {:?}", msg.len() as u32);
+    println!(
+        "message length as bytes: {:?}",
+        buffer.to_bytes().as_slice()
+    );
+    println!("message: {:?}", msg);
+    buffer.write(msg.trim().as_bytes());
+    println!("full message as bytes: {:?}", buffer.to_bytes().as_slice());
     buffer
 }
 
@@ -241,8 +252,9 @@ pub fn read_msg<'a>(buf: &[u8]) -> (usize, String, Vec<u8>) {
     if buf.len() < 4 {
         return (0, "".to_string(), buf.to_vec());
     }
-    let size = usize::from_ne_bytes(buf[0..4].try_into().unwrap());
-    usize::to_ne_bytes(0);
+    println!("{:?}", AsciiStr::from_ascii(buf).unwrap());
+    let size = i32::from_ne_bytes(buf[0..4].try_into().unwrap()) as usize;
+    println!("Message size: {:?}", size);
     //logger.debug("read_msg: size: %d", size)
     //logger.error("read_msg: Message: %s", str(buf, 'utf-8'))
 
@@ -273,6 +285,12 @@ pub fn make_field(val: &mut dyn Any) -> String {
     if let Some(boolval) = val.downcast_mut::<bool>() {
         format!("{}\0", *boolval as i32)
     } else if let Some(stringval) = val.downcast_mut::<String>() {
+        format!("{}\0", stringval)
+    } else if let Some(stringval) = val.downcast_mut::<&str>() {
+        format!("{}\0", stringval)
+    } else if let Some(stringval) = val.downcast_mut::<f64>() {
+        format!("{}\0", stringval)
+    } else if let Some(stringval) = val.downcast_mut::<i32>() {
         format!("{}\0", stringval)
     } else {
         "".to_string()

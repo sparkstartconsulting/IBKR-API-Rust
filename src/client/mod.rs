@@ -2,6 +2,8 @@ pub mod client;
 pub mod common;
 pub mod connection;
 pub mod decoder;
+pub mod defaults;
+pub mod errors;
 pub mod messages;
 pub mod reader;
 pub mod server_versions;

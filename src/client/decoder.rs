@@ -81,15 +81,15 @@ impl Sender<&str> for Builder {
 }
 
 pub struct Decoder<'a, T: Wrapper> {
-    wrapper: &'a mut T,
-    server_version: i32,
+    wrapper: &'a T,
+    pub server_version: i32,
 }
 
 impl<'a, T> Decoder<'a, T>
 where
     T: client::wrapper::Wrapper,
 {
-    pub fn new(wrapper: &'a mut T, server_version: i32) -> Self {
+    pub fn new(wrapper: &'a T, server_version: i32) -> Self {
         Decoder {
             wrapper,
             server_version,
@@ -220,9 +220,20 @@ where
     fn process_account_summary_end(&mut self, fields: &[String]) {}
     fn process_account_update_multi(&mut self, fields: &[String]) {}
     fn process_account_update_multi_end(&mut self, fields: &[String]) {}
-    fn process_account_download_end(&mut self, fields: &[String]) {}
-    fn process_account_update_time(&mut self, fields: &[String]) {}
-    fn process_account_value(&mut self, fields: &[String]) {}
+    fn process_account_download_end(&mut self, fields: &[String]) {
+        self.wrapper.account_download_end(fields.get(0).unwrap())
+    }
+    fn process_account_update_time(&mut self, fields: &[String]) {
+        self.wrapper.update_account_time(fields.get(0).unwrap())
+    }
+    fn process_account_value(&mut self, fields: &[String]) {
+        self.wrapper.update_account_value(
+            fields.get(0).unwrap(),
+            fields.get(1).unwrap(),
+            fields.get(2).unwrap(),
+            fields.get(3).unwrap(),
+        );
+    }
     fn process_bond_contract_data(&mut self, fields: &[String]) {}
     fn process_commission_report(&mut self, fields: &[String]) {}
     fn process_completed_order(&mut self, fields: &[String]) {}
