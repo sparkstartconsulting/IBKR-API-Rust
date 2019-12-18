@@ -1,8 +1,3 @@
-use crate::client::connection::Connection;
-use crate::client::messages::read_msg;
-use crate::client::messages::EMessage;
-use log;
-use log4rs;
 use std::borrow::Borrow;
 use std::convert::TryInto;
 use std::io::BufReader;
@@ -14,13 +9,21 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 
+use ascii::AsciiString;
+use log;
+use log4rs;
+
+use crate::client::connection::Connection;
+use crate::client::messages::read_msg;
+use crate::client::messages::EMessage;
+
 pub struct Reader {
     stream: TcpStream,
-    messages: Sender<String>,
+    messages: Sender<AsciiString>,
 }
 
 impl Reader {
-    pub fn new(stream: TcpStream, messages: Sender<String>) -> Self {
+    pub fn new(stream: TcpStream, messages: Sender<AsciiString>) -> Self {
         Reader { stream, messages }
     }
 
@@ -32,6 +35,7 @@ impl Reader {
         // closed or broken
         if buf.len() == 0 {
             debug!("socket either closed or broken, disconnecting");
+            println!("socket either closed or broken, disconnecting");
             self.stream.shutdown(Shutdown::Both).unwrap();
 
             //debug!("socket timeout from recvMsg %s", sys.exc_info())
@@ -48,7 +52,8 @@ impl Reader {
             println!("Getting bytes");
             let bytes_read = self.stream.read(&mut buf).unwrap();
             println!("got bytes: {}", bytes_read);
-            allbuf.extend_from_slice(&buf);
+
+            allbuf.extend_from_slice(&buf[0..bytes_read]);
             //logger.debug("len %d raw:%s|", len(buf), buf)
 
             if bytes_read < 4096 {
@@ -70,7 +75,7 @@ impl Reader {
             /// When this loop ends, break into the outer loop and grab another packet.  
             /// Repeat until the connection is closed
             ///
-            let mut msg = "".to_string();
+            let mut msg = AsciiString::new();
             while message_packet.len() > 0 {
                 /// Read a message from the packet then add it to the message queue below.
                 let (size, msg, remaining_messages) = read_msg(message_packet.as_slice());
@@ -86,7 +91,7 @@ impl Reader {
                     size,
                     msg.len(),
                     msg,
-                    String::from_utf8(message_packet.to_owned()).unwrap()
+                    AsciiString::from_ascii(message_packet.to_owned().as_slice()).unwrap()
                 );
 
                 println!(
@@ -94,7 +99,7 @@ impl Reader {
                     size,
                     msg.len(),
                     msg,
-                    String::from_utf8(message_packet.to_owned()).unwrap()
+                    AsciiString::from_ascii(message_packet.to_owned()).unwrap()
                 );
 
                 if msg.as_str() != "" {

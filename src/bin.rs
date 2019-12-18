@@ -1,19 +1,23 @@
+extern crate ascii;
 extern crate bytebuffer;
+extern crate from_ascii;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
 extern crate num;
-extern crate twsapi;
 #[macro_use]
 extern crate num_derive;
-use crate::client::client::EClient;
-use crate::client::defaults::DefaultWrapper;
-use client::connection;
-use client::messages::make_field;
+extern crate serde;
+extern crate twsapi;
+
 use std::borrow::{Borrow, BorrowMut};
 use std::io::Read;
-extern crate serde;
-extern crate ascii;
+
+use client::connection;
+use client::messages::make_field;
+
+use crate::client::client::EClient;
+use crate::client::defaults::DefaultWrapper;
 
 mod client;
 

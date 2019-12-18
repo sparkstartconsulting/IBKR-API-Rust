@@ -1,4 +1,21 @@
+use std::any::Any;
+use std::borrow::{Borrow, Cow};
 use std::collections::vec_deque::VecDeque;
+use std::convert::TryFrom;
+use std::io::Write;
+use std::net::TcpStream;
+use std::net::{Shutdown, SocketAddr};
+use std::sync::atomic::AtomicBool;
+use std::sync::mpsc::{channel, Receiver};
+use std::thread;
+
+use ascii::{AsAsciiStr, AsciiStr, AsciiString};
+use byteorder::{BigEndian, ByteOrder};
+use encoding::all::ASCII;
+use encoding::types::RawEncoder;
+use encoding::{ByteWriter, DecoderTrap, EncoderTrap, Encoding};
+use from_ascii::{FromAscii, FromAsciiRadix};
+use num_traits::FromPrimitive;
 
 use crate::client::common::*;
 use crate::client::decoder::Decoder;
@@ -9,20 +26,6 @@ use crate::client::server_versions::*;
 use crate::client::wrapper::Wrapper;
 use crate::connection::Connection;
 use crate::make_field;
-use ascii::AsciiStr;
-use byteorder::{BigEndian, ByteOrder};
-use encoding::all::ASCII;
-use encoding::types::RawEncoder;
-use encoding::{ByteWriter, DecoderTrap, EncoderTrap, Encoding};
-use std::any::Any;
-use std::borrow::{Borrow, Cow};
-use std::convert::TryFrom;
-use std::io::Write;
-use std::net::TcpStream;
-use std::net::{Shutdown, SocketAddr};
-use std::sync::atomic::AtomicBool;
-use std::sync::mpsc::{channel, Receiver};
-use std::thread;
 
 enum ConnStatus {
     DISCONNECTED,
@@ -32,7 +35,7 @@ enum ConnStatus {
 }
 
 pub struct EClient<'a, T: Wrapper> {
-    msg_queue: Option<Receiver<String>>,
+    msg_queue: Option<Receiver<AsciiString>>,
     wrapper: &'a T,
     decoder: Decoder<'a, T>,
     done: bool,
@@ -89,7 +92,7 @@ where
         let reader_stream = thestream.try_clone().unwrap();
         // reader_stream.shutdown(Shutdown::Write);
 
-        let (tx, rx) = channel::<String>();
+        let (tx, rx) = channel::<AsciiString>();
         let mut reader = Reader::new(thestream, tx.clone());
 
         self.msg_queue = Option::from(rx);
@@ -114,13 +117,16 @@ where
         self.send_request(
             AsciiStr::from_ascii(AsciiStr::from_ascii(bytearray.as_slice()).unwrap()).unwrap(),
         );
-        let mut fields: Vec<String> = Vec::new();
+        let mut fields: Vec<AsciiString> = Vec::new();
 
         //sometimes I get news before the server version, thus the loop
 
         while fields.len() != 2 {
-            self.decoder.interpret(fields.as_slice());
-            let buf = reader.recv_packet();
+            if fields.len() > 0 {
+                self.decoder.interpret(fields.as_slice());
+            }
+
+            let mut buf = reader.recv_packet();
             println!("got initial packet: {}", buf.len());
             //logger.debug("ANSWER %s", buf)
             if buf.len() > 0 {
@@ -128,13 +134,14 @@ where
                 //logger.debug("size:%d msg:%s rest:%s|", size, msg, rest)
 
                 fields.clear();
-                fields.extend_from_slice(read_fields(msg.as_str()).as_slice());
+                fields.extend_from_slice(read_fields(msg.as_ref()).as_slice());
+                println!("fields.len(): {}", fields.len());
             } else {
                 fields.clear();
             }
         }
-
-        self.server_version = fields.get(0).unwrap().parse::<i32>().unwrap();
+        println!("Got all messages");
+        self.server_version = i32::from_ascii(fields.get(0).unwrap().as_bytes()).unwrap();
 
         self.conn_time = fields.get(1).unwrap().to_string();
 
@@ -309,7 +316,7 @@ where
                 self.disconnect();
                 break;
             } else {
-                let fields = read_fields(&text);
+                let fields = read_fields((&text).as_ref());
                 //debug("fields {}", fields)
                 self.decoder.interpret(fields.as_slice());
             }
