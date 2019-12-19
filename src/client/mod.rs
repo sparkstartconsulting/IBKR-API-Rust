@@ -1,10 +1,14 @@
 pub mod client;
 pub mod common;
 pub mod connection;
+pub mod contract;
 pub mod decoder;
 pub mod defaults;
 pub mod errors;
+pub mod execution;
 pub mod messages;
+pub mod order;
+pub mod order_condition;
 pub mod reader;
 pub mod server_versions;
 pub mod transport;

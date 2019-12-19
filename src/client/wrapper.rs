@@ -3,11 +3,15 @@ use std::collections::{HashMap, HashSet};
 use ascii::AsciiStr;
 
 use crate::client::common::{
-    BarData, CommissionReport, Contract, ContractDescription, ContractDetails,
-    DeltaNeutralContract, DepthExchanges, Execution, FaDataType, FamilyCode, HistogramData,
-    HistoricalTick, HistoricalTickBidAsk, NewsProvider, Order, OrderState, PriceIncrement,
-    SimpleEntry, SoftDollarTier, TickAttrib, TickAttribBidAsk, TickAttribLast,
+    BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
+    HistoricalTick, HistoricalTickBidAsk, NewsProvider, OrderState, PriceIncrement, SmartComponent,
+    TickAttrib, TickAttribBidAsk, TickAttribLast,
 };
+use crate::client::contract::{
+    Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
+};
+use crate::client::execution::Execution;
+use crate::client::order::{Order, SoftDollarTier};
 
 pub trait Wrapper {
     /// This event is called when there is an error with the
@@ -496,7 +500,7 @@ pub trait Wrapper {
     fn symbol_samples(&self, req_id: i32, contract_descriptions: Vec<ContractDescription>);
 
     /// returns array of exchanges which return depth to UpdateMktDepthL2
-    fn mkt_depth_exchanges(&self, depth_mkt_data_descriptions: Vec<DepthExchanges>);
+    fn mkt_depth_exchanges(&self, depth_mkt_data_descriptions: Vec<DepthMktDataDescription>);
 
     /// returns news headlines
     fn tick_news(
@@ -510,7 +514,7 @@ pub trait Wrapper {
     );
 
     /// returns exchange component mapping
-    fn smart_components(&self, req_id: i32, smart_component_map: HashMap<i32, SimpleEntry>);
+    fn smart_components(&self, req_id: i32, smart_components: Vec<SmartComponent>);
 
     /// returns exchange map of a particular contract
     fn tick_req_params(

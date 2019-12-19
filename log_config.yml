@@ -16,7 +16,7 @@ appenders:
         level: debug
 
 root:
-  level: error
+  level: debug
   appenders:
     - console
     - file

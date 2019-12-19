@@ -1,14 +1,18 @@
-use std::collections::hash_map::RandomState;
+use std::collections::hash_map::{Entry, RandomState};
 use std::collections::{HashMap, HashSet};
 
 use ascii::AsciiStr;
 
 use crate::client::common::{
-    BarData, CommissionReport, Contract, ContractDescription, ContractDetails,
-    DeltaNeutralContract, DepthExchanges, Execution, FaDataType, FamilyCode, HistogramData,
-    HistoricalTick, HistoricalTickBidAsk, NewsProvider, Order, OrderState, PriceIncrement,
-    SimpleEntry, SoftDollarTier, TickAttrib, TickAttribBidAsk, TickAttribLast,
+    BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
+    HistoricalTick, HistoricalTickBidAsk, NewsProvider, OrderState, PriceIncrement, SmartComponent,
+    TickAttrib, TickAttribBidAsk, TickAttribLast,
 };
+use crate::client::contract::{
+    Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
+};
+use crate::client::execution::Execution;
+use crate::client::order::{Order, SoftDollarTier};
 use crate::client::wrapper::Wrapper;
 
 pub struct DefaultWrapper {}
@@ -21,7 +25,7 @@ impl DefaultWrapper {
 impl Wrapper for DefaultWrapper {
     fn error(&self, req_id: i32, error_code: i32, error_string: &AsciiStr) {
         error!("Code: {} , Message:{}", error_code, error_string);
-        println!("Code: {} , Message:{}", error_code, error_string);
+        debug!("Code: {} , Message:{}", error_code, error_string);
     }
 
     fn win_error(&self, text: &AsciiStr, last_error: i32) {
@@ -112,7 +116,7 @@ impl Wrapper for DefaultWrapper {
             key, val, currency, account_name
         );
 
-        println!(
+        debug!(
             "key: {}, value: {}, ccy: {}, account: {}.",
             key, val, currency, account_name
         );
@@ -134,12 +138,12 @@ impl Wrapper for DefaultWrapper {
 
     fn update_account_time(&self, time_stamp: &AsciiStr) {
         info!("update_account_time: {}.", time_stamp);
-        println!("update_account_time: {}.", time_stamp);
+        debug!("update_account_time: {}.", time_stamp);
     }
 
     fn account_download_end(&self, account_name: &AsciiStr) {
         info!("account_download_end: {}.", account_name);
-        println!("account_download_end: {}.", account_name);
+        debug!("account_download_end: {}.", account_name);
     }
 
     fn next_valid_id(&self, order_id: i32) {
@@ -394,7 +398,7 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn mkt_depth_exchanges(&self, depth_mkt_data_descriptions: Vec<DepthExchanges>) {
+    fn mkt_depth_exchanges(&self, depth_mkt_data_descriptions: Vec<DepthMktDataDescription>) {
         unimplemented!()
     }
 
@@ -410,11 +414,7 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn smart_components(
-        &self,
-        req_id: i32,
-        smart_component_map: HashMap<i32, SimpleEntry, RandomState>,
-    ) {
+    fn smart_components(&self, req_id: i32, smart_components: Vec<SmartComponent>) {
         unimplemented!()
     }
 

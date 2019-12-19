@@ -12,6 +12,8 @@ extern crate twsapi;
 
 use std::borrow::{Borrow, BorrowMut};
 use std::io::Read;
+use std::thread;
+use std::time::Duration;
 
 use client::connection;
 use client::messages::make_field;
@@ -22,21 +24,24 @@ use crate::client::defaults::DefaultWrapper;
 mod client;
 
 fn main() {
-    //log4rs::init_file("log_config.yml", Default::default()).unwrap();
-    println!("starting");
+    log4rs::init_file("log_config.yml", Default::default()).unwrap();
+    debug!("starting");
+    error!("test logging");
+    info!("test logging");
+    debug!("test logging");
     //let x = b"&".to_vec();
     //let a: u8 = '&' as u8; //x.as_slice();
-    //println!("{}", a);
+    //debug!("{}", a);
     //let z = [a];
     //let ab = std::str::from_utf8(&z).unwrap();
     //let b = ab.chars().nth(0).unwrap();
-    //println!("{}", b);
+    //debug!("{}", b);
 
-    //println!("{}", make_field(&mut true));
-    //println!("{}", make_field(&mut false));
-    //println!("{}", make_field(&mut "Hello!!".to_string()));
-    //println!("{}", make_field(&mut 47));
-    //println!("{}", make_field(&mut 100.3));
+    //debug!("{}", make_field(&mut true));
+    //debug!("{}", make_field(&mut false));
+    //debug!("{}", make_field(&mut "Hello!!".to_string()));
+    //debug!("{}", make_field(&mut 47));
+    //debug!("{}", make_field(&mut 100.3));
     let mut wrapper = DefaultWrapper::new();
     let mut app = EClient::new(&mut wrapper);
     {
@@ -45,4 +50,5 @@ fn main() {
     {
         app.req_account_updates(true, "DU248225");
     }
+    thread::sleep(Duration::new(60, 0));
 }

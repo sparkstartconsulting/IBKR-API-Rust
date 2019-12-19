@@ -113,6 +113,7 @@ pub enum IncomingMessageIds {
 }
 
 // Outgoing msg id's
+#[derive(FromPrimitive)]
 pub enum OutgoingMessageIds {
     ReqMktData = 1,
     CancelMktData = 2,
@@ -236,14 +237,14 @@ pub fn make_message(msg: &str) -> ByteBuffer {
     //BigEndian::write_u32(&mut big_endian_u32, msg.len() as u32);
     //let intstring = format!("{}", msg.len() as u32);
     buffer.write_u32(msg.len() as u32);
-    println!("message length: {:?}", msg.len() as u32);
-    println!(
+    debug!("message length: {:?}", msg.len() as u32);
+    debug!(
         "message length as bytes: {:?}",
         buffer.to_bytes().as_slice()
     );
-    println!("message: {:?}", msg);
+    debug!("message: {:?}", msg);
     buffer.write(msg.trim().as_bytes());
-    println!("full message as bytes: {:?}", buffer.to_bytes().as_slice());
+    debug!("full message as bytes: {:?}", buffer.to_bytes().as_slice());
     buffer
 }
 
@@ -253,15 +254,15 @@ pub fn read_msg<'a>(buf: &[u8]) -> (usize, AsciiString, Vec<u8>) {
     if buf.len() < 4 {
         return (0, AsciiString::new(), buf.to_vec());
     }
-    println!("{:?}", AsciiStr::from_ascii(buf).unwrap());
+    debug!("{:?}", AsciiStr::from_ascii(buf).unwrap());
     let size = i32::from_be_bytes(buf[0..4].try_into().unwrap()) as usize;
-    println!("Message size: {:?}", size);
+    debug!("Message size: {:?}", size);
     //logger.debug("read_msg: size: %d", size)
     //logger.error("read_msg: Message: %s", str(buf, 'utf-8'))
 
     if buf.len() - 4 >= size {
         text = AsciiStr::from_ascii(&buf[4..4 + size]).unwrap().to_owned();
-        println!("text in read message: {:?}", text);
+        debug!("text in read message: {:?}", text);
         (size, text.to_ascii_string(), buf[4 + size..].to_vec())
     } else {
         (size, AsciiString::new(), buf.to_vec())
@@ -272,9 +273,9 @@ pub fn read_fields(buf: &AsciiStr) -> Vec<AsciiString> {
     //msg payload is made of fields terminated/separated by NULL chars """
     let a = AsciiChar::new('\u{0}');
     let mut fields: Vec<&AsciiStr> = buf.split(a).collect::<Vec<&AsciiStr>>();
-    println!("fields.len() in read_fields: {}", fields.len());
-    //last one is empty; this may slow dow things though, TODO
-    //fields.remove(fields.len() - 1);
+    debug!("fields.len() in read_fields: {}", fields.len());
+    //last one is empty
+    fields.remove(fields.len() - 1);
     //fields
     fields
         .iter()

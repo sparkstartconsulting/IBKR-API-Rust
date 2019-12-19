@@ -104,7 +104,7 @@ where
         if fields.is_empty() {
             return;
         }
-        println!("inside interpret: {:?}", fields.get(0).unwrap());
+        debug!("inside interpret: {:?}", fields.get(0).unwrap());
         let msg_id = i32::from_str(fields.get(0).unwrap().as_str()).unwrap();
 
         match FromPrimitive::from_i32(msg_id) {

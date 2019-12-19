@@ -84,9 +84,9 @@ where
         self.host = host;
         self.port = port;
         self.client_id = client_id;
-        println!("Connecting");
+        debug!("Connecting");
         let thestream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port)).unwrap();
-        println!("Connected");
+        debug!("Connected");
         self.stream = Option::from(thestream.try_clone().unwrap());
 
         let reader_stream = thestream.try_clone().unwrap();
@@ -101,14 +101,14 @@ where
         let v_100_version = format!("v{}..{}", MIN_CLIENT_VER, MAX_CLIENT_VER);
 
         let msg = make_message(v_100_version.as_str());
-        println!("v_100_version.as_str(): {}", v_100_version.as_str());
+        debug!("v_100_version.as_str(): {}", v_100_version.as_str());
         //logger.debug("msg %s", msg)
         //let encoded = ASCII.encode(v_100_prefix, EncoderTrap::NcrEscape).unwrap();
         let mut bytearray: Vec<u8> = Vec::new();
         bytearray.extend_from_slice(v_100_prefix.as_bytes());
         bytearray.extend_from_slice(msg.to_bytes().as_slice());
         //let msg2 = format!("{:?}", String::from_utf8(bytearray).unwrap());
-        println!(
+        debug!(
             "sending initial request: {:?}",
             AsciiStr::from_ascii(bytearray.as_slice()).unwrap()
         );
@@ -127,7 +127,7 @@ where
             }
 
             let mut buf = reader.recv_packet();
-            println!("got initial packet: {}", buf.len());
+            debug!("got initial packet: {}", buf.len());
             //logger.debug("ANSWER %s", buf)
             if buf.len() > 0 {
                 let (size, msg, remaining_messages) = read_msg(buf.as_slice());
@@ -135,21 +135,21 @@ where
 
                 fields.clear();
                 fields.extend_from_slice(read_fields(msg.as_ref()).as_slice());
-                println!("fields.len(): {}", fields.len());
+                debug!("fields.len(): {}", fields.len());
             } else {
                 fields.clear();
             }
         }
-        println!("Got all messages");
+        debug!("Got all messages");
         self.server_version = i32::from_ascii(fields.get(0).unwrap().as_bytes()).unwrap();
-
+        debug!("Server version: {} ", self.server_version);
         self.conn_time = fields.get(1).unwrap().to_string();
-
+        debug!("Connection time: {} ", self.conn_time);
         self.decoder.server_version = self.server_version;
 
-        /* thread::spawn(move || {
+        thread::spawn(move || {
             reader.run();
-        });*/
+        });
 
         /*
         //debug!("fields {}", fields);
@@ -176,6 +176,10 @@ where
             portfolio updates.*/
 
         info!("subscribe: {}, acct_code: {}", subscribe, acct_code);
+        debug!(
+            "req_account_updates: subscribe: {}, acct_code: {}",
+            subscribe, acct_code
+        );
 
         if !self.is_connected() {
             //self.wrapper.error(NO_VALID_ID, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
@@ -193,7 +197,7 @@ where
         msg.push_str(&make_field(&mut _subscribe)); // TRUE = subscribe, FALSE = unsubscribe.
         msg.push_str(&make_field(&mut _acct_code)); // srv v9 and above, the account code.This will only be used for FA clients
         msg = make_message(msg.as_str()).to_string();
-        println!("{}", msg);
+        debug!("{}", msg);
         // self.send_request(msg.as_str());
     }
     pub fn req_account_summary(
