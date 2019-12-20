@@ -48,7 +48,7 @@ fn main() {
         app.connect("127.0.0.1".to_string(), 7497, 0);
     }
     {
-        app.req_account_updates(true, "DU226951");
+        app.req_account_updates(true, "");
     }
 
     app.run();

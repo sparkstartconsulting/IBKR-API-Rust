@@ -193,7 +193,7 @@ where
         msg.push_str(&make_field(&mut message_id));
         msg.push_str(&make_field(&mut version));
         msg.push_str(&make_field(&mut _subscribe)); // TRUE = subscribe, FALSE = unsubscribe.
-        msg.push_str(&make_field(&mut _acct_code)); // srv v9 and above, the account code.This will only be used for FA clients
+                                                    // msg.push_str(&make_field(&mut _acct_code)); // srv v9 and above, the account code.This will only be used for FA clients
 
         self.send_request(msg.as_str());
     }
