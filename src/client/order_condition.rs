@@ -2,7 +2,10 @@ use std::fmt::Display;
 
 use serde::export::fmt::Error;
 use serde::export::Formatter;
+use serde::{Deserialize, Serialize};
 
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ConditionType {
     Price = 1,
     Time = 3,
@@ -12,9 +15,11 @@ pub enum ConditionType {
     PercentChange = 7,
 }
 
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OrderCondition {
-    cond_type: ConditionType,
-    is_conjunction_connection: bool,
+    pub cond_type: ConditionType,
+    pub is_conjunction_connection: bool,
 }
 
 impl OrderCondition {

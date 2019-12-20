@@ -75,9 +75,13 @@ where
             asynchronous: false,
         }
     }
-    fn send_request(&self, request: &AsciiStr) {
-        //let bytes = make_message(request);
-        self.stream.as_ref().unwrap().write(request.as_bytes());
+    fn send_request(&self, request: &str) {
+        let bytes = make_message(request);
+        self.send_bytes(bytes.to_bytes().as_slice());
+    }
+
+    fn send_bytes(&self, bytes: &[u8]) {
+        self.stream.as_ref().unwrap().write(bytes);
     }
 
     pub fn connect(&mut self, host: String, port: u32, client_id: i32) {
@@ -93,7 +97,7 @@ where
         // reader_stream.shutdown(Shutdown::Write);
 
         let (tx, rx) = channel::<AsciiString>();
-        let mut reader = Reader::new(thestream, tx.clone());
+        let mut reader = Reader::new(thestream, tx);
 
         self.msg_queue = Option::from(rx);
 
@@ -114,9 +118,7 @@ where
         );
         //return;
         //self.send_request(msg2.as_str());
-        self.send_request(
-            AsciiStr::from_ascii(AsciiStr::from_ascii(bytearray.as_slice()).unwrap()).unwrap(),
-        );
+        self.send_bytes(bytearray.as_slice());
         let mut fields: Vec<AsciiString> = Vec::new();
 
         //sometimes I get news before the server version, thus the loop
@@ -146,17 +148,13 @@ where
         self.conn_time = fields.get(1).unwrap().to_string();
         debug!("Connection time: {} ", self.conn_time);
         self.decoder.server_version = self.server_version;
-
         thread::spawn(move || {
             reader.run();
         });
-
-        /*
-        //debug!("fields {}", fields);
-         */
+        self.start_api();
     }
 
-    pub fn is_connected(&self) -> bool {
+    pub fn is_connected(&mut self) -> bool {
         true
     }
 
@@ -164,7 +162,7 @@ where
     //################## Account and Portfolio
     //########################################################################
 
-    pub fn req_account_updates(self, subscribe: bool, acct_code: &'static str) {
+    pub fn req_account_updates(&mut self, subscribe: bool, acct_code: &'static str) {
         /*Call this function to start getting account values, portfolio,
         and last update time information via EWrapper.updateAccountValue(),
         EWrapperi.updatePortfolio() and Wrapper.updateAccountTime().
@@ -196,9 +194,8 @@ where
         msg.push_str(&make_field(&mut version));
         msg.push_str(&make_field(&mut _subscribe)); // TRUE = subscribe, FALSE = unsubscribe.
         msg.push_str(&make_field(&mut _acct_code)); // srv v9 and above, the account code.This will only be used for FA clients
-        msg = make_message(msg.as_str()).to_string();
-        debug!("{}", msg);
-        // self.send_request(msg.as_str());
+
+        self.send_request(msg.as_str());
     }
     pub fn req_account_summary(
         &mut self,
@@ -279,7 +276,7 @@ where
         msg.push_str(&make_field(&mut _group_name));
         msg.push_str(&make_field(&mut _tags));
 
-        //self.send_request(msg.as_str())
+        self.send_request(msg.as_str())
     }
 
     pub fn disconnect(&mut self) {
@@ -311,12 +308,19 @@ where
 
     pub fn run(&mut self) {
         //This is the function that has the message loop.
-
-        while !self.done && self.is_connected() {
-            let text = self.msg_queue.as_mut().unwrap().recv().unwrap();
+        info!("Starting run...");
+        let queue = self.msg_queue.as_mut().unwrap();
+        while !self.done && true {
+            info!("################Client trying to receive...");
+            let text = queue.recv().unwrap();
+            info!("Client got message...");
+            info!("{}", text.as_str());
             if text.len() > MAX_MSG_LEN as usize {
-                //self.wrapper.error(NO_VALID_ID, BAD_LENGTH.code(),
-                //                   format!("{}:{}:{}" (BAD_LENGTH.msg(), len(text), &text));
+                //self.wrapper.error(
+                //NO_VALID_ID,
+                //BAD_LENGTH.code(),
+                //format!("{}:{}:{}"(BAD_LENGTH.msg(), len(text), &text)),
+                //);
                 self.disconnect();
                 break;
             } else {
@@ -325,5 +329,32 @@ where
                 self.decoder.interpret(fields.as_slice());
             }
         }
+    }
+
+    fn start_api(&mut self) {
+        //Initiates the message exchange between the client application and
+        //the TWS/IB Gateway. """
+
+        //self.logRequest(current_fn_name(), vars())
+
+        if !self.is_connected() {
+            // self.wrapper.error(NO_VALID_ID, NOT_CONNECTED.code(),
+            //                   NOT_CONNECTED.msg());
+            return;
+        }
+
+        let version = 2;
+
+        let msg = format!(
+            "{}{}{}",
+            make_field(&mut (Some(OutgoingMessageIds::StartApi).unwrap() as i32)),
+            make_field(&mut version.to_string()),
+            make_field(&mut self.client_id.to_string())
+        );
+
+        //if self.serverVersion() >= MIN_SERVER_VER_OPTIONAL_CAPABILITIES:
+        //    msg += make_field(self.optCapab)
+
+        self.send_request(msg.as_str())
     }
 }

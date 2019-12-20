@@ -2,6 +2,7 @@ use std::fmt;
 
 use serde::export::fmt::Error;
 use serde::export::Formatter;
+use serde::{Deserialize, Serialize};
 
 pub const NO_VALID_ID: i32 = -1;
 pub const MAX_MSG_LEN: i64 = 0xFFFFFF; //16Mb - 1byte
@@ -10,6 +11,7 @@ pub const UNSET_INTEGER: i32 = std::i32::MAX;
 pub const UNSET_DOUBLE: f64 = std::f64::MAX;
 pub const UNSET_LONG: i64 = std::i64::MAX;
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum FaDataType {
     NA = 0,
     GROUPS = 1,
@@ -18,121 +20,16 @@ pub enum FaDataType {
 }
 
 //==================================================================================================
-#[derive()]
-pub struct OrderState {
-    status: String,
-    init_margin_before: String,
-    maint_margin_before: String,
-    equity_with_loan_before: String,
-    init_margin_change: String,
-    maint_margin_change: String,
-    equity_with_loan_change: String,
-    init_margin_after: String,
-    maint_margin_after: String,
-    equity_with_loan_after: String,
-    commission: f64,
-    min_commission: f64,
-    max_commission: f64,
-    commission_currency: String,
-    warning_text: String,
-    completed_time: String,
-    completed_status: String,
-}
-
-impl OrderState {
-    pub fn new(
-        status: String,
-        init_margin_before: String,
-        maint_margin_before: String,
-        equity_with_loan_before: String,
-        init_margin_change: String,
-        maint_margin_change: String,
-        equity_with_loan_change: String,
-        init_margin_after: String,
-        maint_margin_after: String,
-        equity_with_loan_after: String,
-        commission: f64,
-        min_commission: f64,
-        max_commission: f64,
-        commission_currency: String,
-        warning_text: String,
-        completed_time: String,
-        completed_status: String,
-    ) -> Self {
-        OrderState {
-            status,
-            init_margin_before,
-            maint_margin_before,
-            equity_with_loan_before,
-            init_margin_change,
-            maint_margin_change,
-            equity_with_loan_change,
-            init_margin_after,
-            maint_margin_after,
-            equity_with_loan_after,
-            commission,
-            min_commission,
-            max_commission,
-            commission_currency,
-            warning_text,
-            completed_time,
-            completed_status,
-        }
-    }
-}
-
-impl fmt::Display for OrderState {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "status: {},
-            init_margin_before: {},
-            maint_margin_before: {},
-            equity_with_loan_before: {},
-            init_margin_change: {},
-            maint_margin_change: {},
-            equity_with_loan_change: {},
-            init_margin_after: {},
-            maint_margin_after: {},
-            equity_with_loan_after: {},
-            commission: {},
-            min_commission: {},
-            max_commission: {},
-            commission_currency: {},
-            warning_text: {},
-            completed_time: {},
-            completed_status: {},",
-            self.status,
-            self.init_margin_before,
-            self.maint_margin_before,
-            self.equity_with_loan_before,
-            self.init_margin_change,
-            self.maint_margin_change,
-            self.equity_with_loan_change,
-            self.init_margin_after,
-            self.maint_margin_after,
-            self.equity_with_loan_after,
-            self.commission,
-            self.min_commission,
-            self.max_commission,
-            self.commission_currency,
-            self.warning_text,
-            self.completed_time,
-            self.completed_status,
-        )
-    }
-}
-
-//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BarData {
-    date: String,
-    open: f64,
-    high: f64,
-    low: f64,
-    close: f64,
-    volume: i32,
-    bar_count: i32,
-    average: f64,
+    pub date: String,
+    pub open: f64,
+    pub high: f64,
+    pub low: f64,
+    pub close: f64,
+    pub volume: i32,
+    pub bar_count: i32,
+    pub average: f64,
 }
 
 impl BarData {
@@ -167,16 +64,17 @@ impl fmt::Display for BarData {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RealTimeBar {
-    time: String,
-    end_time: String,
-    open: f64,
-    high: f64,
-    low: f64,
-    close: f64,
-    volume: i32,
-    wap: f64,
-    count: i32,
+    pub time: String,
+    pub end_time: String,
+    pub open: f64,
+    pub high: f64,
+    pub low: f64,
+    pub close: f64,
+    pub volume: i32,
+    pub wap: f64,
+    pub count: i32,
 }
 
 impl RealTimeBar {
@@ -213,9 +111,10 @@ impl fmt::Display for RealTimeBar {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HistogramData {
-    price: f64,
-    count: i32,
+    pub price: f64,
+    pub count: i32,
 }
 
 impl HistogramData {
@@ -231,12 +130,13 @@ impl fmt::Display for HistogramData {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DepthMktDataDescription {
-    exchange: String,
-    sec_type: String,
-    listing_exch: String,
-    service_data_type: String,
-    agg_group: i32,
+    pub exchange: String,
+    pub sec_type: String,
+    pub listing_exch: String,
+    pub service_data_type: String,
+    pub agg_group: i32,
 }
 
 impl DepthMktDataDescription {
@@ -276,10 +176,11 @@ impl fmt::Display for DepthMktDataDescription {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SmartComponent {
-    bit_number: i32,
-    exchange: String,
-    exchange_letter: String,
+    pub bit_number: i32,
+    pub exchange: String,
+    pub exchange_letter: String,
 }
 
 impl SmartComponent {
@@ -303,10 +204,11 @@ impl fmt::Display for SmartComponent {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TickAttrib {
-    can_auto_execute: bool,
-    past_limit: bool,
-    pre_open: bool,
+    pub can_auto_execute: bool,
+    pub past_limit: bool,
+    pub pre_open: bool,
 }
 
 impl TickAttrib {
@@ -330,9 +232,10 @@ impl fmt::Display for TickAttrib {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TickAttribBidAsk {
-    bid_past_low: bool,
-    ask_past_high: bool,
+    pub bid_past_low: bool,
+    pub ask_past_high: bool,
 }
 
 impl TickAttribBidAsk {
@@ -355,9 +258,10 @@ impl fmt::Display for TickAttribBidAsk {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TickAttribLast {
-    past_limit: bool,
-    unreported: bool,
+    pub past_limit: bool,
+    pub unreported: bool,
 }
 
 impl TickAttribLast {
@@ -380,9 +284,10 @@ impl fmt::Display for TickAttribLast {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FamilyCode {
-    account_id: String,
-    family_code_str: String,
+    pub account_id: String,
+    pub family_code_str: String,
 }
 
 impl FamilyCode {
@@ -405,9 +310,10 @@ impl fmt::Display for FamilyCode {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PriceIncrement {
-    low_edge: f64,
-    increment: f64,
+    pub low_edge: f64,
+    pub increment: f64,
 }
 
 impl PriceIncrement {
@@ -430,10 +336,11 @@ impl fmt::Display for PriceIncrement {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HistoricalTick {
-    time: i32,
-    price: f64,
-    size: i32,
+    pub time: i32,
+    pub price: f64,
+    pub size: i32,
 }
 
 impl HistoricalTick {
@@ -453,13 +360,14 @@ impl fmt::Display for HistoricalTick {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HistoricalTickBidAsk {
-    time: i32,
-    tick_attrib_bid_ask: TickAttribBidAsk,
-    price_bid: f64,
-    price_ask: f64,
-    size_bid: i32,
-    size_ask: i32,
+    pub time: i32,
+    pub tick_attrib_bid_ask: TickAttribBidAsk,
+    pub price_bid: f64,
+    pub price_ask: f64,
+    pub size_bid: i32,
+    pub size_ask: i32,
 }
 
 impl HistoricalTickBidAsk {
@@ -498,13 +406,14 @@ impl fmt::Display for HistoricalTickBidAsk {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HistoricalTickLast {
-    time: i32,
-    tick_attrib_last: TickAttribLast,
-    price: f64,
-    size: i32,
-    exchange: String,
-    special_conditions: String,
+    pub time: i32,
+    pub tick_attrib_last: TickAttribLast,
+    pub price: f64,
+    pub size: i32,
+    pub exchange: String,
+    pub special_conditions: String,
 }
 
 impl HistoricalTickLast {
@@ -540,13 +449,14 @@ impl fmt::Display for HistoricalTickLast {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CommissionReport {
-    exec_id: String,
-    commission: f64,
-    currency: String,
-    realized_pnl: f64,
-    yield_: f64,
-    yield_redemption_date: i32, //YYYYMMDD format
+    pub exec_id: String,
+    pub commission: f64,
+    pub currency: String,
+    pub realized_pnl: f64,
+    pub yield_: f64,
+    pub yield_redemption_date: i32, //YYYYMMDD format
 }
 
 impl CommissionReport {
@@ -582,9 +492,10 @@ impl fmt::Display for CommissionReport {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewsProvider {
-    code: String,
-    name: String,
+    pub code: String,
+    pub name: String,
 }
 
 impl NewsProvider {
@@ -600,9 +511,10 @@ impl fmt::Display for NewsProvider {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TagValue {
-    tag: String,
-    value: String,
+    pub tag: String,
+    pub value: String,
 }
 
 impl TagValue {

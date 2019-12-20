@@ -32,6 +32,7 @@ trait IncomingMessageProcessor {
 
 // incoming msg id's
 #[derive(FromPrimitive)]
+#[repr(i32)]
 pub enum IncomingMessageIds {
     TickPrice = 1,
     TickSize = 2,
@@ -114,6 +115,7 @@ pub enum IncomingMessageIds {
 
 // Outgoing msg id's
 #[derive(FromPrimitive)]
+#[repr(i32)]
 pub enum OutgoingMessageIds {
     ReqMktData = 1,
     CancelMktData = 2,
@@ -236,15 +238,17 @@ pub fn make_message(msg: &str) -> ByteBuffer {
     //let mut big_endian_u32: [u8; 4] = [0u8, 0u8, 0u8, 0u8];
     //BigEndian::write_u32(&mut big_endian_u32, msg.len() as u32);
     //let intstring = format!("{}", msg.len() as u32);
-    buffer.write_u32(msg.len() as u32);
+    buffer.write(&i32::to_be_bytes(msg.len() as i32));
     debug!("message length: {:?}", msg.len() as u32);
     debug!(
         "message length as bytes: {:?}",
         buffer.to_bytes().as_slice()
     );
     debug!("message: {:?}", msg);
-    buffer.write(msg.trim().as_bytes());
+    let ascii_msg = AsciiStr::from_ascii(msg.trim()).unwrap();
+    buffer.write(ascii_msg.as_bytes());
     debug!("full message as bytes: {:?}", buffer.to_bytes().as_slice());
+    debug!("full message as string: {:?}", buffer.read_string());
     buffer
 }
 
@@ -252,17 +256,18 @@ pub fn read_msg<'a>(buf: &[u8]) -> (usize, AsciiString, Vec<u8>) {
     // first the size prefix and then the corresponding msg payload ""
     let mut text = AsciiString::new();
     if buf.len() < 4 {
+        debug!("read_msg:  buffer too small!! {:?}", buf.len());
         return (0, AsciiString::new(), buf.to_vec());
     }
-    debug!("{:?}", AsciiStr::from_ascii(buf).unwrap());
+    debug!("read_msg:  {:?}", AsciiStr::from_ascii(buf).unwrap());
     let size = i32::from_be_bytes(buf[0..4].try_into().unwrap()) as usize;
-    debug!("Message size: {:?}", size);
+    debug!("read_msg: Message size: {:?}", size);
     //logger.debug("read_msg: size: %d", size)
     //logger.error("read_msg: Message: %s", str(buf, 'utf-8'))
 
     if buf.len() - 4 >= size {
         text = AsciiStr::from_ascii(&buf[4..4 + size]).unwrap().to_owned();
-        debug!("text in read message: {:?}", text);
+        debug!("read_msg: text in read message: {:?}", text);
         (size, text.to_ascii_string(), buf[4 + size..].to_vec())
     } else {
         (size, AsciiString::new(), buf.to_vec())
@@ -284,7 +289,7 @@ pub fn read_fields(buf: &AsciiStr) -> Vec<AsciiString> {
 }
 
 pub fn make_field(val: &mut dyn Any) -> String {
-    // adds the NULL string terminator """
+    // adds the NULL string terminator
 
     // bool type is encoded as int
     if let Some(boolval) = val.downcast_mut::<bool>() {

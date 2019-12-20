@@ -4,14 +4,14 @@ use ascii::AsciiStr;
 
 use crate::client::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
-    HistoricalTick, HistoricalTickBidAsk, NewsProvider, OrderState, PriceIncrement, SmartComponent,
-    TickAttrib, TickAttribBidAsk, TickAttribLast,
+    HistoricalTick, HistoricalTickBidAsk, NewsProvider, PriceIncrement, SmartComponent, TickAttrib,
+    TickAttribBidAsk, TickAttribLast,
 };
 use crate::client::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
 };
 use crate::client::execution::Execution;
-use crate::client::order::{Order, SoftDollarTier};
+use crate::client::order::{Order, OrderState, SoftDollarTier};
 
 pub trait Wrapper {
     /// This event is called when there is an error with the

@@ -1,12 +1,11 @@
-/*
-    SamePos    = open/close leg value is same as combo
-    OpenPos    = open
-    ClosePos   = close
-    UnknownPos = unknown
-*/
+use serde::export::fmt::{Display, Error};
+use serde::export::Formatter;
+use serde::{Deserialize, Serialize};
 
 use crate::client::common::TagValue;
 
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum PositionType {
     SamePos = 0,
     //open/close leg value is same as combo
@@ -17,195 +16,489 @@ pub enum PositionType {
     UnknownPos = 3, //unknown
 }
 
+impl Display for PositionType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            PositionType::SamePos => write!(f, "SamePos"),
+            PositionType::OpenPos => write!(f, "OpenPos"),
+            PositionType::ClosePos => write!(f, "ClosePos"),
+            PositionType::UnknownPos => write!(f, "UnknownPos"),
+        }
+    }
+}
+
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ComboLeg {
-    con_id: i32,
+    pub con_id: i32,
     // type: int
-    ratio: i32,
+    pub ratio: i32,
     // type: int
-    action: String,
+    pub action: String,
     // BUY /SELL / SSHORT
-    exchange: String,
-    open_close: PositionType,
+    pub exchange: String,
+    pub open_close: PositionType,
     // type: int; LegOpenClose enum values
     // for stock legs when doing short sale
-    short_sale_slot: i32,
-    designated_location: String,
-    exempt_code: i32,
+    pub short_sale_slot: i32,
+    pub designated_location: String,
+    pub exempt_code: i32,
 }
 
-/*def __str__(self):
-return ",".join((
-str(con_id),
-str(self.ratio),
-str(self.action),
-str(self.exchange),
-str(self.open_close),
-str(self.short_sale_slot),
-str(self.designated_location),
-str(self.exempt_code)))*/
+impl ComboLeg {
+    pub fn new(
+        con_id: i32,
+        ratio: i32,
+        action: String,
+        exchange: String,
+        open_close: PositionType,
+        short_sale_slot: i32,
+        designated_location: String,
+        exempt_code: i32,
+    ) -> Self {
+        ComboLeg {
+            con_id,
+            ratio,
+            action,
+            exchange,
+            open_close,
+            short_sale_slot,
+            designated_location,
+            exempt_code,
+        }
+    }
+}
 
+impl Display for ComboLeg {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "con_id: {},
+            ratio: {},
+            action: {},
+            exchange: {},
+            open_close: {},
+            short_sale_slot: {},
+            designated_location: {},
+            exempt_code: {}",
+            self.con_id,
+            self.ratio,
+            self.action,
+            self.exchange,
+            self.open_close,
+            self.short_sale_slot,
+            self.designated_location,
+            self.exempt_code
+        )
+    }
+}
+
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DeltaNeutralContract {
-    con_id: i32,
+    pub con_id: i32,
     // type: int
-    delta: f64,
+    pub delta: f64,
     // type: float
-    price: f64, // type: float
+    pub price: f64, // type: float
 }
 
-/*def __str__(self):
-return ",".join((
-str(self.con_id),
-str(self.delta),
-str(self.price)))*/
+impl DeltaNeutralContract {
+    pub fn new(con_id: i32, delta: f64, price: f64) -> Self {
+        DeltaNeutralContract {
+            con_id,
+            delta,
+            price,
+        }
+    }
+}
 
+impl Display for DeltaNeutralContract {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "con_id: {}, delta: {}, price: {},",
+            self.con_id, self.delta, self.price,
+        )
+    }
+}
+
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Contract {
-    con_id: i32,
-    symbol: String,
-    sec_type: String,
-    last_trade_date_or_contract_month: String,
-    strike: f64,
+    pub con_id: i32,
+    pub symbol: String,
+    pub sec_type: String,
+    pub last_trade_date_or_contract_month: String,
+    pub strike: f64,
     // float ! !
-    right: String,
-    multiplier: String,
-    exchange: String,
-    primary_exchange: String,
+    pub right: String,
+    pub multiplier: String,
+    pub exchange: String,
+    pub primary_exchange: String,
     // pick an actual (ie non - aggregate) exchange that the contract trades on.DO NOT SET TO SMART.
-    currency: String,
-    local_symbol: String,
-    trading_class: String,
-    include_expired: bool,
-    sec_id_type: String,
+    pub currency: String,
+    pub local_symbol: String,
+    pub trading_class: String,
+    pub include_expired: bool,
+    pub sec_id_type: String,
     // CUSIP; SEDOL; ISIN;RIC
-    sec_id: String,
+    pub sec_id: String,
 
     //combos
-    combo_legs_descrip: String,
+    pub combo_legs_descrip: String,
     // type: str; received in open order 14 and up for all combos
-    combo_legs: Vec<ComboLeg>,
+    pub combo_legs: Vec<ComboLeg>,
     // type: list<ComboLeg>
-    delta_neutral_contract: DeltaNeutralContract,
+    pub delta_neutral_contract: DeltaNeutralContract,
 }
 
-/*def __str__(self):
-s = ",".join((
-str(self.con_id),
-str(self.symbol),
-str(self.sec_type),
-str(self.last_trade_date_or_contract_month),
-str(self.strike),
-str(self.right),
-str(self.multiplier),
-str(self.exchange),
-str(self.primary_exchange),
-str(self.currency),
-str(self.local_symbol),
-str(self.trading_class),
-str(self.include_expired),
-str(self.sec_id_type),
-str(self.sec_id)))
-s += "combo:" + self.combo_legs_descrip
+impl Contract {
+    pub fn new(
+        con_id: i32,
+        symbol: String,
+        sec_type: String,
+        last_trade_date_or_contract_month: String,
+        strike: f64,
+        right: String,
+        multiplier: String,
+        exchange: String,
+        primary_exchange: String,
+        currency: String,
+        local_symbol: String,
+        trading_class: String,
+        include_expired: bool,
+        sec_id_type: String,
+        sec_id: String,
+        combo_legs_descrip: String,
+        combo_legs: Vec<ComboLeg>,
+        delta_neutral_contract: DeltaNeutralContract,
+    ) -> Self {
+        Contract {
+            con_id,
+            symbol,
+            sec_type,
+            last_trade_date_or_contract_month,
+            strike,
+            right,
+            multiplier,
+            exchange,
+            primary_exchange,
+            currency,
+            local_symbol,
+            trading_class,
+            include_expired,
+            sec_id_type,
+            sec_id,
+            combo_legs_descrip,
+            combo_legs,
+            delta_neutral_contract,
+        }
+    }
+}
 
-if self.combo_legs:
-for leg in self.combo_legs:
-s += ";" + str(leg)
+impl Display for Contract {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "con_id: {},
+            symbol: {},
+            sec_type: {},
+            last_trade_date_or_contract_month: {},
+            strike: {},
+            right: {},
+            multiplier: {},
+            exchange: {},
+            primary_exchange: {},
+            currency: {},
+            local_symbol: {},
+            trading_class: {},
+            include_expired: {},
+            sec_id_type: {},
+            sec_id: {},
+            combo_legs_descrip: {},
+            combo_legs: [{}],
+            delta_neutral_contract: [{}],",
+            self.con_id,
+            self.symbol,
+            self.sec_type,
+            self.last_trade_date_or_contract_month,
+            self.strike,
+            self.right,
+            self.multiplier,
+            self.exchange,
+            self.primary_exchange,
+            self.currency,
+            self.local_symbol,
+            self.trading_class,
+            self.include_expired,
+            self.sec_id_type,
+            self.sec_id,
+            self.combo_legs_descrip,
+            self.combo_legs
+                .iter()
+                .map(|x| { format!("{}", x.to_string()) })
+                .collect::<Vec<String>>()
+                .join(","),
+            self.delta_neutral_contract
+        )
+    }
+}
 
-if self.delta_neutral_contract:
-s += ";" + str(self.delta_neutral_contract)
-
-return s
-*/
-
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ContractDetails {
-    contract: Contract,
-    market_name: String,
-    min_tick: f64,
-    order_types: String,
-    valid_exchanges: String,
-    price_magnifier: i32,
-    under_con_id: i32,
-    long_name: String,
-    contract_month: String,
-    industry: String,
-    category: String,
-    subcategory: String,
-    time_zone_id: String,
-    trading_hours: String,
-    liquid_hours: String,
-    ev_rule: String,
-    ev_multiplier: i32,
-    md_size_multiplier: i32,
-    agg_group: i32,
-    under_symbol: String,
-    under_sec_type: String,
-    market_rule_ids: String,
-    sec_id_list: Vec<TagValue>,
-    real_expiration_date: String,
-    last_trade_time: String,
+    pub contract: Contract,
+    pub market_name: String,
+    pub min_tick: f64,
+    pub order_types: String,
+    pub valid_exchanges: String,
+    pub price_magnifier: i32,
+    pub under_con_id: i32,
+    pub long_name: String,
+    pub contract_month: String,
+    pub industry: String,
+    pub category: String,
+    pub subcategory: String,
+    pub time_zone_id: String,
+    pub trading_hours: String,
+    pub liquid_hours: String,
+    pub ev_rule: String,
+    pub ev_multiplier: i32,
+    pub md_size_multiplier: i32,
+    pub agg_group: i32,
+    pub under_symbol: String,
+    pub under_sec_type: String,
+    pub market_rule_ids: String,
+    pub sec_id_list: Vec<TagValue>,
+    pub real_expiration_date: String,
+    pub last_trade_time: String,
 
     // BOND values
-    cusip: String,
-    ratings: String,
-    desc_append: String,
-    bond_type: String,
-    coupon_type: String,
-    callable: bool,
-    putable: bool,
-    coupon: i32,
-    convertible: bool,
-    maturity: String,
-    issue_date: String,
-    next_option_date: String,
-    next_option_type: String,
-    next_option_partial: bool,
-    notes: String,
+    pub cusip: String,
+    pub ratings: String,
+    pub desc_append: String,
+    pub bond_type: String,
+    pub coupon_type: String,
+    pub callable: bool,
+    pub putable: bool,
+    pub coupon: i32,
+    pub convertible: bool,
+    pub maturity: String,
+    pub issue_date: String,
+    pub next_option_date: String,
+    pub next_option_type: String,
+    pub next_option_partial: bool,
+    pub notes: String,
 }
 
-/*
-def __str__(self):
-s = ",".join((
-str(self.contract),
-str(self.market_name),
-str(self.min_tick),
-str(self.order_types),
-str(self.valid_exchanges),
-str(self.price_magnifier),
-str(self.under_con_id),
-str(self.long_name),
-str(self.contract_month),
-str(self.industry),
-str(self.category),
-str(self.subcategory),
-str(self.time_zone_id),
-str(self.trading_hours),
-str(self.liquid_hours),
-str(self.ev_rule),
-str(self.ev_multiplier),
-str(self.md_size_multiplier),
-str(self.under_symbol),
-str(self.under_sec_type),
-str(self.market_rule_ids),
-str(self.agg_group),
-str(self.sec_id_list),
-str(self.real_expiration_date),
-str(self.cusip),
-str(self.ratings),
-str(self.desc_append),
-str(self.bond_type),
-str(self.coupon_type),
-str(self.callable),
-str(self.putable),
-str(self.coupon),
-str(self.convertible),
-str(self.maturity),
-str(self.issue_date),
-str(self.next_option_date),
-str(self.next_option_type),
-str(self.next_option_partial),
-str(self.notes)))
-return s
-*/
+impl ContractDetails {
+    pub fn new(
+        contract: Contract,
+        market_name: String,
+        min_tick: f64,
+        order_types: String,
+        valid_exchanges: String,
+        price_magnifier: i32,
+        under_con_id: i32,
+        long_name: String,
+        contract_month: String,
+        industry: String,
+        category: String,
+        subcategory: String,
+        time_zone_id: String,
+        trading_hours: String,
+        liquid_hours: String,
+        ev_rule: String,
+        ev_multiplier: i32,
+        md_size_multiplier: i32,
+        agg_group: i32,
+        under_symbol: String,
+        under_sec_type: String,
+        market_rule_ids: String,
+        sec_id_list: Vec<TagValue>,
+        real_expiration_date: String,
+        last_trade_time: String,
+        cusip: String,
+        ratings: String,
+        desc_append: String,
+        bond_type: String,
+        coupon_type: String,
+        callable: bool,
+        putable: bool,
+        coupon: i32,
+        convertible: bool,
+        maturity: String,
+        issue_date: String,
+        next_option_date: String,
+        next_option_type: String,
+        next_option_partial: bool,
+        notes: String,
+    ) -> Self {
+        ContractDetails {
+            contract,
+            market_name,
+            min_tick,
+            order_types,
+            valid_exchanges,
+            price_magnifier,
+            under_con_id,
+            long_name,
+            contract_month,
+            industry,
+            category,
+            subcategory,
+            time_zone_id,
+            trading_hours,
+            liquid_hours,
+            ev_rule,
+            ev_multiplier,
+            md_size_multiplier,
+            agg_group,
+            under_symbol,
+            under_sec_type,
+            market_rule_ids,
+            sec_id_list,
+            real_expiration_date,
+            last_trade_time,
+            cusip,
+            ratings,
+            desc_append,
+            bond_type,
+            coupon_type,
+            callable,
+            putable,
+            coupon,
+            convertible,
+            maturity,
+            issue_date,
+            next_option_date,
+            next_option_type,
+            next_option_partial,
+            notes,
+        }
+    }
+}
 
+impl Display for ContractDetails {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "contract: {},
+            market_name: {},
+            min_tick: {},
+            order_types: {},
+            valid_exchanges: {},
+            price_magnifier: {},
+            under_con_id: {},
+            long_name: {},
+            contract_month: {},
+            industry: {},
+            category: {},
+            subcategory: {},
+            time_zone_id: {},
+            trading_hours: {},
+            liquid_hours: {},
+            ev_rule: {},
+            ev_multiplier: {},
+            md_size_multiplier: {},
+            agg_group: {},
+            under_symbol: {},
+            under_sec_type: {},
+            market_rule_ids: {},
+            sec_id_list: {},
+            real_expiration_date: {},
+            last_trade_time: {},
+            cusip: {},
+            ratings: {},
+            desc_append: {},
+            bond_type: {},
+            coupon_type: {},
+            callable: {},
+            putable: {},
+            coupon: {},
+            convertible: {},
+            maturity: {},
+            issue_date: {},
+            next_option_date: {},
+            next_option_type: {},
+            next_option_partial: {},
+            notes: {},",
+            self.contract,
+            self.market_name,
+            self.min_tick,
+            self.order_types,
+            self.valid_exchanges,
+            self.price_magnifier,
+            self.under_con_id,
+            self.long_name,
+            self.contract_month,
+            self.industry,
+            self.category,
+            self.subcategory,
+            self.time_zone_id,
+            self.trading_hours,
+            self.liquid_hours,
+            self.ev_rule,
+            self.ev_multiplier,
+            self.md_size_multiplier,
+            self.agg_group,
+            self.under_symbol,
+            self.under_sec_type,
+            self.market_rule_ids,
+            self.sec_id_list
+                .iter()
+                .map(|x| { format!("{}", x.to_string()) })
+                .collect::<Vec<String>>()
+                .join(","),
+            self.real_expiration_date,
+            self.last_trade_time,
+            self.cusip,
+            self.ratings,
+            self.desc_append,
+            self.bond_type,
+            self.coupon_type,
+            self.callable,
+            self.putable,
+            self.coupon,
+            self.convertible,
+            self.maturity,
+            self.issue_date,
+            self.next_option_date,
+            self.next_option_type,
+            self.next_option_partial,
+            self.notes
+        )
+    }
+}
+
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ContractDescription {
-    contract: Contract,
-    derivative_sec_types: Vec<String>, // type: list of strings
+    pub contract: Contract,
+    pub derivative_sec_types: Vec<String>, // type: list of strings
+}
+
+impl ContractDescription {
+    pub fn new(contract: Contract, derivative_sec_types: Vec<String>) -> Self {
+        ContractDescription {
+            contract,
+            derivative_sec_types,
+        }
+    }
+}
+
+impl Display for ContractDescription {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "contract: {}, derivative_sec_types: ({})",
+            self.contract,
+            self.derivative_sec_types
+                .iter()
+                .map(|x| { x.to_owned() })
+                .collect::<Vec<String>>()
+                .join(",")
+        )
+    }
 }

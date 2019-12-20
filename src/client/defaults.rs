@@ -5,16 +5,17 @@ use ascii::AsciiStr;
 
 use crate::client::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
-    HistoricalTick, HistoricalTickBidAsk, NewsProvider, OrderState, PriceIncrement, SmartComponent,
-    TickAttrib, TickAttribBidAsk, TickAttribLast,
+    HistoricalTick, HistoricalTickBidAsk, NewsProvider, PriceIncrement, SmartComponent, TickAttrib,
+    TickAttribBidAsk, TickAttribLast,
 };
 use crate::client::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
 };
 use crate::client::execution::Execution;
-use crate::client::order::{Order, SoftDollarTier};
+use crate::client::order::{Order, OrderState, SoftDollarTier};
 use crate::client::wrapper::Wrapper;
 
+//==================================================================================================
 pub struct DefaultWrapper {}
 
 impl DefaultWrapper {
@@ -116,7 +117,7 @@ impl Wrapper for DefaultWrapper {
             key, val, currency, account_name
         );
 
-        debug!(
+        info!(
             "key: {}, value: {}, ccy: {}, account: {}.",
             key, val, currency, account_name
         );
@@ -138,12 +139,10 @@ impl Wrapper for DefaultWrapper {
 
     fn update_account_time(&self, time_stamp: &AsciiStr) {
         info!("update_account_time: {}.", time_stamp);
-        debug!("update_account_time: {}.", time_stamp);
     }
 
     fn account_download_end(&self, account_name: &AsciiStr) {
         info!("account_download_end: {}.", account_name);
-        debug!("account_download_end: {}.", account_name);
     }
 
     fn next_valid_id(&self, order_id: i32) {

@@ -1,10 +1,13 @@
 use serde::export::fmt::{Display, Error};
 use serde::export::Formatter;
+use serde::{Deserialize, Serialize};
 
 use crate::client::common::TagValue;
 use crate::client::order_condition::OrderCondition;
 
 // enum Origin
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Origin {
     Customer = 0,
     Firm = 1,
@@ -12,6 +15,8 @@ pub enum Origin {
 }
 
 // enum AuctionStrategy
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum AuctionStrategy {
     AuctionUnset = 0,
     AuctionMatch = 1,
@@ -19,10 +24,12 @@ pub enum AuctionStrategy {
     AuctionTransparent = 3,
 }
 
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SoftDollarTier {
-    name: String,
-    val: String,
-    display_name: String,
+    pub name: String,
+    pub val: String,
+    pub display_name: String,
 }
 
 impl SoftDollarTier {
@@ -46,6 +53,113 @@ impl Display for SoftDollarTier {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct OrderState {
+    pub status: String,
+    pub init_margin_before: String,
+    pub maint_margin_before: String,
+    pub equity_with_loan_before: String,
+    pub init_margin_change: String,
+    pub maint_margin_change: String,
+    pub equity_with_loan_change: String,
+    pub init_margin_after: String,
+    pub maint_margin_after: String,
+    pub equity_with_loan_after: String,
+    pub commission: f64,
+    pub min_commission: f64,
+    pub max_commission: f64,
+    pub commission_currency: String,
+    pub warning_text: String,
+    pub completed_time: String,
+    pub completed_status: String,
+}
+
+impl OrderState {
+    pub fn new(
+        status: String,
+        init_margin_before: String,
+        maint_margin_before: String,
+        equity_with_loan_before: String,
+        init_margin_change: String,
+        maint_margin_change: String,
+        equity_with_loan_change: String,
+        init_margin_after: String,
+        maint_margin_after: String,
+        equity_with_loan_after: String,
+        commission: f64,
+        min_commission: f64,
+        max_commission: f64,
+        commission_currency: String,
+        warning_text: String,
+        completed_time: String,
+        completed_status: String,
+    ) -> Self {
+        OrderState {
+            status,
+            init_margin_before,
+            maint_margin_before,
+            equity_with_loan_before,
+            init_margin_change,
+            maint_margin_change,
+            equity_with_loan_change,
+            init_margin_after,
+            maint_margin_after,
+            equity_with_loan_after,
+            commission,
+            min_commission,
+            max_commission,
+            commission_currency,
+            warning_text,
+            completed_time,
+            completed_status,
+        }
+    }
+}
+
+impl Display for OrderState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "status: {},
+            init_margin_before: {},
+            maint_margin_before: {},
+            equity_with_loan_before: {},
+            init_margin_change: {},
+            maint_margin_change: {},
+            equity_with_loan_change: {},
+            init_margin_after: {},
+            maint_margin_after: {},
+            equity_with_loan_after: {},
+            commission: {},
+            min_commission: {},
+            max_commission: {},
+            commission_currency: {},
+            warning_text: {},
+            completed_time: {},
+            completed_status: {},",
+            self.status,
+            self.init_margin_before,
+            self.maint_margin_before,
+            self.equity_with_loan_before,
+            self.init_margin_change,
+            self.maint_margin_change,
+            self.equity_with_loan_change,
+            self.init_margin_after,
+            self.maint_margin_after,
+            self.equity_with_loan_after,
+            self.commission,
+            self.min_commission,
+            self.max_commission,
+            self.commission_currency,
+            self.warning_text,
+            self.completed_time,
+            self.completed_status,
+        )
+    }
+}
+
+//==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OrderComboLeg {
     price: f64, // type: float
 }
@@ -63,230 +177,231 @@ impl Display for OrderComboLeg {
 }
 
 //==================================================================================================
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Order {
-    soft_dollar_tier: SoftDollarTier,
+    pub soft_dollar_tier: SoftDollarTier,
     // order identifier
-    order_id: i32,
-    client_id: i32,
-    perm_id: i32,
+    pub order_id: i32,
+    pub client_id: i32,
+    pub perm_id: i32,
 
     // main order fields
-    action: String,
-    total_quantity: i32,
-    order_type: String,
-    lmt_price: f64,
+    pub action: String,
+    pub total_quantity: i32,
+    pub order_type: String,
+    pub lmt_price: f64,
     aux_price: f64,
 
     // extended order fields
-    tif: String,
+    pub tif: String,
     // "Time in Force" - DAY, GTC, etc.
-    active_start_time: String,
+    pub active_start_time: String,
     // for GTC orders
-    active_stop_time: String,
+    pub active_stop_time: String,
     // for GTC orders
-    oca_group: String,
+    pub oca_group: String,
     // one cancels all group name
-    oca_type: i32,
+    pub oca_type: i32,
     // 1 = CANCEL_WITH_BLOCK, 2 = REDUCE_WITH_BLOCK, 3 = REDUCE_NON_BLOCK
-    order_ref: String,
-    transmit: bool,
+    pub order_ref: String,
+    pub transmit: bool,
     // if false, order will be created but not transmited
-    parent_id: i32,
+    pub parent_id: i32,
     // Parent order Id, to associate Auto STP or TRAIL orders with the original order.
-    block_order: bool,
-    sweep_to_fill: bool,
-    display_size: i32,
-    trigger_method: i32,
+    pub block_order: bool,
+    pub sweep_to_fill: bool,
+    pub display_size: i32,
+    pub trigger_method: i32,
     // 0=Default, 1=Double_Bid_Ask, 2=Last, 3=Double_Last, 4=Bid_Ask, 7=Last_or_Bid_Ask, 8=Mid-point
-    outside_rth: bool,
-    hidden: bool,
-    good_after_time: String,
+    pub outside_rth: bool,
+    pub hidden: bool,
+    pub good_after_time: String,
     // Format: 20060505 08:00:00 {time zone}
-    good_till_date: String,
+    pub good_till_date: String,
     // Format: 20060505 08:00:00 {time zone}
-    rule80a: String,
+    pub rule80a: String,
     // Individual = 'I', Agency = 'A', AgentOtherMember = 'W', IndividualPTIA = 'J', AgencyPTIA = 'U', AgentOtherMemberPTIA = 'M', IndividualPT = 'K', AgencyPT = 'Y', AgentOtherMemberPT = 'N'
-    all_or_none: bool,
-    min_qty: i32,
+    pub all_or_none: bool,
+    pub min_qty: i32,
     //type: int
-    percent_offset: f64,
+    pub percent_offset: f64,
     // type: float; REL orders only
-    override_percentage_constraints: bool,
-    trail_stop_price: f64,
+    pub override_percentage_constraints: bool,
+    pub trail_stop_price: f64,
     // type: float
-    trailing_percent: f64, // type: float; TRAILLIMIT orders only
+    pub trailing_percent: f64, // type: float; TRAILLIMIT orders only
 
     // financial advisors only
-    fa_group: String,
-    fa_profile: String,
-    fa_method: String,
-    fa_percentage: String,
+    pub fa_group: String,
+    pub fa_profile: String,
+    pub fa_method: String,
+    pub fa_percentage: String,
 
     // institutional (ie non-cleared) only
-    designated_location: String,
+    pub designated_location: String,
     //used only when short_sale_slot=2
-    open_close: String,
+    pub open_close: String,
     // O=Open, C=Close
-    origin: Origin,
+    pub origin: Origin,
     // 0=Customer, 1=Firm
-    short_sale_slot: i32,
+    pub short_sale_slot: i32,
     // type: int; 1 if you hold the shares, 2 if they will be delivered from elsewhere.  Only for Action=SSHORT
-    exempt_code: i32,
+    pub exempt_code: i32,
 
     // SMART routing only
-    discretionary_amt: i32,
-    e_trade_only: bool,
-    firm_quote_only: bool,
-    nbbo_price_cap: f64,
+    pub discretionary_amt: i32,
+    pub e_trade_only: bool,
+    pub firm_quote_only: bool,
+    pub nbbo_price_cap: f64,
     // type: float
-    opt_out_smart_routing: bool,
+    pub opt_out_smart_routing: bool,
 
     // BOX exchange orders only
-    auction_strategy: AuctionStrategy,
+    pub auction_strategy: AuctionStrategy,
     // type: int; AuctionMatch, AuctionImprovement, AuctionTransparent
-    starting_price: f64,
+    pub starting_price: f64,
     // type: float
-    stock_ref_price: f64,
+    pub stock_ref_price: f64,
     // type: float
-    delta: f64, // type: float
+    pub delta: f64, // type: float
 
     // pegged to stock and VOL orders only
-    stock_range_lower: f64,
+    pub stock_range_lower: f64,
     // type: float
-    stock_range_upper: f64, // type: float
+    pub stock_range_upper: f64, // type: float
 
-    randomize_price: bool,
-    randomize_size: bool,
+    pub randomize_price: bool,
+    pub randomize_size: bool,
 
     // VOLATILITY ORDERS ONLY
-    volatility: f64,
+    pub volatility: f64,
     // type: float
-    volatility_type: i32,
+    pub volatility_type: i32,
     // type: int   // 1=daily, 2=annual
-    delta_neutral_order_type: String,
-    delta_neutral_aux_price: f64,
+    pub delta_neutral_order_type: String,
+    pub delta_neutral_aux_price: f64,
     // type: float
-    delta_neutral_con_id: i32,
-    delta_neutral_settling_firm: String,
-    delta_neutral_clearing_account: String,
-    delta_neutral_clearing_intent: String,
-    delta_neutral_open_close: String,
-    delta_neutral_short_sale: bool,
-    delta_neutral_short_sale_slot: i32,
-    delta_neutral_designated_location: String,
-    continuous_update: bool,
-    reference_price_type: i32, // type: int; 1=Average, 2 = BidOrAsk
+    pub delta_neutral_con_id: i32,
+    pub delta_neutral_settling_firm: String,
+    pub delta_neutral_clearing_account: String,
+    pub delta_neutral_clearing_intent: String,
+    pub delta_neutral_open_close: String,
+    pub delta_neutral_short_sale: bool,
+    pub delta_neutral_short_sale_slot: i32,
+    pub delta_neutral_designated_location: String,
+    pub continuous_update: bool,
+    pub reference_price_type: i32, // type: int; 1=Average, 2 = BidOrAsk
 
     // COMBO ORDERS ONLY
-    basis_points: f64,
+    pub basis_points: f64,
     // type: float; EFP orders only
-    basis_points_type: i32, // type: int;  EFP orders only
+    pub basis_points_type: i32, // type: int;  EFP orders only
 
     // SCALE ORDERS ONLY
-    scale_init_level_size: i32,
+    pub scale_init_level_size: i32,
     // type: int
-    scale_subs_level_size: i32,
+    pub scale_subs_level_size: i32,
     // type: int
-    scale_price_increment: f64,
+    pub scale_price_increment: f64,
     // type: float
-    scale_price_adjust_value: f64,
+    pub scale_price_adjust_value: f64,
     // type: float
-    scale_price_adjust_interval: i32,
+    pub scale_price_adjust_interval: i32,
     // type: int
-    scale_profit_offset: f64,
+    pub scale_profit_offset: f64,
     // type: float
-    scale_auto_reset: bool,
-    scale_init_position: i32,
+    pub scale_auto_reset: bool,
+    pub scale_init_position: i32,
     // type: int
-    scale_init_fill_qty: i32,
+    pub scale_init_fill_qty: i32,
     // type: int
-    scale_random_percent: bool,
-    scale_table: String,
+    pub scale_random_percent: bool,
+    pub scale_table: String,
 
     // HEDGE ORDERS
-    hedge_type: String,
+    pub hedge_type: String,
     // 'D' - delta, 'B' - beta, 'F' - FX, 'P' - pair
-    hedge_param: String, // 'beta=X' value for beta hedge, 'ratio=Y' for pair hedge
+    pub hedge_param: String, // 'beta=X' value for beta hedge, 'ratio=Y' for pair hedge
 
     // Clearing info
-    account: String,
+    pub account: String,
     // IB account
-    settling_firm: String,
-    clearing_account: String,
+    pub settling_firm: String,
+    pub clearing_account: String,
     //True beneficiary of the order
-    clearing_intent: String, // "" (Default), "IB", "Away", "PTA" (PostTrade)
+    pub clearing_intent: String, // "" (Default), "IB", "Away", "PTA" (PostTrade)
 
     // ALGO ORDERS ONLY
-    algo_strategy: String,
+    pub algo_strategy: String,
 
-    algo_params: Vec<TagValue>,
+    pub algo_params: Vec<TagValue>,
     //TagValueList
-    smart_combo_routing_params: Vec<TagValue>, //TagValueList
+    pub smart_combo_routing_params: Vec<TagValue>, //TagValueList
 
-    algo_id: String,
+    pub algo_id: String,
 
     // What-if
-    what_if: bool,
+    pub what_if: bool,
 
     // Not Held
-    not_held: bool,
-    solicited: bool,
+    pub not_held: bool,
+    pub solicited: bool,
 
     // models
-    model_code: String,
+    pub model_code: String,
 
     // order combo legs
-    order_combo_legs: Vec<OrderComboLeg>, // OrderComboLegListSPtr
+    pub order_combo_legs: Vec<OrderComboLeg>, // OrderComboLegListSPtr
 
-    order_misc_options: Vec<TagValue>, // TagValueList
+    pub order_misc_options: Vec<TagValue>, // TagValueList
 
     // VER PEG2BENCH fields:
-    reference_contract_id: i32,
-    pegged_change_amount: f64,
-    is_pegged_change_amount_decrease: bool,
-    reference_change_amount: f64,
-    reference_exchange_id: String,
-    adjusted_order_type: String,
+    pub reference_contract_id: i32,
+    pub pegged_change_amount: f64,
+    pub is_pegged_change_amount_decrease: bool,
+    pub reference_change_amount: f64,
+    pub reference_exchange_id: String,
+    pub adjusted_order_type: String,
 
-    trigger_price: f64,
-    adjusted_stop_price: f64,
-    adjusted_stop_limit_price: f64,
-    adjusted_trailing_amount: f64,
-    adjustable_trailing_unit: i32,
-    lmt_price_offset: f64,
+    pub trigger_price: f64,
+    pub adjusted_stop_price: f64,
+    pub adjusted_stop_limit_price: f64,
+    pub adjusted_trailing_amount: f64,
+    pub adjustable_trailing_unit: i32,
+    pub lmt_price_offset: f64,
 
-    conditions: Vec<OrderCondition>,
+    pub conditions: Vec<OrderCondition>,
     // std::vector<std::shared_ptr<OrderCondition>>
-    conditions_cancel_order: bool,
-    conditions_ignore_rth: bool,
+    pub conditions_cancel_order: bool,
+    pub conditions_ignore_rth: bool,
 
     // ext operator
-    ext_operator: String,
+    pub ext_operator: String,
 
     // native cash quantity
-    cash_qty: f64,
+    pub cash_qty: f64,
 
-    mifid2decision_maker: String,
-    mifid2decision_algo: String,
-    mifid2execution_trader: String,
-    mifid2execution_algo: String,
+    pub mifid2decision_maker: String,
+    pub mifid2decision_algo: String,
+    pub mifid2execution_trader: String,
+    pub mifid2execution_algo: String,
 
-    dont_use_auto_price_for_hedge: bool,
+    pub dont_use_auto_price_for_hedge: bool,
 
-    is_oms_container: bool,
+    pub is_oms_container: bool,
 
-    discretionary_up_to_limit_price: bool,
+    pub discretionary_up_to_limit_price: bool,
 
-    auto_cancel_date: String,
-    filled_quantity: f64,
-    ref_futures_con_id: i32,
-    auto_cancel_parent: bool,
-    shareholder: String,
-    imbalance_only: bool,
-    route_marketable_to_bbo: bool,
-    parent_perm_id: i32,
+    pub auto_cancel_date: String,
+    pub filled_quantity: f64,
+    pub ref_futures_con_id: i32,
+    pub auto_cancel_parent: bool,
+    pub shareholder: String,
+    pub imbalance_only: bool,
+    pub route_marketable_to_bbo: bool,
+    pub parent_perm_id: i32,
 
-    use_price_mgmt_algo: i32,
+    pub use_price_mgmt_algo: i32,
 }
 
 impl Order {
@@ -591,27 +706,3 @@ impl Display for Order {
         )
     }
 }
-/*def __str__(self):
-s = "%s,%d,%s:" % (order_id, client_id, perm_id)
-
-s += " %s %s %d@%f" % (
-order_type,
-action,
-total_quantity,
-lmt_price)
-
-s += " %s" % tif
-
-if order_combo_legs:
-s += " CMB("
-for leg in order_combo_legs:
-s += str(leg) + ","
-s += ")"
-
-if conditions:
-s += " COND("
-for cond in conditions:
-s += str(cond) + ","
-s += ")"
-
-return s*/

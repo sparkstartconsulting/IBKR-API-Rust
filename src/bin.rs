@@ -48,7 +48,10 @@ fn main() {
         app.connect("127.0.0.1".to_string(), 7497, 0);
     }
     {
-        app.req_account_updates(true, "DU248225");
+        app.req_account_updates(true, "DU226951");
     }
+
+    app.run();
+
     thread::sleep(Duration::new(60, 0));
 }

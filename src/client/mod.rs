@@ -10,6 +10,7 @@ pub mod messages;
 pub mod order;
 pub mod order_condition;
 pub mod reader;
+pub mod scanner;
 pub mod server_versions;
 pub mod transport;
 pub mod wrapper;

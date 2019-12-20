@@ -66,10 +66,13 @@ impl Reader {
 
     pub fn run(&mut self) {
         loop {
-            debug!("starting reader loop");
+            debug!("#######    starting reader loop");
             /// grab a packet of messages from the socket
             let mut message_packet = self.recv_packet();
-            debug!("reader loop, recvd size {}", message_packet.len());
+            debug!(
+                "###########  reader loop, recvd size {}",
+                message_packet.len()
+            );
 
             /// Read messages from the packet until there are no more.
             /// When this loop ends, break into the outer loop and grab another packet.  
@@ -87,7 +90,7 @@ impl Reader {
                 message_packet.extend_from_slice(remaining_messages.as_slice());
 
                 debug!(
-                    "size:{} msg.size:{} msg:|{}| buf:{:?}|",
+                    "############    size:{} msg.size:{} msg:|{}| buf:{:?}|",
                     size,
                     msg.len(),
                     msg,
@@ -95,7 +98,7 @@ impl Reader {
                 );
 
                 debug!(
-                    "size:{} msg.size:{} msg:|{}| buf:{:?}|",
+                    "########     size:{} msg.size:{} msg:|{}| buf:{:?}|",
                     size,
                     msg.len(),
                     msg,
@@ -103,12 +106,11 @@ impl Reader {
                 );
 
                 if msg.as_str() != "" {
-                    debug!("sending message... ");
+                    info!("s@@@@@@@@@@@@@@@@@@@@@@@@sending message... ");
                     self.messages.send(msg).unwrap();
                 } else {
                     ///Break to the outer loop and get another packet of messages.
 
-                    debug!("more incoming packet(s) are needed ");
                     debug!("more incoming packet(s) are needed ");
                     break;
                 }
