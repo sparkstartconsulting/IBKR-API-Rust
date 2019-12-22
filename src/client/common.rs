@@ -19,6 +19,12 @@ pub enum FaDataType {
     ALIASES = 3,
 }
 
+impl fmt::Display for FaDataType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Type: {}", self)
+    }
+}
+
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BarData {

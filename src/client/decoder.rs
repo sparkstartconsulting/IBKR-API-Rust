@@ -222,8 +222,20 @@ where
 
     fn process_tick_price(&mut self, fields: &[String]) {}
     fn process_tick_string(&mut self, fields: &[String]) {}
-    fn process_account_summary(&mut self, fields: &[String]) {}
-    fn process_account_summary_end(&mut self, fields: &[String]) {}
+    fn process_account_summary(&mut self, fields: &[String]) {
+        self.wrapper.account_summary(
+            fields.get(2).unwrap().parse().unwrap(),
+            fields.get(3).unwrap(),
+            fields.get(4).unwrap(),
+            fields.get(5).unwrap(),
+            fields.get(6).unwrap(),
+        );
+    }
+    fn process_account_summary_end(&mut self, fields: &[String]) {
+        self.wrapper
+            .account_summary_end(fields.get(2).unwrap().parse().unwrap())
+    }
+
     fn process_account_update_multi(&mut self, fields: &[String]) {}
     fn process_account_update_multi_end(&mut self, fields: &[String]) {}
     fn process_account_download_end(&mut self, fields: &[String]) {
