@@ -6,7 +6,7 @@ use std::string::String;
 use std::vec::Vec;
 
 use ascii;
-use ascii::{AsciiChar, AsciiStr, AsciiString};
+use ascii::AsAsciiStr;
 use byteorder::{BigEndian, ByteOrder};
 
 use crate::bytebuffer::ByteBuffer;
@@ -232,60 +232,54 @@ impl EMessage {
     }
 }
 
-pub fn make_message(msg: &str) -> ByteBuffer {
-    let mut buffer = ByteBuffer::new();
-    //add the length header
-    //let mut big_endian_u32: [u8; 4] = [0u8, 0u8, 0u8, 0u8];
-    //BigEndian::write_u32(&mut big_endian_u32, msg.len() as u32);
-    //let intstring = format!("{}", msg.len() as u32);
-    buffer.write(&i32::to_be_bytes(msg.len() as i32));
-    debug!("message length: {:?}", msg.len() as u32);
-    debug!(
-        "message length as bytes: {:?}",
-        buffer.to_bytes().as_slice()
-    );
-    debug!("message: {:?}", msg);
-    let ascii_msg = AsciiStr::from_ascii(msg.trim()).unwrap();
-    buffer.write(ascii_msg.as_bytes());
-    debug!("full message as bytes: {:?}", buffer.to_bytes().as_slice());
-    debug!("full message as string: {:?}", buffer.read_string());
-    buffer
+pub fn make_message(msg: &str) -> Vec<u8> {
+    //let mut buffer = ByteBuffer::new();
+    let mut buffer: Vec<u8> = Vec::new();
+
+    buffer.extend_from_slice(&i32::to_be_bytes(msg.len() as i32));
+
+    buffer.write(msg.as_ascii_str().unwrap().as_bytes());
+    let tmp = buffer.clone();
+    debug!("Message after create: {:?}", buffer);
+
+    let (size, msg, buf) = read_msg(tmp.as_slice());
+    debug!("Message read: size:{}, msg:{}, bytes: {:?}", size, msg, buf);
+
+    tmp
 }
 
-pub fn read_msg<'a>(buf: &[u8]) -> (usize, AsciiString, Vec<u8>) {
+pub fn read_msg<'a>(buf: &[u8]) -> (usize, String, Vec<u8>) {
     // first the size prefix and then the corresponding msg payload ""
-    let mut text = AsciiString::new();
+    let mut text = String::new();
     if buf.len() < 4 {
         debug!("read_msg:  buffer too small!! {:?}", buf.len());
-        return (0, AsciiString::new(), buf.to_vec());
+        return (0, String::new(), buf.to_vec());
     }
-    debug!("read_msg:  {:?}", AsciiStr::from_ascii(buf).unwrap());
+
     let size = i32::from_be_bytes(buf[0..4].try_into().unwrap()) as usize;
     debug!("read_msg: Message size: {:?}", size);
-    //logger.debug("read_msg: size: %d", size)
-    //logger.error("read_msg: Message: %s", str(buf, 'utf-8'))
 
     if buf.len() - 4 >= size {
-        text = AsciiStr::from_ascii(&buf[4..4 + size]).unwrap().to_owned();
+        text = String::from_utf8(buf[4..4 + size].to_vec()).unwrap();
         debug!("read_msg: text in read message: {:?}", text);
-        (size, text.to_ascii_string(), buf[4 + size..].to_vec())
+        (size, text, buf[4 + size..].to_vec())
     } else {
-        (size, AsciiString::new(), buf.to_vec())
+        (size, String::new(), buf.to_vec())
     }
 }
 
-pub fn read_fields(buf: &AsciiStr) -> Vec<AsciiString> {
+pub fn read_fields(buf: &str) -> Vec<String> {
     //msg payload is made of fields terminated/separated by NULL chars """
-    let a = AsciiChar::new('\u{0}');
-    let mut fields: Vec<&AsciiStr> = buf.split(a).collect::<Vec<&AsciiStr>>();
+    let a = '\u{0}';
+    let mut fields: Vec<&str> = buf.split(a).collect::<Vec<&str>>();
     debug!("fields.len() in read_fields: {}", fields.len());
     //last one is empty
     fields.remove(fields.len() - 1);
-    //fields
+
     fields
         .iter()
-        .map(|x| AsciiString::from(*x))
-        .collect::<Vec<AsciiString>>()
+        .map(|x| String::from(*x))
+        .collect::<Vec<String>>()
 }
 
 pub fn make_field(val: &mut dyn Any) -> String {

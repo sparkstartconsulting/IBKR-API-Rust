@@ -9,7 +9,6 @@ use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 
-use ascii::AsciiString;
 use log;
 use log4rs;
 
@@ -19,26 +18,22 @@ use crate::client::messages::EMessage;
 
 pub struct Reader {
     stream: TcpStream,
-    messages: Sender<AsciiString>,
+    messages: Sender<String>,
 }
 
 impl Reader {
-    pub fn new(stream: TcpStream, messages: Sender<AsciiString>) -> Self {
+    pub fn new(stream: TcpStream, messages: Sender<String>) -> Self {
         Reader { stream, messages }
     }
 
     pub fn recv_packet(&mut self) -> Vec<u8> {
         debug!("_recv_all_msg");
         let buf = self._recv_all_msg();
-        debug!("What did we get?");
         // receiving 0 bytes outside a timeout means the connection is either
         // closed or broken
         if buf.len() == 0 {
             debug!("socket either closed or broken, disconnecting");
-            debug!("socket either closed or broken, disconnecting");
             self.stream.shutdown(Shutdown::Both).unwrap();
-
-            //debug!("socket timeout from recvMsg %s", sys.exc_info())
         }
         buf
     }
@@ -78,7 +73,7 @@ impl Reader {
             /// When this loop ends, break into the outer loop and grab another packet.  
             /// Repeat until the connection is closed
             ///
-            let mut msg = AsciiString::new();
+            let mut msg = String::new();
             while message_packet.len() > 0 {
                 /// Read a message from the packet then add it to the message queue below.
                 let (size, msg, remaining_messages) = read_msg(message_packet.as_slice());
@@ -90,23 +85,15 @@ impl Reader {
                 message_packet.extend_from_slice(remaining_messages.as_slice());
 
                 debug!(
-                    "############    size:{} msg.size:{} msg:|{}| buf:{:?}|",
+                    "size:{} msg.size:{} msg:|{}| buf:{:?}|",
                     size,
                     msg.len(),
                     msg,
-                    AsciiString::from_ascii(message_packet.to_owned().as_slice()).unwrap()
-                );
-
-                debug!(
-                    "########     size:{} msg.size:{} msg:|{}| buf:{:?}|",
-                    size,
-                    msg.len(),
-                    msg,
-                    AsciiString::from_ascii(message_packet.to_owned()).unwrap()
+                    message_packet.to_owned()
                 );
 
                 if msg.as_str() != "" {
-                    info!("s@@@@@@@@@@@@@@@@@@@@@@@@sending message... ");
+                    info!("sending message to client... ");
                     self.messages.send(msg).unwrap();
                 } else {
                     ///Break to the outer loop and get another packet of messages.
@@ -118,10 +105,4 @@ impl Reader {
         }
         //debug!("EReader thread finished")
     }
-
-    //    pub fn start(&mut self) {
-    //        thread::spawn(move || {
-    //            self.run();
-    //        });
-    //    }
 }

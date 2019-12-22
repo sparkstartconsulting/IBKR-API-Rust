@@ -4,7 +4,6 @@ use std::str::FromStr;
 use std::string::ToString;
 use std::u8;
 
-use ascii::AsciiString;
 use bytebuffer::ByteBuffer;
 use from_ascii::{FromAscii, FromAsciiRadix};
 use num_traits::FromPrimitive;
@@ -100,11 +99,13 @@ where
         }
     }
 
-    pub fn interpret(&mut self, fields: &[AsciiString]) {
+    pub fn interpret(&mut self, fields: &[String]) {
         if fields.is_empty() {
             return;
         }
-        debug!("inside interpret: {:?}", fields.get(0).unwrap());
+        for field in fields {
+            debug!("inside interpret: {:?}", field);
+        }
         let msg_id = i32::from_str(fields.get(0).unwrap().as_str()).unwrap();
 
         match FromPrimitive::from_i32(msg_id) {
@@ -219,93 +220,99 @@ where
         }
     }
 
-    fn process_tick_price(&mut self, fields: &[AsciiString]) {}
-    fn process_tick_string(&mut self, fields: &[AsciiString]) {}
-    fn process_account_summary(&mut self, fields: &[AsciiString]) {}
-    fn process_account_summary_end(&mut self, fields: &[AsciiString]) {}
-    fn process_account_update_multi(&mut self, fields: &[AsciiString]) {}
-    fn process_account_update_multi_end(&mut self, fields: &[AsciiString]) {}
-    fn process_account_download_end(&mut self, fields: &[AsciiString]) {
-        self.wrapper.account_download_end(fields.get(0).unwrap())
+    fn process_tick_price(&mut self, fields: &[String]) {}
+    fn process_tick_string(&mut self, fields: &[String]) {}
+    fn process_account_summary(&mut self, fields: &[String]) {}
+    fn process_account_summary_end(&mut self, fields: &[String]) {}
+    fn process_account_update_multi(&mut self, fields: &[String]) {}
+    fn process_account_update_multi_end(&mut self, fields: &[String]) {}
+    fn process_account_download_end(&mut self, fields: &[String]) {
+        self.wrapper.account_download_end(fields.get(1).unwrap())
     }
-    fn process_account_update_time(&mut self, fields: &[AsciiString]) {
-        self.wrapper.update_account_time(fields.get(0).unwrap())
+    fn process_account_update_time(&mut self, fields: &[String]) {
+        self.wrapper.update_account_time(fields.get(1).unwrap())
     }
-    fn process_account_value(&mut self, fields: &[AsciiString]) {
+    fn process_account_value(&mut self, fields: &[String]) {
         self.wrapper.update_account_value(
-            fields.get(0).unwrap(),
             fields.get(1).unwrap(),
             fields.get(2).unwrap(),
             fields.get(3).unwrap(),
+            fields.get(4).unwrap(),
         );
     }
-    fn process_bond_contract_data(&mut self, fields: &[AsciiString]) {}
-    fn process_commission_report(&mut self, fields: &[AsciiString]) {}
-    fn process_completed_order(&mut self, fields: &[AsciiString]) {}
-    fn process_complete_orders_end(&mut self, fields: &[AsciiString]) {}
-    fn process_contract_data(&mut self, fields: &[AsciiString]) {}
-    fn process_contract_data_end(&mut self, fields: &[AsciiString]) {}
-    fn process_current_time(&mut self, fields: &[AsciiString]) {}
-    fn process_delta_neutral_validation(&mut self, fields: &[AsciiString]) {}
-    fn process_display_group_list(&mut self, fields: &[AsciiString]) {}
-    fn process_display_group_updated(&mut self, fields: &[AsciiString]) {}
-    fn process_error_message(&mut self, fields: &[AsciiString]) {}
-    fn process_execution_data(&mut self, fields: &[AsciiString]) {}
-    fn process_execution_data_end(&mut self, fields: &[AsciiString]) {}
-    fn process_family_codes(&mut self, fields: &[AsciiString]) {}
-    fn process_fundamental_data(&mut self, fields: &[AsciiString]) {}
-    fn process_head_timestamp(&mut self, fields: &[AsciiString]) {}
-    fn process_histogram_data(&mut self, fields: &[AsciiString]) {}
-    fn process_historical_data(&mut self, fields: &[AsciiString]) {}
-    fn process_historical_data_update(&mut self, fields: &[AsciiString]) {}
-    fn process_historical_news(&mut self, fields: &[AsciiString]) {}
-    fn process_historical_news_end(&mut self, fields: &[AsciiString]) {}
-    fn process_historical_ticks(&mut self, fields: &[AsciiString]) {}
-    fn process_historical_ticks_bid_ask(&mut self, fields: &[AsciiString]) {}
-    fn process_historical_ticks_last(&mut self, fields: &[AsciiString]) {}
-    fn process_managed_accounts(&mut self, fields: &[AsciiString]) {}
-    fn process_market_data_type(&mut self, fields: &[AsciiString]) {}
-    fn process_market_depth(&mut self, fields: &[AsciiString]) {}
-    fn process_market_depth_l2(&mut self, fields: &[AsciiString]) {}
-    fn process_market_rule(&mut self, fields: &[AsciiString]) {}
-    fn process_market_depth_exchanges(&mut self, fields: &[AsciiString]) {}
-    fn process_news_article(&mut self, fields: &[AsciiString]) {}
-    fn process_news_bulletins(&mut self, fields: &[AsciiString]) {}
-    fn process_news_providers(&mut self, fields: &[AsciiString]) {}
-    fn process_next_valid_id(&mut self, fields: &[AsciiString]) {}
-    fn process_open_order(&mut self, fields: &[AsciiString]) {}
-    fn process_open_order_end(&mut self, fields: &[AsciiString]) {}
-    fn process_order_bound(&mut self, fields: &[AsciiString]) {}
-    fn process_order_status(&mut self, fields: &[AsciiString]) {}
-    fn process_pnl(&mut self, fields: &[AsciiString]) {}
-    fn process_pnl_single(&mut self, fields: &[AsciiString]) {}
-    fn process_portfolio_value(&mut self, fields: &[AsciiString]) {}
-    fn process_position_data(&mut self, fields: &[AsciiString]) {}
-    fn process_position_end(&mut self, fields: &[AsciiString]) {}
-    fn process_real_time_bars(&mut self, fields: &[AsciiString]) {}
-    fn process_receive_fa(&mut self, fields: &[AsciiString]) {}
-    fn process_reroute_mkt_data_req(&mut self, fields: &[AsciiString]) {}
-    fn process_reroute_mkt_depth_req(&mut self, fields: &[AsciiString]) {}
-    fn process_position_multi(&mut self, fields: &[AsciiString]) {}
-    fn process_position_multi_end(&mut self, fields: &[AsciiString]) {}
-    fn process_scanner_data(&mut self, fields: &[AsciiString]) {}
-    fn process_scanner_parameters(&mut self, fields: &[AsciiString]) {}
-    fn process_security_definition_option_parameter(&mut self, fields: &[AsciiString]) {}
-    fn process_security_definition_option_parameter_end(&mut self, fields: &[AsciiString]) {}
-    fn process_smart_components(&mut self, fields: &[AsciiString]) {}
-    fn process_soft_dollar_tiers(&mut self, fields: &[AsciiString]) {}
-    fn process_symbol_samples(&mut self, fields: &[AsciiString]) {}
-    fn process_tick_by_tick(&mut self, fields: &[AsciiString]) {}
-    fn process_tick_efp(&mut self, fields: &[AsciiString]) {}
-    fn process_tick_generic_news(&mut self, fields: &[AsciiString]) {}
-    fn process_tick_news(&mut self, fields: &[AsciiString]) {}
-    fn process_tick_option_computation(&mut self, fields: &[AsciiString]) {}
-    fn process_tick_teq_params(&mut self, fields: &[AsciiString]) {}
-    fn process_tick_size(&mut self, fields: &[AsciiString]) {}
-    fn process_tick_snapshot_end(&mut self, fields: &[AsciiString]) {}
+    fn process_bond_contract_data(&mut self, fields: &[String]) {}
+    fn process_commission_report(&mut self, fields: &[String]) {}
+    fn process_completed_order(&mut self, fields: &[String]) {}
+    fn process_complete_orders_end(&mut self, fields: &[String]) {}
+    fn process_contract_data(&mut self, fields: &[String]) {}
+    fn process_contract_data_end(&mut self, fields: &[String]) {}
+    fn process_current_time(&mut self, fields: &[String]) {}
+    fn process_delta_neutral_validation(&mut self, fields: &[String]) {}
+    fn process_display_group_list(&mut self, fields: &[String]) {}
+    fn process_display_group_updated(&mut self, fields: &[String]) {}
+    fn process_error_message(&mut self, fields: &[String]) {
+        self.wrapper.error(
+            fields.get(2).unwrap().parse().unwrap(),
+            fields.get(3).unwrap().parse().unwrap(),
+            fields.get(4).unwrap(),
+        )
+    }
+    fn process_execution_data(&mut self, fields: &[String]) {}
+    fn process_execution_data_end(&mut self, fields: &[String]) {}
+    fn process_family_codes(&mut self, fields: &[String]) {}
+    fn process_fundamental_data(&mut self, fields: &[String]) {}
+    fn process_head_timestamp(&mut self, fields: &[String]) {}
+    fn process_histogram_data(&mut self, fields: &[String]) {}
+    fn process_historical_data(&mut self, fields: &[String]) {}
+    fn process_historical_data_update(&mut self, fields: &[String]) {}
+    fn process_historical_news(&mut self, fields: &[String]) {}
+    fn process_historical_news_end(&mut self, fields: &[String]) {}
+    fn process_historical_ticks(&mut self, fields: &[String]) {}
+    fn process_historical_ticks_bid_ask(&mut self, fields: &[String]) {}
+    fn process_historical_ticks_last(&mut self, fields: &[String]) {}
+    fn process_managed_accounts(&mut self, fields: &[String]) {}
+    fn process_market_data_type(&mut self, fields: &[String]) {}
+    fn process_market_depth(&mut self, fields: &[String]) {}
+    fn process_market_depth_l2(&mut self, fields: &[String]) {}
+    fn process_market_rule(&mut self, fields: &[String]) {}
+    fn process_market_depth_exchanges(&mut self, fields: &[String]) {}
+    fn process_news_article(&mut self, fields: &[String]) {}
+    fn process_news_bulletins(&mut self, fields: &[String]) {}
+    fn process_news_providers(&mut self, fields: &[String]) {}
+    fn process_next_valid_id(&mut self, fields: &[String]) {}
+    fn process_open_order(&mut self, fields: &[String]) {}
+    fn process_open_order_end(&mut self, fields: &[String]) {}
+    fn process_order_bound(&mut self, fields: &[String]) {}
+    fn process_order_status(&mut self, fields: &[String]) {}
+    fn process_pnl(&mut self, fields: &[String]) {}
+    fn process_pnl_single(&mut self, fields: &[String]) {}
+    fn process_portfolio_value(&mut self, fields: &[String]) {}
+    fn process_position_data(&mut self, fields: &[String]) {}
+    fn process_position_end(&mut self, fields: &[String]) {}
+    fn process_real_time_bars(&mut self, fields: &[String]) {}
+    fn process_receive_fa(&mut self, fields: &[String]) {}
+    fn process_reroute_mkt_data_req(&mut self, fields: &[String]) {}
+    fn process_reroute_mkt_depth_req(&mut self, fields: &[String]) {}
+    fn process_position_multi(&mut self, fields: &[String]) {}
+    fn process_position_multi_end(&mut self, fields: &[String]) {}
+    fn process_scanner_data(&mut self, fields: &[String]) {}
+    fn process_scanner_parameters(&mut self, fields: &[String]) {}
+    fn process_security_definition_option_parameter(&mut self, fields: &[String]) {}
+    fn process_security_definition_option_parameter_end(&mut self, fields: &[String]) {}
+    fn process_smart_components(&mut self, fields: &[String]) {}
+    fn process_soft_dollar_tiers(&mut self, fields: &[String]) {}
+    fn process_symbol_samples(&mut self, fields: &[String]) {}
+    fn process_tick_by_tick(&mut self, fields: &[String]) {}
+    fn process_tick_efp(&mut self, fields: &[String]) {}
+    fn process_tick_generic_news(&mut self, fields: &[String]) {}
+    fn process_tick_news(&mut self, fields: &[String]) {}
+    fn process_tick_option_computation(&mut self, fields: &[String]) {}
+    fn process_tick_teq_params(&mut self, fields: &[String]) {}
+    fn process_tick_size(&mut self, fields: &[String]) {}
+    fn process_tick_snapshot_end(&mut self, fields: &[String]) {}
 
-    fn process_verify_and_auth_completed(&mut self, fields: &[AsciiString]) {}
-    fn process_verify_and_auth_message_api(&mut self, fields: &[AsciiString]) {}
-    fn process_verify_completed(&mut self, fields: &[AsciiString]) {}
-    fn process_verify_message_api(&mut self, fields: &[AsciiString]) {}
+    fn process_verify_and_auth_completed(&mut self, fields: &[String]) {}
+    fn process_verify_and_auth_message_api(&mut self, fields: &[String]) {}
+    fn process_verify_completed(&mut self, fields: &[String]) {}
+    fn process_verify_message_api(&mut self, fields: &[String]) {}
 }

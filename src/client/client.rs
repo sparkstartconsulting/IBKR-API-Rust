@@ -9,7 +9,6 @@ use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
 
-use ascii::{AsAsciiStr, AsciiStr, AsciiString};
 use byteorder::{BigEndian, ByteOrder};
 use encoding::all::ASCII;
 use encoding::types::RawEncoder;
@@ -35,7 +34,7 @@ enum ConnStatus {
 }
 
 pub struct EClient<'a, T: Wrapper> {
-    msg_queue: Option<Receiver<AsciiString>>,
+    msg_queue: Option<Receiver<String>>,
     wrapper: &'a T,
     decoder: Decoder<'a, T>,
     done: bool,
@@ -76,11 +75,13 @@ where
         }
     }
     fn send_request(&self, request: &str) {
+        info!("Sending request to server...");
         let bytes = make_message(request);
-        self.send_bytes(bytes.to_bytes().as_slice());
+        self.send_bytes(bytes.as_slice());
     }
 
     fn send_bytes(&self, bytes: &[u8]) {
+        debug!("Message before send {:?}", bytes);
         self.stream.as_ref().unwrap().write(bytes);
     }
 
@@ -94,9 +95,8 @@ where
         self.stream = Option::from(thestream.try_clone().unwrap());
 
         let reader_stream = thestream.try_clone().unwrap();
-        // reader_stream.shutdown(Shutdown::Write);
 
-        let (tx, rx) = channel::<AsciiString>();
+        let (tx, rx) = channel::<String>();
         let mut reader = Reader::new(thestream, tx);
 
         self.msg_queue = Option::from(rx);
@@ -110,16 +110,15 @@ where
         //let encoded = ASCII.encode(v_100_prefix, EncoderTrap::NcrEscape).unwrap();
         let mut bytearray: Vec<u8> = Vec::new();
         bytearray.extend_from_slice(v_100_prefix.as_bytes());
-        bytearray.extend_from_slice(msg.to_bytes().as_slice());
+        bytearray.extend_from_slice(msg.as_slice());
         //let msg2 = format!("{:?}", String::from_utf8(bytearray).unwrap());
         debug!(
             "sending initial request: {:?}",
-            AsciiStr::from_ascii(bytearray.as_slice()).unwrap()
+            String::from_utf8(bytearray.as_slice().to_vec()).unwrap()
         );
-        //return;
-        //self.send_request(msg2.as_str());
+
         self.send_bytes(bytearray.as_slice());
-        let mut fields: Vec<AsciiString> = Vec::new();
+        let mut fields: Vec<String> = Vec::new();
 
         //sometimes I get news before the server version, thus the loop
 
@@ -130,10 +129,9 @@ where
 
             let mut buf = reader.recv_packet();
             debug!("got initial packet: {}", buf.len());
-            //logger.debug("ANSWER %s", buf)
+
             if buf.len() > 0 {
                 let (size, msg, remaining_messages) = read_msg(buf.as_slice());
-                //logger.debug("size:%d msg:%s rest:%s|", size, msg, rest)
 
                 fields.clear();
                 fields.extend_from_slice(read_fields(msg.as_ref()).as_slice());
@@ -142,7 +140,7 @@ where
                 fields.clear();
             }
         }
-        debug!("Got all messages");
+
         self.server_version = i32::from_ascii(fields.get(0).unwrap().as_bytes()).unwrap();
         debug!("Server version: {} ", self.server_version);
         self.conn_time = fields.get(1).unwrap().to_string();
@@ -151,6 +149,7 @@ where
         thread::spawn(move || {
             reader.run();
         });
+
         self.start_api();
     }
 
@@ -190,6 +189,7 @@ where
         let mut msg = "".to_string();
 
         let mut message_id = OutgoingMessageIds::ReqAcctData as i32;
+        let x = message_id.to_be_bytes();
         msg.push_str(&make_field(&mut message_id));
         msg.push_str(&make_field(&mut version));
         msg.push_str(&make_field(&mut _subscribe)); // TRUE = subscribe, FALSE = unsubscribe.
@@ -264,7 +264,7 @@ where
             return;
         }
 
-        let mut version = 1;
+        let mut version = 2;
         let mut _req_id = req_id;
         let mut _group_name = group_name;
         let mut _tags = tags;
@@ -279,6 +279,20 @@ where
         self.send_request(msg.as_str())
     }
 
+    pub fn req_current_time(&mut self) {
+        let mut version = 2;
+
+        let mut message_id: i32 = OutgoingMessageIds::ReqCurrentTime as i32;
+        let mut msg = "".to_string();
+        msg.push_str(&make_field(&mut message_id));
+        msg.push_str(&make_field(&mut version));
+
+        debug!(
+            "#########################    Requesting current time: {}",
+            msg.as_str()
+        );
+        self.send_request(msg.as_str())
+    }
     pub fn disconnect(&mut self) {
         self.stream.as_mut().unwrap().shutdown(Shutdown::Both);
     }
@@ -295,7 +309,7 @@ where
             return;
         }
 
-        let mut version = 1;
+        let mut version = 2;
         let mut _req_id = req_id;
         let mut message_id = OutgoingMessageIds::ReqAcctData as i32;
         let mut msg = "".to_string();
@@ -344,16 +358,18 @@ where
         }
 
         let version = 2;
+        let mut opt_capab = "".to_string();
+        if self.server_version >= MIN_SERVER_VER_OPTIONAL_CAPABILITIES as i32 {
+            opt_capab = make_field(&mut self.opt_capab);
+        }
 
         let msg = format!(
-            "{}{}{}",
+            "{}{}{}{}",
             make_field(&mut (Some(OutgoingMessageIds::StartApi).unwrap() as i32)),
             make_field(&mut version.to_string()),
-            make_field(&mut self.client_id.to_string())
+            make_field(&mut self.client_id.to_string()),
+            opt_capab
         );
-
-        //if self.serverVersion() >= MIN_SERVER_VER_OPTIONAL_CAPABILITIES:
-        //    msg += make_field(self.optCapab)
 
         self.send_request(msg.as_str())
     }

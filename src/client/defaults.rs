@@ -1,8 +1,6 @@
 use std::collections::hash_map::{Entry, RandomState};
 use std::collections::{HashMap, HashSet};
 
-use ascii::AsciiStr;
-
 use crate::client::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, NewsProvider, PriceIncrement, SmartComponent, TickAttrib,
@@ -24,12 +22,12 @@ impl DefaultWrapper {
     }
 }
 impl Wrapper for DefaultWrapper {
-    fn error(&self, req_id: i32, error_code: i32, error_string: &AsciiStr) {
+    fn error(&self, req_id: i32, error_code: i32, error_string: &str) {
         error!("Code: {} , Message:{}", error_code, error_string);
         debug!("Code: {} , Message:{}", error_code, error_string);
     }
 
-    fn win_error(&self, text: &AsciiStr, last_error: i32) {
+    fn win_error(&self, text: &str, last_error: i32) {
         unimplemented!()
     }
 
@@ -57,7 +55,7 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn tick_string(&self, req_id: i32, tick_type: i32, value: &AsciiStr) {
+    fn tick_string(&self, req_id: i32, tick_type: i32, value: &str) {
         unimplemented!()
     }
 
@@ -66,10 +64,10 @@ impl Wrapper for DefaultWrapper {
         req_id: i32,
         tick_type: i32,
         basis_points: f64,
-        formatted_basis_points: &AsciiStr,
+        formatted_basis_points: &str,
         total_dividends: f64,
         hold_days: i32,
-        future_last_trade_date: &AsciiStr,
+        future_last_trade_date: &str,
         dividend_impact: f64,
         dividends_to_last_trade_date: f64,
     ) {
@@ -79,7 +77,7 @@ impl Wrapper for DefaultWrapper {
     fn order_status(
         &self,
         order_id: i32,
-        status: &AsciiStr,
+        status: &str,
         filled: f64,
         remaining: f64,
         avg_fill_price: f64,
@@ -87,7 +85,7 @@ impl Wrapper for DefaultWrapper {
         parent_id: i32,
         last_fill_price: f64,
         client_id: i32,
-        why_held: &AsciiStr,
+        why_held: &str,
         mkt_cap_price: f64,
     ) {
         unimplemented!()
@@ -105,13 +103,7 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn update_account_value(
-        &self,
-        key: &AsciiStr,
-        val: &AsciiStr,
-        currency: &AsciiStr,
-        account_name: &AsciiStr,
-    ) {
+    fn update_account_value(&self, key: &str, val: &str, currency: &str, account_name: &str) {
         info!(
             "key: {}, value: {}, ccy: {}, account: {}.",
             key, val, currency, account_name
@@ -132,16 +124,16 @@ impl Wrapper for DefaultWrapper {
         average_cost: f64,
         unrealized_pnl: f64,
         realized_pnl: f64,
-        account_name: &AsciiStr,
+        account_name: &str,
     ) {
         unimplemented!()
     }
 
-    fn update_account_time(&self, time_stamp: &AsciiStr) {
+    fn update_account_time(&self, time_stamp: &str) {
         info!("update_account_time: {}.", time_stamp);
     }
 
-    fn account_download_end(&self, account_name: &AsciiStr) {
+    fn account_download_end(&self, account_name: &str) {
         info!("account_download_end: {}.", account_name);
     }
 
@@ -185,7 +177,7 @@ impl Wrapper for DefaultWrapper {
         &self,
         req_id: i32,
         position: i32,
-        market_maker: &AsciiStr,
+        market_maker: &str,
         operation: i32,
         side: i32,
         price: f64,
@@ -199,17 +191,17 @@ impl Wrapper for DefaultWrapper {
         &self,
         msg_id: i32,
         msg_type: i32,
-        news_message: &AsciiStr,
-        origin_exch: &AsciiStr,
+        news_message: &str,
+        origin_exch: &str,
     ) {
         unimplemented!()
     }
 
-    fn managed_accounts(&self, accounts_list: &AsciiStr) {
+    fn managed_accounts(&self, accounts_list: &str) {
         unimplemented!()
     }
 
-    fn receive_fa(&self, fa_data: FaDataType, cxml: &AsciiStr) {
+    fn receive_fa(&self, fa_data: FaDataType, cxml: &str) {
         unimplemented!()
     }
 
@@ -217,11 +209,11 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn historical_data_end(&self, req_id: i32, start: &AsciiStr, end: &AsciiStr) {
+    fn historical_data_end(&self, req_id: i32, start: &str, end: &str) {
         unimplemented!()
     }
 
-    fn scanner_parameters(&self, xml: &AsciiStr) {
+    fn scanner_parameters(&self, xml: &str) {
         unimplemented!()
     }
 
@@ -230,10 +222,10 @@ impl Wrapper for DefaultWrapper {
         req_id: i32,
         rank: i32,
         contract_details: ContractDetails,
-        distance: &AsciiStr,
-        benchmark: &AsciiStr,
-        projection: &AsciiStr,
-        legs_str: &AsciiStr,
+        distance: &str,
+        benchmark: &str,
+        projection: &str,
+        legs_str: &str,
     ) {
         unimplemented!()
     }
@@ -261,7 +253,7 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn fundamental_data(&self, req_id: i32, data: &AsciiStr) {
+    fn fundamental_data(&self, req_id: i32, data: &str) {
         unimplemented!()
     }
 
@@ -273,7 +265,7 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn position(&self, account: &AsciiStr, contract: Contract, position: f64, avg_cost: f64) {
+    fn position(&self, account: &str, contract: Contract, position: f64, avg_cost: f64) {
         unimplemented!()
     }
 
@@ -281,14 +273,7 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn account_summary(
-        &self,
-        req_id: i32,
-        account: &AsciiStr,
-        tag: &AsciiStr,
-        value: &AsciiStr,
-        currency: &AsciiStr,
-    ) {
+    fn account_summary(&self, req_id: i32, account: &str, tag: &str, value: &str, currency: &str) {
         unimplemented!()
     }
 
@@ -296,35 +281,35 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn verify_message_api(&self, api_data: &AsciiStr) {
+    fn verify_message_api(&self, api_data: &str) {
         unimplemented!()
     }
 
-    fn verify_completed(&self, is_successful: bool, error_text: &AsciiStr) {
+    fn verify_completed(&self, is_successful: bool, error_text: &str) {
         unimplemented!()
     }
 
-    fn verify_and_auth_message_api(&self, api_data: &AsciiStr, xyz_challange: &AsciiStr) {
+    fn verify_and_auth_message_api(&self, api_data: &str, xyz_challange: &str) {
         unimplemented!()
     }
 
-    fn verify_and_auth_completed(&self, is_successful: bool, error_text: &AsciiStr) {
+    fn verify_and_auth_completed(&self, is_successful: bool, error_text: &str) {
         unimplemented!()
     }
 
-    fn display_group_list(&self, req_id: i32, groups: &AsciiStr) {
+    fn display_group_list(&self, req_id: i32, groups: &str) {
         unimplemented!()
     }
 
-    fn display_group_updated(&self, req_id: i32, contract_info: &AsciiStr) {
+    fn display_group_updated(&self, req_id: i32, contract_info: &str) {
         unimplemented!()
     }
 
     fn position_multi(
         &self,
         req_id: i32,
-        account: &AsciiStr,
-        model_code: &AsciiStr,
+        account: &str,
+        model_code: &str,
         contract: Contract,
         pos: f64,
         avg_cost: f64,
@@ -339,11 +324,11 @@ impl Wrapper for DefaultWrapper {
     fn account_update_multi(
         &self,
         req_id: i32,
-        account: &AsciiStr,
-        model_code: &AsciiStr,
-        key: &AsciiStr,
-        value: &AsciiStr,
-        currency: &AsciiStr,
+        account: &str,
+        model_code: &str,
+        key: &str,
+        value: &str,
+        currency: &str,
     ) {
         unimplemented!()
     }
@@ -371,10 +356,10 @@ impl Wrapper for DefaultWrapper {
     fn security_definition_option_parameter(
         &self,
         req_id: i32,
-        exchange: &AsciiStr,
+        exchange: &str,
         underlying_con_id: i32,
-        trading_class: &AsciiStr,
-        multiplier: &AsciiStr,
+        trading_class: &str,
+        multiplier: &str,
         expirations: HashSet<String, RandomState>,
         strikes: HashSet<f64, RandomState>,
     ) {
@@ -405,10 +390,10 @@ impl Wrapper for DefaultWrapper {
         &self,
         ticker_id: i32,
         time_stamp: i32,
-        provider_code: &AsciiStr,
-        article_id: &AsciiStr,
-        headline: &AsciiStr,
-        extra_data: &AsciiStr,
+        provider_code: &str,
+        article_id: &str,
+        headline: &str,
+        extra_data: &str,
     ) {
         unimplemented!()
     }
@@ -421,7 +406,7 @@ impl Wrapper for DefaultWrapper {
         &self,
         ticker_id: i32,
         min_tick: f64,
-        bbo_exchange: &AsciiStr,
+        bbo_exchange: &str,
         snapshot_permissions: i32,
     ) {
         unimplemented!()
@@ -431,17 +416,17 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn news_article(&self, request_id: i32, article_type: i32, article_text: &AsciiStr) {
+    fn news_article(&self, request_id: i32, article_type: i32, article_text: &str) {
         unimplemented!()
     }
 
     fn historical_news(
         &self,
         request_id: i32,
-        time: &AsciiStr,
-        provider_code: &AsciiStr,
-        article_id: &AsciiStr,
-        headline: &AsciiStr,
+        time: &str,
+        provider_code: &str,
+        article_id: &str,
+        headline: &str,
     ) {
         unimplemented!()
     }
@@ -450,7 +435,7 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn head_timestamp(&self, req_id: i32, head_timestamp: &AsciiStr) {
+    fn head_timestamp(&self, req_id: i32, head_timestamp: &str) {
         unimplemented!()
     }
 
@@ -462,11 +447,11 @@ impl Wrapper for DefaultWrapper {
         unimplemented!()
     }
 
-    fn reroute_mkt_data_req(&self, req_id: i32, con_id: i32, exchange: &AsciiStr) {
+    fn reroute_mkt_data_req(&self, req_id: i32, con_id: i32, exchange: &str) {
         unimplemented!()
     }
 
-    fn reroute_mkt_depth_req(&self, req_id: i32, con_id: i32, exchange: &AsciiStr) {
+    fn reroute_mkt_depth_req(&self, req_id: i32, con_id: i32, exchange: &str) {
         unimplemented!()
     }
 
@@ -506,8 +491,8 @@ impl Wrapper for DefaultWrapper {
         price: f64,
         size: i32,
         tick_attrib_last: TickAttribLast,
-        exchange: &AsciiStr,
-        special_conditions: &AsciiStr,
+        exchange: &str,
+        special_conditions: &str,
     ) {
         unimplemented!()
     }

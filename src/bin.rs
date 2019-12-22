@@ -48,7 +48,9 @@ fn main() {
         app.connect("127.0.0.1".to_string(), 7497, 0);
     }
     {
-        app.req_account_updates(true, "");
+        //app.req_account_updates(true, "");
+        //app.req_current_time();
+        app.req_account_summary(2, "All", "NetLiquidation");
     }
 
     app.run();

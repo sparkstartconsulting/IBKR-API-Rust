@@ -1,7 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-use ascii::AsciiStr;
-
 use crate::client::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, NewsProvider, PriceIncrement, SmartComponent, TickAttrib,
@@ -16,9 +14,9 @@ use crate::client::order::{Order, OrderState, SoftDollarTier};
 pub trait Wrapper {
     /// This event is called when there is an error with the
     /// communication or when TWS wants to send a message to the client.
-    fn error(&self, req_id: i32, error_code: i32, error_string: &AsciiStr);
+    fn error(&self, req_id: i32, error_code: i32, error_string: &str);
 
-    fn win_error(&self, text: &AsciiStr, last_error: i32);
+    fn win_error(&self, text: &str, last_error: i32);
 
     fn connect_ack(&self);
 
@@ -43,7 +41,7 @@ pub trait Wrapper {
 
     fn tick_generic(&self, req_id: i32, tick_type: i32, value: f64);
 
-    fn tick_string(&self, req_id: i32, tick_type: i32, value: &AsciiStr);
+    fn tick_string(&self, req_id: i32, tick_type: i32, value: &str);
 
     ///market data call back for Exchange for Physical
     ///        tickerId -      The request's identifier.
@@ -64,10 +62,10 @@ pub trait Wrapper {
         req_id: i32,
         tick_type: i32,
         basis_points: f64,
-        formatted_basis_points: &AsciiStr,
+        formatted_basis_points: &str,
         total_dividends: f64,
         hold_days: i32,
-        future_last_trade_date: &AsciiStr,
+        future_last_trade_date: &str,
         dividend_impact: f64,
         dividends_to_last_trade_date: f64,
     );
@@ -77,7 +75,7 @@ pub trait Wrapper {
     //
     //        order_id: i32 - The order ID that was specified previously in the
     //            call to placeOrder()
-    //        status:&AsciiStr - The order status. Possible values include:
+    //        status:&str - The order status. Possible values include:
     //            PendingSubmit - indicates that you have transmitted the order, but have not  yet received confirmation that it has been accepted by the order destination. NOTE: This order status is not sent by TWS and should be explicitly set by the API developer when an order is submitted.
     //            PendingCancel - indicates that you have sent a request to cancel the order but have not yet received cancel confirmation from the order destination. At this point, your order is not confirmed canceled. You may still receive an execution while your cancellation request is pending. NOTE: This order status is not sent by TWS and should be explicitly set by the API developer when an order is canceled.
     //            PreSubmitted - indicates that a simulated order type has been accepted by the IB system and that this order has yet to be elected. The order is held in the IB system until the election criteria are met. At that time the order is transmitted to the order destination as specified.
@@ -93,11 +91,11 @@ pub trait Wrapper {
     //        parent_id:i32 - The order ID of the parent order, used for bracket and auto trailing stop orders.
     //        lastFilledPrice:f64 - The last price of the shares that have been executed. This parameter is valid only if the filled parameter value is greater than zero. Otherwise, the price parameter will be zero.
     //        client_id:i32 - The ID of the client (or TWS) that placed the order. Note that TWS orders have a fixed client_id and order_id of 0 that distinguishes them from API orders.
-    //        why_held:&AsciiStr - This field is used to identify an order held when TWS is trying to locate shares for a short sell. The value used to indicate this is 'locate'.
+    //        why_held:&str - This field is used to identify an order held when TWS is trying to locate shares for a short sell. The value used to indicate this is 'locate'.
     fn order_status(
         &self,
         order_id: i32,
-        status: &AsciiStr,
+        status: &str,
         filled: f64,
         remaining: f64,
         avg_fill_price: f64,
@@ -105,7 +103,7 @@ pub trait Wrapper {
         parent_id: i32,
         last_fill_price: f64,
         client_id: i32,
-        why_held: &AsciiStr,
+        why_held: &str,
         mkt_cap_price: f64,
     );
 
@@ -128,13 +126,7 @@ pub trait Wrapper {
 
     ///  This function is called only when ReqAccountUpdates on
     //        EEClientSocket object has been called.
-    fn update_account_value(
-        &self,
-        key: &AsciiStr,
-        val: &AsciiStr,
-        currency: &AsciiStr,
-        account_name: &AsciiStr,
-    );
+    fn update_account_value(&self, key: &str, val: &str, currency: &str, account_name: &str);
 
     /// This function is called only when req_account_updates on
     //        EEClientSocket object has been called.
@@ -147,14 +139,14 @@ pub trait Wrapper {
         average_cost: f64,
         unrealized_pnl: f64,
         realized_pnl: f64,
-        account_name: &AsciiStr,
+        account_name: &str,
     );
 
-    fn update_account_time(&self, time_stamp: &AsciiStr);
+    fn update_account_time(&self, time_stamp: &str);
 
     /// This is called after a batch update_account_value() and
     //        update_portfolio() is sent.
-    fn account_download_end(&self, account_name: &AsciiStr);
+    fn account_download_end(&self, account_name: &str);
 
     /// Receives next valid order id.
     fn next_valid_id(&self, order_id: i32);
@@ -218,7 +210,7 @@ pub trait Wrapper {
         &self,
         req_id: i32,
         position: i32,
-        market_maker: &AsciiStr,
+        market_maker: &str,
         operation: i32,
         side: i32,
         price: f64,
@@ -236,12 +228,12 @@ pub trait Wrapper {
         &self,
         msg_id: i32,
         msg_type: i32,
-        news_message: &AsciiStr,
-        origin_exch: &AsciiStr,
+        news_message: &str,
+        origin_exch: &str,
     );
 
     /// Receives a comma-separated string with the managed account ids.
-    fn managed_accounts(&self, accounts_list: &AsciiStr);
+    fn managed_accounts(&self, accounts_list: &str);
 
     ///  receives the Financial Advisor's configuration available in the TWS
     ///
@@ -253,7 +245,7 @@ pub trait Wrapper {
     ///            Account Aliases: let you easily identify the accounts by meaningful
     ///                 names rather than account numbers.
     ///        faXmlData -  the xml-formatted configuration
-    fn receive_fa(&self, fa_data: FaDataType, cxml: &AsciiStr);
+    fn receive_fa(&self, fa_data: FaDataType, cxml: &str);
 
     ///  returns the requested historical data bars
     ///
@@ -272,13 +264,13 @@ pub trait Wrapper {
     fn historical_data(&self, req_id: i32, bar: BarData);
 
     /// Marks the ending of the historical bars reception.
-    fn historical_data_end(&self, req_id: i32, start: &AsciiStr, end: &AsciiStr);
+    fn historical_data_end(&self, req_id: i32, start: &str, end: &str);
 
     ///  Provides the xml-formatted parameters available to create a market
     ///        scanner.
     ///
     ///        xml -   the xml-formatted string with the available parameters.
-    fn scanner_parameters(&self, xml: &AsciiStr);
+    fn scanner_parameters(&self, xml: &str);
 
     ///  Provides the data resulting from the market scanner request.
     ///
@@ -294,10 +286,10 @@ pub trait Wrapper {
         req_id: i32,
         rank: i32,
         contract_details: ContractDetails,
-        distance: &AsciiStr,
-        benchmark: &AsciiStr,
-        projection: &AsciiStr,
-        legs_str: &AsciiStr,
+        distance: &str,
+        benchmark: &str,
+        projection: &str,
+        legs_str: &str,
     );
 
     ///  Indicates the scanner data reception has terminated.
@@ -338,7 +330,7 @@ pub trait Wrapper {
     /// This function is called to receive fundamental
     /// market data. The appropriate market data subscription must be set
     /// up in Account Management before you can receive this data.
-    fn fundamental_data(&self, req_id: i32, data: &AsciiStr);
+    fn fundamental_data(&self, req_id: i32, data: &str);
 
     /// Upon accepting a Delta-Neutral RFQ(request for quote), the
     /// server sends a delta_neutral_validation() message with the DeltaNeutralContract
@@ -355,7 +347,7 @@ pub trait Wrapper {
 
     /// This event returns real-time positions for all accounts in
     /// response to the reqPositions() method.
-    fn position(&self, account: &AsciiStr, contract: Contract, position: f64, avg_cost: f64);
+    fn position(&self, account: &str, contract: Contract, position: f64, avg_cost: f64);
 
     /// This is called once all position data for a given request are
     //  received and functions as an end marker for the position() data.
@@ -363,27 +355,20 @@ pub trait Wrapper {
 
     /// Returns the data from the TWS Account Window Summary tab in
     /// response to req_account_summary().
-    fn account_summary(
-        &self,
-        req_id: i32,
-        account: &AsciiStr,
-        tag: &AsciiStr,
-        value: &AsciiStr,
-        currency: &AsciiStr,
-    );
+    fn account_summary(&self, req_id: i32, account: &str, tag: &str, value: &str, currency: &str);
 
     /// This method is called once all account summary data for a
     //  given request are received.
     fn account_summary_end(&self, req_id: i32);
 
     /// Deprecated Function
-    fn verify_message_api(&self, api_data: &AsciiStr);
+    fn verify_message_api(&self, api_data: &str);
 
-    fn verify_completed(&self, is_successful: bool, error_text: &AsciiStr);
+    fn verify_completed(&self, is_successful: bool, error_text: &str);
 
-    fn verify_and_auth_message_api(&self, api_data: &AsciiStr, xyz_challange: &AsciiStr);
+    fn verify_and_auth_message_api(&self, api_data: &str, xyz_challange: &str);
 
-    fn verify_and_auth_completed(&self, is_successful: bool, error_text: &AsciiStr);
+    fn verify_and_auth_completed(&self, is_successful: bool, error_text: &str);
 
     /// This callback is a one-time response to queryDisplayGroups().
     ///
@@ -392,7 +377,7 @@ pub trait Wrapper {
     ///            the | character, and sorted by most used group first. This list will
     ///             not change during TWS session (in other words, user cannot add a
     ///            new group; sorting can change though).
-    fn display_group_list(&self, req_id: i32, groups: &AsciiStr);
+    fn display_group_list(&self, req_id: i32, groups: &str);
 
     /// This is sent by TWS to the API client once after receiving
     ///        the subscription request subscribeToGroupEvents(), and will be sent
@@ -406,15 +391,15 @@ pub trait Wrapper {
     ///            contractID@exchange = any non-combination contract.
     ///                Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
     ///            combo = if any combo is selected.
-    fn display_group_updated(&self, req_id: i32, contract_info: &AsciiStr);
+    fn display_group_updated(&self, req_id: i32, contract_info: &str);
 
     /// same as position() except it can be for a certain
     /// account/model
     fn position_multi(
         &self,
         req_id: i32,
-        account: &AsciiStr,
-        model_code: &AsciiStr,
+        account: &str,
+        model_code: &str,
         contract: Contract,
         pos: f64,
         avg_cost: f64,
@@ -429,11 +414,11 @@ pub trait Wrapper {
     fn account_update_multi(
         &self,
         req_id: i32,
-        account: &AsciiStr,
-        model_code: &AsciiStr,
-        key: &AsciiStr,
-        value: &AsciiStr,
-        currency: &AsciiStr,
+        account: &str,
+        model_code: &str,
+        key: &str,
+        value: &str,
+        currency: &str,
     );
 
     /// same as account_download_end() except it can be for a certain
@@ -473,10 +458,10 @@ pub trait Wrapper {
     fn security_definition_option_parameter(
         &self,
         req_id: i32,
-        exchange: &AsciiStr,
+        exchange: &str,
         underlying_con_id: i32,
-        trading_class: &AsciiStr,
-        multiplier: &AsciiStr,
+        trading_class: &str,
+        multiplier: &str,
         expirations: HashSet<String>,
         strikes: HashSet<f64>,
     );
@@ -507,10 +492,10 @@ pub trait Wrapper {
         &self,
         ticker_id: i32,
         time_stamp: i32,
-        provider_code: &AsciiStr,
-        article_id: &AsciiStr,
-        headline: &AsciiStr,
-        extra_data: &AsciiStr,
+        provider_code: &str,
+        article_id: &str,
+        headline: &str,
+        extra_data: &str,
     );
 
     /// returns exchange component mapping
@@ -521,7 +506,7 @@ pub trait Wrapper {
         &self,
         ticker_id: i32,
         min_tick: f64,
-        bbo_exchange: &AsciiStr,
+        bbo_exchange: &str,
         snapshot_permissions: i32,
     );
 
@@ -529,23 +514,23 @@ pub trait Wrapper {
     fn news_providers(&self, news_providers: Vec<NewsProvider>);
 
     /// returns body of news article
-    fn news_article(&self, request_id: i32, article_type: i32, article_text: &AsciiStr);
+    fn news_article(&self, request_id: i32, article_type: i32, article_text: &str);
 
     /// returns historical news headlines
     fn historical_news(
         &self,
         request_id: i32,
-        time: &AsciiStr,
-        provider_code: &AsciiStr,
-        article_id: &AsciiStr,
-        headline: &AsciiStr,
+        time: &str,
+        provider_code: &str,
+        article_id: &str,
+        headline: &str,
     );
 
     /// signals end of historical news
     fn historical_news_end(&self, request_id: i32, has_more: bool);
 
     /// returns earliest available data of a type of data for a particular contract
-    fn head_timestamp(&self, req_id: i32, head_timestamp: &AsciiStr);
+    fn head_timestamp(&self, req_id: i32, head_timestamp: &str);
 
     /// returns histogram data for a contract
     fn histogram_data(&self, req_id: i32, items: HistogramData);
@@ -554,10 +539,10 @@ pub trait Wrapper {
     fn historical_data_update(&self, req_id: i32, bar: BarData);
 
     /// returns reroute CFD contract information for market data request
-    fn reroute_mkt_data_req(&self, req_id: i32, con_id: i32, exchange: &AsciiStr);
+    fn reroute_mkt_data_req(&self, req_id: i32, con_id: i32, exchange: &str);
 
     /// returns reroute CFD contract information for market depth request
-    fn reroute_mkt_depth_req(&self, req_id: i32, con_id: i32, exchange: &AsciiStr);
+    fn reroute_mkt_depth_req(&self, req_id: i32, con_id: i32, exchange: &str);
 
     /// returns minimum price increment structure for a particular market rule ID
     fn market_rule(&self, market_rule_id: i32, price_increments: Vec<PriceIncrement>);
@@ -593,8 +578,8 @@ pub trait Wrapper {
         price: f64,
         size: i32,
         tick_attrib_last: TickAttribLast,
-        exchange: &AsciiStr,
-        special_conditions: &AsciiStr,
+        exchange: &str,
+        special_conditions: &str,
     );
 
     /// returns tick-by-tick data for tickType = "BidAsk"
