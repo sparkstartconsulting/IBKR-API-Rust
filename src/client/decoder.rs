@@ -1,7 +1,10 @@
 use std::io::Write;
+use std::marker::Sync;
 use std::net::TcpStream;
+use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use std::string::ToString;
+use std::sync::{Arc, Mutex};
 use std::u8;
 
 use bytebuffer::ByteBuffer;
@@ -32,7 +35,7 @@ impl Builder {
         }
     }
 
-    pub fn write_out(&self, mut stream: &mut dyn std::io::Write) {
+    pub fn write_out(&self, stream: &mut dyn std::io::Write) {
         stream.write(self.buffer.to_bytes().as_slice());
     }
 
@@ -83,18 +86,18 @@ impl Sender<&str> for Builder {
     }
 }
 
-pub struct Decoder<'a, T: Wrapper> {
-    wrapper: &'a T,
+pub struct Decoder<T: Wrapper> {
+    pub wrapper: Arc<Mutex<T>>,
     pub server_version: i32,
 }
 
-impl<'a, T> Decoder<'a, T>
+impl<T> Decoder<T>
 where
-    T: client::wrapper::Wrapper,
+    T: Wrapper + Sync,
 {
-    pub fn new(wrapper: &'a T, server_version: i32) -> Self {
+    pub fn new(the_wrapper: T, server_version: i32) -> Self {
         Decoder {
-            wrapper,
+            wrapper: Arc::new(Mutex::new(the_wrapper)),
             server_version,
         }
     }
@@ -223,7 +226,7 @@ where
     fn process_tick_price(&mut self, fields: &[String]) {}
     fn process_tick_string(&mut self, fields: &[String]) {}
     fn process_account_summary(&mut self, fields: &[String]) {
-        self.wrapper.account_summary(
+        self.wrapper.lock().unwrap().deref_mut().account_summary(
             fields.get(2).unwrap().parse().unwrap(),
             fields.get(3).unwrap(),
             fields.get(4).unwrap(),
@@ -233,24 +236,39 @@ where
     }
     fn process_account_summary_end(&mut self, fields: &[String]) {
         self.wrapper
+            .lock()
+            .unwrap()
+            .deref_mut()
             .account_summary_end(fields.get(2).unwrap().parse().unwrap())
     }
 
     fn process_account_update_multi(&mut self, fields: &[String]) {}
     fn process_account_update_multi_end(&mut self, fields: &[String]) {}
     fn process_account_download_end(&mut self, fields: &[String]) {
-        self.wrapper.account_download_end(fields.get(1).unwrap())
+        self.wrapper
+            .lock()
+            .unwrap()
+            .deref_mut()
+            .account_download_end(fields.get(1).unwrap())
     }
     fn process_account_update_time(&mut self, fields: &[String]) {
-        self.wrapper.update_account_time(fields.get(1).unwrap())
+        self.wrapper
+            .lock()
+            .unwrap()
+            .deref_mut()
+            .update_account_time(fields.get(1).unwrap())
     }
     fn process_account_value(&mut self, fields: &[String]) {
-        self.wrapper.update_account_value(
-            fields.get(1).unwrap(),
-            fields.get(2).unwrap(),
-            fields.get(3).unwrap(),
-            fields.get(4).unwrap(),
-        );
+        self.wrapper
+            .lock()
+            .unwrap()
+            .deref_mut()
+            .update_account_value(
+                fields.get(1).unwrap(),
+                fields.get(2).unwrap(),
+                fields.get(3).unwrap(),
+                fields.get(4).unwrap(),
+            );
     }
     fn process_bond_contract_data(&mut self, fields: &[String]) {}
     fn process_commission_report(&mut self, fields: &[String]) {}
@@ -263,7 +281,9 @@ where
     fn process_display_group_list(&mut self, fields: &[String]) {}
     fn process_display_group_updated(&mut self, fields: &[String]) {}
     fn process_error_message(&mut self, fields: &[String]) {
-        self.wrapper.error(
+        print!("{:?}", fields);
+
+        self.wrapper.lock().unwrap().deref_mut().error(
             fields.get(2).unwrap().parse().unwrap(),
             fields.get(3).unwrap().parse().unwrap(),
             fields.get(4).unwrap(),

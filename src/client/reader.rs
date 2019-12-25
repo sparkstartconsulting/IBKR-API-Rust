@@ -61,13 +61,10 @@ impl Reader {
 
     pub fn run(&mut self) {
         loop {
-            debug!("#######    starting reader loop");
+            debug!("starting reader loop");
             /// grab a packet of messages from the socket
             let mut message_packet = self.recv_packet();
-            debug!(
-                "###########  reader loop, recvd size {}",
-                message_packet.len()
-            );
+            debug!("reader loop, recvd size {}", message_packet.len());
 
             /// Read messages from the packet until there are no more.
             /// When this loop ends, break into the outer loop and grab another packet.  
@@ -93,7 +90,7 @@ impl Reader {
                 );
 
                 if msg.as_str() != "" {
-                    info!("sending message to client... ");
+                    debug!("sending message to client... ");
                     self.messages.send(msg).unwrap();
                 } else {
                     ///Break to the outer loop and get another packet of messages.

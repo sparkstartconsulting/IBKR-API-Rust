@@ -12,6 +12,7 @@ extern crate twsapi;
 
 use std::borrow::{Borrow, BorrowMut};
 use std::io::Read;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -20,6 +21,7 @@ use client::messages::make_field;
 
 use crate::client::client::EClient;
 use crate::client::defaults::DefaultWrapper;
+use crate::client::wrapper::Wrapper;
 
 mod client;
 
@@ -42,18 +44,21 @@ fn main() {
     //debug!("{}", make_field(&mut "Hello!!".to_string()));
     //debug!("{}", make_field(&mut 47));
     //debug!("{}", make_field(&mut 100.3));
-    let mut wrapper = DefaultWrapper::new();
-    let mut app = EClient::new(&mut wrapper);
+
+    let wrapper = DefaultWrapper::new();
+    let mut app = EClient::new(wrapper);
     {
         app.connect("127.0.0.1".to_string(), 7497, 0);
     }
+    //app.req_account_updates(true, "");
     {
-        //app.req_account_updates(true, "");
-        //app.req_current_time();
+        // app.req_current_time();
+    }
+    {
         app.req_account_summary(2, "All", "NetLiquidation");
     }
-
-    app.run();
-
+    {
+        app.run();
+    }
     thread::sleep(Duration::new(60, 0));
 }

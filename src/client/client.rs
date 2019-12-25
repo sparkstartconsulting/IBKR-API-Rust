@@ -3,10 +3,13 @@ use std::borrow::{Borrow, Cow};
 use std::collections::vec_deque::VecDeque;
 use std::convert::TryFrom;
 use std::io::Write;
+use std::marker::Sync;
 use std::net::TcpStream;
 use std::net::{Shutdown, SocketAddr};
+use std::ops::{Deref, DerefMut};
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::{channel, Receiver};
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use byteorder::{BigEndian, ByteOrder};
@@ -18,6 +21,8 @@ use num_traits::FromPrimitive;
 
 use crate::client::common::*;
 use crate::client::decoder::Decoder;
+use crate::client::errors;
+use crate::client::errors::TwsError;
 use crate::client::messages::read_msg;
 use crate::client::messages::{make_message, read_fields, OutgoingMessageIds};
 use crate::client::reader::Reader;
@@ -33,10 +38,9 @@ enum ConnStatus {
     REDIRECT,
 }
 
-pub struct EClient<'a, T: Wrapper> {
+pub struct EClient<T: Wrapper + Sync + Send> {
     msg_queue: Option<Receiver<String>>,
-    wrapper: &'a T,
-    decoder: Decoder<'a, T>,
+    decoder: Decoder<T>,
     done: bool,
     n_keyb_int_hard: i32,
     stream: Option<TcpStream>,
@@ -51,15 +55,14 @@ pub struct EClient<'a, T: Wrapper> {
     asynchronous: bool,
 }
 
-impl<'a, T: Wrapper> EClient<'a, T>
+impl<T> EClient<T>
 where
-    T: Wrapper,
+    T: Wrapper + Sync + Send,
 {
-    pub fn new(wrapper: &'a T) -> Self {
+    pub fn new(the_wrapper: T) -> Self {
         EClient {
             msg_queue: None,
-            wrapper,
-            decoder: Decoder::new(wrapper, 0),
+            decoder: Decoder::new(the_wrapper, 0),
             done: false,
             n_keyb_int_hard: 0,
             stream: None,
@@ -75,13 +78,11 @@ where
         }
     }
     fn send_request(&self, request: &str) {
-        info!("Sending request to server...");
         let bytes = make_message(request);
         self.send_bytes(bytes.as_slice());
     }
 
     fn send_bytes(&self, bytes: &[u8]) {
-        debug!("Message before send {:?}", bytes);
         self.stream.as_ref().unwrap().write(bytes);
     }
 
@@ -92,6 +93,7 @@ where
         debug!("Connecting");
         let thestream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port)).unwrap();
         debug!("Connected");
+
         self.stream = Option::from(thestream.try_clone().unwrap());
 
         let reader_stream = thestream.try_clone().unwrap();
@@ -105,51 +107,39 @@ where
         let v_100_version = format!("v{}..{}", MIN_CLIENT_VER, MAX_CLIENT_VER);
 
         let msg = make_message(v_100_version.as_str());
-        debug!("v_100_version.as_str(): {}", v_100_version.as_str());
-        //logger.debug("msg %s", msg)
-        //let encoded = ASCII.encode(v_100_prefix, EncoderTrap::NcrEscape).unwrap();
+
         let mut bytearray: Vec<u8> = Vec::new();
         bytearray.extend_from_slice(v_100_prefix.as_bytes());
         bytearray.extend_from_slice(msg.as_slice());
-        //let msg2 = format!("{:?}", String::from_utf8(bytearray).unwrap());
-        debug!(
-            "sending initial request: {:?}",
-            String::from_utf8(bytearray.as_slice().to_vec()).unwrap()
-        );
 
         self.send_bytes(bytearray.as_slice());
         let mut fields: Vec<String> = Vec::new();
 
         //sometimes I get news before the server version, thus the loop
-
         while fields.len() != 2 {
             if fields.len() > 0 {
                 self.decoder.interpret(fields.as_slice());
             }
 
-            let mut buf = reader.recv_packet();
-            debug!("got initial packet: {}", buf.len());
+            let buf = reader.recv_packet();
 
             if buf.len() > 0 {
                 let (size, msg, remaining_messages) = read_msg(buf.as_slice());
 
                 fields.clear();
                 fields.extend_from_slice(read_fields(msg.as_ref()).as_slice());
-                debug!("fields.len(): {}", fields.len());
             } else {
                 fields.clear();
             }
         }
 
         self.server_version = i32::from_ascii(fields.get(0).unwrap().as_bytes()).unwrap();
-        debug!("Server version: {} ", self.server_version);
         self.conn_time = fields.get(1).unwrap().to_string();
-        debug!("Connection time: {} ", self.conn_time);
         self.decoder.server_version = self.server_version;
+
         thread::spawn(move || {
             reader.run();
         });
-
         self.start_api();
     }
 
@@ -179,7 +169,11 @@ where
         );
 
         if !self.is_connected() {
-            //self.wrapper.error(NO_VALID_ID, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+                NO_VALID_ID,
+                TwsError::BadLength.code(),
+                TwsError::BadLength.message(),
+            );
             return;
         }
 
@@ -260,7 +254,11 @@ where
         //self.logRequest(current_fn_name(), vars())
 
         if !self.is_connected() {
-            //self.wrapper.error(NO_VALID_ID, NOT_CONNECTED.code(), NOT_CONNECTED.msg());
+            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+                NO_VALID_ID,
+                TwsError::BadLength.code(),
+                TwsError::BadLength.message(),
+            );
             return;
         }
 
@@ -305,7 +303,11 @@ where
         //self.logRequest(current_fn_name(), vars())
 
         if !self.is_connected() {
-            //self.wrapper.error(NO_VALID_ID, NOT_CONNECTED.code(), NOT_CONNECTED.msg())
+            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+                NO_VALID_ID,
+                TwsError::BadLength.code(),
+                TwsError::BadLength.message(),
+            );
             return;
         }
 
@@ -322,24 +324,24 @@ where
 
     pub fn run(&mut self) {
         //This is the function that has the message loop.
+
         info!("Starting run...");
         let queue = self.msg_queue.as_mut().unwrap();
         while !self.done && true {
-            info!("################Client trying to receive...");
+            info!("Client waiting for message...");
             let text = queue.recv().unwrap();
-            info!("Client got message...");
-            info!("{}", text.as_str());
+
             if text.len() > MAX_MSG_LEN as usize {
-                //self.wrapper.error(
-                //NO_VALID_ID,
-                //BAD_LENGTH.code(),
-                //format!("{}:{}:{}"(BAD_LENGTH.msg(), len(text), &text)),
-                //);
+                self.decoder.wrapper.lock().unwrap().deref_mut().error(
+                    NO_VALID_ID,
+                    TwsError::BadLength.code(),
+                    format!("{}:{}:{}", TwsError::BadLength.message(), text.len(), text).as_str(),
+                );
                 self.disconnect();
                 break;
             } else {
                 let fields = read_fields((&text).as_ref());
-                //debug("fields {}", fields)
+
                 self.decoder.interpret(fields.as_slice());
             }
         }
@@ -349,11 +351,12 @@ where
         //Initiates the message exchange between the client application and
         //the TWS/IB Gateway. """
 
-        //self.logRequest(current_fn_name(), vars())
-
         if !self.is_connected() {
-            // self.wrapper.error(NO_VALID_ID, NOT_CONNECTED.code(),
-            //                   NOT_CONNECTED.msg());
+            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+                NO_VALID_ID,
+                TwsError::BadLength.code(),
+                TwsError::BadLength.message(),
+            );
             return;
         }
 

@@ -1,9 +1,12 @@
+use std::collections::hash_map::RandomState;
 use std::collections::{HashMap, HashSet};
+use std::marker::{Send, Sync};
+use std::sync::{Arc, Mutex};
 
 use crate::client::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, NewsProvider, PriceIncrement, SmartComponent, TickAttrib,
-    TickAttribBidAsk, TickAttribLast,
+    TickAttribBidAsk, TickAttribLast, TickType,
 };
 use crate::client::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
@@ -11,7 +14,7 @@ use crate::client::contract::{
 use crate::client::execution::Execution;
 use crate::client::order::{Order, OrderState, SoftDollarTier};
 
-pub trait Wrapper {
+pub trait Wrapper: Send + Sync {
     /// This event is called when there is an error with the
     /// communication or when TWS wants to send a message to the client.
     fn error(&self, req_id: i32, error_code: i32, error_string: &str);
@@ -30,18 +33,18 @@ pub trait Wrapper {
     fn market_data_type(&self, req_id: i32, market_data_type: i32);
 
     /// Market data tick price callback. Handles all price related ticks.
-    fn tick_price(&self, req_id: i32, tick_type: i32, price: f64, attrib: TickAttrib);
+    fn tick_price(&self, req_id: i32, tick_type: TickType, price: f64, attrib: TickAttrib);
 
     ///Market data tick size callback. Handles all size-related ticks.
-    fn tick_size(&self, req_id: i32, tick_type: i32, size: i32);
+    fn tick_size(&self, req_id: i32, tick_type: TickType, size: i32);
 
     /// When requesting market data snapshots, this market will indicate the
     /// snapshot reception is finished.
     fn tick_snapshot_end(&self, req_id: i32);
 
-    fn tick_generic(&self, req_id: i32, tick_type: i32, value: f64);
+    fn tick_generic(&self, req_id: i32, tick_type: TickType, value: f64);
 
-    fn tick_string(&self, req_id: i32, tick_type: i32, value: &str);
+    fn tick_string(&self, req_id: i32, tick_type: TickType, value: &str);
 
     ///market data call back for Exchange for Physical
     ///        tickerId -      The request's identifier.
@@ -60,7 +63,7 @@ pub trait Wrapper {
     fn tick_efp(
         &self,
         req_id: i32,
-        tick_type: i32,
+        tick_type: TickType,
         basis_points: f64,
         formatted_basis_points: &str,
         total_dividends: f64,
@@ -432,7 +435,7 @@ pub trait Wrapper {
     fn tick_option_computation(
         &self,
         req_id: i32,
-        tick_type: i32,
+        tick_type: TickType,
         implied_vol: f64,
         delta: f64,
         opt_price: f64,
@@ -573,7 +576,7 @@ pub trait Wrapper {
     fn tick_by_tick_all_last(
         &self,
         req_id: i32,
-        tick_type: i32,
+        tick_type: TickType,
         time: i32,
         price: f64,
         size: i32,

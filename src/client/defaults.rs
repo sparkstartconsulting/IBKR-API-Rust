@@ -1,10 +1,11 @@
 use std::collections::hash_map::{Entry, RandomState};
 use std::collections::{HashMap, HashSet};
+use std::marker::{Send, Sync};
 
 use crate::client::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, NewsProvider, PriceIncrement, SmartComponent, TickAttrib,
-    TickAttribBidAsk, TickAttribLast,
+    TickAttribBidAsk, TickAttribLast, TickType,
 };
 use crate::client::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
@@ -14,6 +15,7 @@ use crate::client::order::{Order, OrderState, SoftDollarTier};
 use crate::client::wrapper::Wrapper;
 
 //==================================================================================================
+
 pub struct DefaultWrapper {}
 
 impl DefaultWrapper {
@@ -23,11 +25,14 @@ impl DefaultWrapper {
 }
 impl Wrapper for DefaultWrapper {
     fn error(&self, req_id: i32, error_code: i32, error_string: &str) {
-        error!("Code: {} , Message:{}", error_code, error_string);
+        error!(
+            "req_id: {} ,error_code: {} , error_string:{}",
+            req_id, error_code, error_string
+        );
     }
 
     fn win_error(&self, text: &str, last_error: i32) {
-        unimplemented!()
+        error!("text: {} , last_error:{}", text, last_error);
     }
 
     fn connect_ack(&self) {
@@ -41,14 +46,14 @@ impl Wrapper for DefaultWrapper {
         );
     }
 
-    fn tick_price(&self, req_id: i32, tick_type: i32, price: f64, attrib: TickAttrib) {
+    fn tick_price(&self, req_id: i32, tick_type: TickType, price: f64, attrib: TickAttrib) {
         info!(
             "tick_size -- req_id: {}, tick_type: {}, price: {}, attrib: {}",
             req_id, tick_type, price, attrib
         );
     }
 
-    fn tick_size(&self, req_id: i32, tick_type: i32, size: i32) {
+    fn tick_size(&self, req_id: i32, tick_type: TickType, size: i32) {
         info!(
             "tick_size -- req_id: {}, tick_type: {}, size: {}",
             req_id, tick_type, size
@@ -59,14 +64,14 @@ impl Wrapper for DefaultWrapper {
         info!("tick_snapshot_end -- req_id: {}", req_id);
     }
 
-    fn tick_generic(&self, req_id: i32, tick_type: i32, value: f64) {
+    fn tick_generic(&self, req_id: i32, tick_type: TickType, value: f64) {
         info!(
             "tick_generic -- req_id: {}, tick_type: {}, value: {}",
             req_id, tick_type, value
         );
     }
 
-    fn tick_string(&self, req_id: i32, tick_type: i32, value: &str) {
+    fn tick_string(&self, req_id: i32, tick_type: TickType, value: &str) {
         info!(
             "tick_string -- req_id: {}, tick_type: {}, value: {}",
             req_id, tick_type, value
@@ -76,7 +81,7 @@ impl Wrapper for DefaultWrapper {
     fn tick_efp(
         &self,
         req_id: i32,
-        tick_type: i32,
+        tick_type: TickType,
         basis_points: f64,
         formatted_basis_points: &str,
         total_dividends: f64,
@@ -464,7 +469,7 @@ impl Wrapper for DefaultWrapper {
     fn tick_option_computation(
         &self,
         req_id: i32,
-        tick_type: i32,
+        tick_type: TickType,
         implied_vol: f64,
         delta: f64,
         opt_price: f64,
@@ -691,7 +696,7 @@ impl Wrapper for DefaultWrapper {
     fn tick_by_tick_all_last(
         &self,
         req_id: i32,
-        tick_type: i32,
+        tick_type: TickType,
         time: i32,
         price: f64,
         size: i32,
@@ -700,7 +705,7 @@ impl Wrapper for DefaultWrapper {
         special_conditions: &str,
     ) {
         info!(
-            "tick_by_tick_all_last -- req_id: {}, tick_type: {:?}, time: {}, price: {}, size: {}, \
+            "tick_by_tick_all_last -- req_id: {}, tick_type: {}, time: {}, price: {}, size: {}, \
              tick_attrib_last: {}, exchange: {}, special_conditions: {}",
             req_id, tick_type, time, price, size, tick_attrib_last, exchange, special_conditions
         );
@@ -748,3 +753,7 @@ impl Wrapper for DefaultWrapper {
         info!("completed_orders_end -- (no parameters for this message)");
     }
 }
+
+unsafe impl Send for DefaultWrapper {}
+
+unsafe impl Sync for DefaultWrapper {}
