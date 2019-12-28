@@ -150,7 +150,7 @@ pub struct Contract {
     // type: str; received in open order 14 and up for all combos
     pub combo_legs: Vec<ComboLeg>,
     // type: list<ComboLeg>
-    pub delta_neutral_contract: DeltaNeutralContract,
+    pub delta_neutral_contract: Option<DeltaNeutralContract>,
 }
 
 impl Contract {
@@ -172,7 +172,7 @@ impl Contract {
         sec_id: String,
         combo_legs_descrip: String,
         combo_legs: Vec<ComboLeg>,
-        delta_neutral_contract: DeltaNeutralContract,
+        delta_neutral_contract: Option<DeltaNeutralContract>,
     ) -> Self {
         Contract {
             con_id,
@@ -240,7 +240,7 @@ impl Display for Contract {
                 .map(|x| { format!("{}", x.to_string()) })
                 .collect::<Vec<String>>()
                 .join(","),
-            self.delta_neutral_contract
+            self.delta_neutral_contract.as_ref().unwrap()
         )
     }
 }

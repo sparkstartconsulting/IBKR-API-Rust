@@ -282,21 +282,25 @@ pub fn read_fields(buf: &str) -> Vec<String> {
         .collect::<Vec<String>>()
 }
 
-pub fn make_field(val: &mut dyn Any) -> String {
+pub fn make_field(val: &dyn Any) -> String {
     // adds the NULL string terminator
 
     // bool type is encoded as int
-    if let Some(boolval) = val.downcast_mut::<bool>() {
+    if let Some(boolval) = val.downcast_ref::<bool>() {
         format!("{}\0", *boolval as i32)
-    } else if let Some(stringval) = val.downcast_mut::<String>() {
+    } else if let Some(stringval) = val.downcast_ref::<String>() {
         format!("{}\0", stringval)
-    } else if let Some(stringval) = val.downcast_mut::<&str>() {
+    } else if let Some(stringval) = val.downcast_ref::<&str>() {
         format!("{}\0", stringval)
-    } else if let Some(stringval) = val.downcast_mut::<f64>() {
+    } else if let Some(stringval) = val.downcast_ref::<f64>() {
         format!("{}\0", stringval)
-    } else if let Some(stringval) = val.downcast_mut::<i32>() {
+    } else if let Some(stringval) = val.downcast_ref::<i32>() {
         format!("{}\0", stringval)
     } else {
         "".to_string()
     }
+}
+
+pub fn make_field_handle_empty(val: &dyn Any) -> String {
+    make_field(val)
 }

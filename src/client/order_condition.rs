@@ -4,6 +4,8 @@ use serde::export::fmt::Error;
 use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
+use crate::client::messages::{make_field, make_message};
+
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ConditionType {
@@ -28,6 +30,20 @@ impl OrderCondition {
             cond_type,
             is_conjunction_connection,
         }
+    }
+
+    pub fn make_fields(&self) -> String {
+        let mut fields = "".to_string();
+        fields.push(
+            make_field(&if self.is_conjunction_connection {
+                "a".to_owned()
+            } else {
+                "o".to_owned()
+            })
+            .parse()
+            .unwrap(),
+        );
+        return fields;
     }
 }
 

@@ -14,7 +14,7 @@ use crate::client::contract::{
 use crate::client::execution::Execution;
 use crate::client::order::{Order, OrderState, SoftDollarTier};
 
-pub trait Wrapper: Send + Sync {
+pub trait Wrapper: Send + Sync + 'static {
     /// This event is called when there is an error with the
     /// communication or when TWS wants to send a message to the client.
     fn error(&self, req_id: i32, error_code: i32, error_string: &str);
@@ -155,11 +155,11 @@ pub trait Wrapper: Send + Sync {
     fn next_valid_id(&self, order_id: i32);
 
     /// Receives the full contract's definitions. This method will return all
-    //        contracts matching the requested via EEClientSocket::reqContractDetails.
+    //        contracts matching the requested via EEClientSocket::req_contract_details.
     //        For example, one can obtain the whole option chain with it.
     fn contract_details(&self, req_id: i32, contract_details: ContractDetails);
 
-    /// This function is called when reqContractDetails function
+    /// This function is called when req_contract_details function
     /// has been called for bonds.
     fn bond_contract_details(&self, req_id: i32, contract_details: ContractDetails);
 
@@ -167,12 +167,12 @@ pub trait Wrapper: Send + Sync {
     //  request are received. This helps to define the end of an option chain.
     fn contract_details_end(&self, req_id: i32);
 
-    /// This event is fired when the reqExecutions() functions is
+    /// This event is fired when the req_executions() functions is
     /// invoked, or when an order is filled.
     fn exec_details(&self, req_id: i32, contract: Contract, execution: Execution);
 
     /// This function is called once all executions have been sent to
-    /// a client in response to reqExecutions().
+    /// a client in response to req_executions().
     fn exec_details_end(&self, req_id: i32);
 
     /// Returns the order book.
@@ -345,7 +345,7 @@ pub trait Wrapper: Send + Sync {
 
     /// The commission_report() callback is triggered as follows:
     /// immediately after a trade execution
-    /// by calling reqExecutions().
+    /// by calling req_executions().
     fn commission_report(&self, commission_report: CommissionReport);
 
     /// This event returns real-time positions for all accounts in
@@ -373,9 +373,9 @@ pub trait Wrapper: Send + Sync {
 
     fn verify_and_auth_completed(&self, is_successful: bool, error_text: &str);
 
-    /// This callback is a one-time response to queryDisplayGroups().
+    /// This callback is a one-time response to query_display_groups().
     ///
-    ///        req_id - The requestId specified in queryDisplayGroups().
+    ///        req_id - The requestId specified in query_display_groups().
     ///        groups - A list of integers representing visible group ID separated by
     ///            the | character, and sorted by most used group first. This list will
     ///             not change during TWS session (in other words, user cannot add a
@@ -383,11 +383,11 @@ pub trait Wrapper: Send + Sync {
     fn display_group_list(&self, req_id: i32, groups: &str);
 
     /// This is sent by TWS to the API client once after receiving
-    ///        the subscription request subscribeToGroupEvents(), and will be sent
+    ///        the subscription request subscribe_to_group_events(), and will be sent
     ///        again if the selected contract in the subscribed display group has
     ///        changed.
     ///
-    ///        requestId - The requestId specified in subscribeToGroupEvents().
+    ///        requestId - The requestId specified in subscribe_to_group_events().
     ///        contractInfo - The encoded value that uniquely represents the contract
     ///            in IB. Possible values include:
     ///            none = empty selection
@@ -447,9 +447,9 @@ pub trait Wrapper: Send + Sync {
     );
 
     /// Returns the option chain for an underlying on an exchange
-    //  specified in reqSecDefOptParams There will be multiple callbacks to
+    //  specified in req_sec_def_opt_params There will be multiple callbacks to
     //  security_definition_option_parameter if multiple exchanges are specified
-    //  in reqSecDefOptParams
+    //  in req_sec_def_opt_params
     //
     //  req_id - ID of the request initiating the callback
     //  underlyingConId - The conID of the underlying security
@@ -476,7 +476,7 @@ pub trait Wrapper: Send + Sync {
 
     /// Called when receives Soft Dollar Tier configuration information
     ///
-    ///        req_id - The request ID used in the call to EEClient::reqSoftDollarTiers
+    ///        req_id - The request ID used in the call to EEClient::req_soft_dollar_tiers
     ///        tiers - Stores a list of SoftDollarTier that contains all Soft Dollar
     ///            Tiers information
     fn soft_dollar_tiers(&self, req_id: i32, tiers: Vec<SoftDollarTier>);

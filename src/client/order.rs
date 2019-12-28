@@ -161,7 +161,7 @@ impl Display for OrderState {
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct OrderComboLeg {
-    price: f64, // type: float
+    pub(crate) price: f64, // type: float
 }
 
 impl OrderComboLeg {
@@ -187,10 +187,10 @@ pub struct Order {
 
     // main order fields
     pub action: String,
-    pub total_quantity: i32,
+    pub total_quantity: f64,
     pub order_type: String,
     pub lmt_price: f64,
-    aux_price: f64,
+    pub(crate) aux_price: f64,
 
     // extended order fields
     pub tif: String,
@@ -411,7 +411,7 @@ impl Order {
         client_id: i32,
         perm_id: i32,
         action: String,
-        total_quantity: i32,
+        total_quantity: f64,
         order_type: String,
         lmt_price: f64,
         aux_price: f64,

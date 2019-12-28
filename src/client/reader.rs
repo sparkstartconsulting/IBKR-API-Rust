@@ -59,46 +59,51 @@ impl Reader {
         allbuf
     }
 
-    pub fn run(&mut self) {
+    pub fn process_reader_msgs(&mut self) {
+        /// grab a packet of messages from the socket
+        let mut message_packet = self.recv_packet();
+        debug!(" recvd size {}", message_packet.len());
+
+        /// Read messages from the packet until there are no more.
+        /// When this loop ends, break into the outer loop and grab another packet.  
+        /// Repeat until the connection is closed
+        ///
+        let mut msg = String::new();
+        while message_packet.len() > 0 {
+            /// Read a message from the packet then add it to the message queue below.
+            let (size, msg, remaining_messages) = read_msg(message_packet.as_slice());
+
+            /// clear the Vec that holds the bytes from the packet
+            /// and reload with the bytes that haven't been read.
+            /// The variable new_buf only holds the unread bytes (messages) left in the packet
+            message_packet.clear();
+            message_packet.extend_from_slice(remaining_messages.as_slice());
+
+            debug!(
+                "size:{} msg.size:{} msg:|{}| buf:{:?}|",
+                size,
+                msg.len(),
+                msg,
+                message_packet.to_owned()
+            );
+
+            if msg.as_str() != "" {
+                debug!("sending message to client... ");
+                self.messages.send(msg).unwrap();
+            } else {
+                ///Break to the outer loop and get another packet of messages.
+
+                debug!("more incoming packet(s) are needed ");
+                break;
+            }
+        }
+    }
+
+    pub async fn run(&mut self) {
         loop {
             debug!("starting reader loop");
-            /// grab a packet of messages from the socket
-            let mut message_packet = self.recv_packet();
-            debug!("reader loop, recvd size {}", message_packet.len());
 
-            /// Read messages from the packet until there are no more.
-            /// When this loop ends, break into the outer loop and grab another packet.  
-            /// Repeat until the connection is closed
-            ///
-            let mut msg = String::new();
-            while message_packet.len() > 0 {
-                /// Read a message from the packet then add it to the message queue below.
-                let (size, msg, remaining_messages) = read_msg(message_packet.as_slice());
-
-                /// clear the Vec that holds the bytes from the packet
-                /// and reload with the bytes that haven't been read.
-                /// The variable new_buf only holds the unread bytes (messages) left in the packet
-                message_packet.clear();
-                message_packet.extend_from_slice(remaining_messages.as_slice());
-
-                debug!(
-                    "size:{} msg.size:{} msg:|{}| buf:{:?}|",
-                    size,
-                    msg.len(),
-                    msg,
-                    message_packet.to_owned()
-                );
-
-                if msg.as_str() != "" {
-                    debug!("sending message to client... ");
-                    self.messages.send(msg).unwrap();
-                } else {
-                    ///Break to the outer loop and get another packet of messages.
-
-                    debug!("more incoming packet(s) are needed ");
-                    break;
-                }
-            }
+            self.process_reader_msgs();
         }
         //debug!("EReader thread finished")
     }
