@@ -1,5 +1,6 @@
 extern crate ascii;
 extern crate bytebuffer;
+extern crate crossbeam_utils;
 extern crate from_ascii;
 #[macro_use]
 extern crate log;
@@ -12,7 +13,9 @@ extern crate twsapi;
 
 use std::borrow::{Borrow, BorrowMut};
 use std::io::Read;
-use std::sync::{Arc, Mutex};
+use std::io::Stdin;
+use std::net::{TcpListener, ToSocketAddrs};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 
@@ -45,20 +48,41 @@ fn main() {
     //debug!("{}", make_field(&mut 47));
     //debug!("{}", make_field(&mut 100.3));
 
+    let listener = TcpListener::bind(("127.0.0.1", 7495)).unwrap();
+
     let wrapper = DefaultWrapper::new();
-    let mut app = EClient::new(wrapper);
-    {
-        app.connect("127.0.0.1".to_string(), 7497, 0);
-    }
+    let app = Arc::new(Mutex::new(EClient::new(wrapper)));
+    let app2 = Option::from(app.clone());
+    app.lock().unwrap().wrapper.lock().unwrap().client = app2;
+    app.lock().unwrap().wrapper.lock().unwrap().next_valid_id(3);
+    app.lock()
+        .unwrap()
+        .connect("127.0.0.1".to_string(), 7497, 0);
+    //let fut = app.run();
     //app.req_account_updates(true, "");
+
+    // app.req_current_time();
     {
-        // app.req_current_time();
+        app.lock()
+            .unwrap()
+            .req_account_summary(2, "All", "NetLiquidation");
+
+        //    let app2 = Arc::new(Mutex::new(app));
+        //    let mut moved = app2.clone();
+        //    thread::spawn(move || {
+        //        moved.lock().unwrap().run();
+        //    });
+        //app2.lock().into_inner().unwrap().req_current_time();
     }
-    {
-        app.req_account_summary(2, "All", "NetLiquidation");
-    }
-    {
-        app.run();
-    }
-    thread::sleep(Duration::new(60, 0));
+
+    //    app.lock().unwrap().req_current_time();
+    //    thread::sleep(Duration::new(2, 0));
+    //    app.lock().unwrap().req_current_time();
+    //    thread::sleep(Duration::new(2, 0));
+    //    app.lock().unwrap().req_current_time();
+    //    thread::sleep(Duration::new(2, 0));
+    //    app.lock().unwrap().req_current_time();
+    //    thread::sleep(Duration::new(2, 0));
+
+    thread::sleep(Duration::new(200, 0));
 }

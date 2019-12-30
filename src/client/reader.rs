@@ -99,10 +99,9 @@ impl Reader {
         }
     }
 
-    pub async fn run(&mut self) {
+    pub fn run(&mut self) {
+        debug!("starting reader loop");
         loop {
-            debug!("starting reader loop");
-
             self.process_reader_msgs();
         }
         //debug!("EReader thread finished")

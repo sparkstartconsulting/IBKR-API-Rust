@@ -3,6 +3,7 @@ use std::convert::TryInto;
 use std::io::Write;
 use std::ops::Deref;
 use std::string::String;
+use std::sync::{Arc, RwLock};
 use std::vec::Vec;
 
 use ascii;
@@ -11,7 +12,7 @@ use byteorder::{BigEndian, ByteOrder};
 
 use crate::bytebuffer::ByteBuffer;
 use crate::client::common::{UNSET_DOUBLE, UNSET_INTEGER, UNSET_LONG};
-use crate::client::decoder::Builder;
+use crate::client::decoder::{Builder, Decoder};
 use crate::client::wrapper::Wrapper;
 
 trait EClientMsgSink {
@@ -28,6 +29,11 @@ pub enum FAMessageDataTypes {
 
 trait IncomingMessageProcessor {
     fn process(wrapper: &mut dyn Wrapper, params: &Vec<String>);
+}
+
+pub struct MessageProcessor<'a, T: Wrapper> {
+    wrapper: Arc<RwLock<&'a T>>,
+    //decoder: Arc<RwLock<Decoder<'a, T>>>,
 }
 
 // incoming msg id's

@@ -13,6 +13,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use byteorder::{BigEndian, ByteOrder};
+use crossbeam_utils;
 use encoding::all::ASCII;
 use encoding::types::RawEncoder;
 use encoding::{ByteWriter, DecoderTrap, EncoderTrap, Encoding};
@@ -43,8 +44,8 @@ enum ConnStatus {
 }
 
 pub struct EClient<T: Wrapper + Sync + Send> {
-    msg_queue: Option<Mutex<Receiver<String>>>,
-    decoder: Decoder<T>,
+    //decoder: Decoder<'a, T>,
+    pub(crate) wrapper: Arc<Mutex<T>>,
     done: bool,
     n_keyb_int_hard: i32,
     stream: Option<TcpStream>,
@@ -65,8 +66,8 @@ where
 {
     pub fn new(the_wrapper: T) -> Self {
         EClient {
-            msg_queue: None,
-            decoder: Decoder::new(the_wrapper, 0),
+            wrapper: Arc::new(Mutex::new(the_wrapper)),
+            //decoder: Decoder::new(the_wrapper, 0),
             done: false,
             n_keyb_int_hard: 0,
             stream: None,
@@ -103,9 +104,9 @@ where
         let reader_stream = thestream.try_clone().unwrap();
 
         let (tx, rx) = channel::<String>();
-        let mut reader = Reader::new(thestream, tx);
+        let mut reader = Reader::new(thestream, tx.clone());
 
-        self.msg_queue = Option::from(Mutex::new(rx));
+        //self.msg_queue = Option::from(Mutex::new(rx));
 
         let v_100_prefix = "API\0";
         let v_100_version = format!("v{}..{}", MIN_CLIENT_VER, MAX_CLIENT_VER);
@@ -119,10 +120,12 @@ where
         self.send_bytes(bytearray.as_slice());
         let mut fields: Vec<String> = Vec::new();
 
+        //let mut decoder = Decoder::new(self.wrapper.clone(), rx, self.server_version);
+        let mut decoder = Decoder::new(self.wrapper.clone(), rx, self.server_version);
         //sometimes I get news before the server version, thus the loop
         while fields.len() != 2 {
             if fields.len() > 0 {
-                self.decoder.interpret(fields.as_slice());
+                decoder.interpret(fields.as_slice());
             }
 
             let buf = reader.recv_packet();
@@ -139,15 +142,19 @@ where
 
         self.server_version = i32::from_ascii(fields.get(0).unwrap().as_bytes()).unwrap();
         self.conn_time = fields.get(1).unwrap().to_string();
-        self.decoder.server_version = self.server_version;
+        //self.decoder.server_version = self.server_version;
 
         thread::spawn(move || {
             reader.run();
         });
+
+        thread::spawn(move || {
+            decoder.run();
+        });
         self.start_api();
     }
 
-    pub fn is_connected(&mut self) -> bool {
+    pub fn is_connected(&self) -> bool {
         true
     }
 
@@ -158,14 +165,14 @@ where
         self.server_version
     }
 
-    pub fn set_server_log_level(&mut self, log_evel: i32) {
+    pub fn set_server_log_level(&self, log_evel: i32) {
         //The pub fnault detail level is ERROR. For more details, see API
         //        Logging.
         //TODO Make log_level an enum
         debug!("set_server_log_level -- log_evel: {}", log_evel);
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -193,7 +200,7 @@ where
         self.conn_time.clone()
     }
 
-    pub fn req_current_time(&mut self) {
+    pub fn req_current_time(&self) {
         let version = 2;
 
         let message_id: i32 = OutgoingMessageIds::ReqCurrentTime as i32;
@@ -211,46 +218,12 @@ where
         self.stream.as_mut().unwrap().shutdown(Shutdown::Both);
     }
 
-    //==============================================================================================
-    pub fn run(&mut self) {
-        //This is the function that has the message loop.
-
-        info!("Starting run...");
-        //  thread::spawn(move || {
-        let queue = self.msg_queue.as_mut().unwrap();
-        while !self.done && true {
-            info!("Client waiting for message...");
-            let text = queue.lock().unwrap().recv().unwrap();
-
-            if text.len() > MAX_MSG_LEN as usize {
-                self.decoder.wrapper.lock().unwrap().deref_mut().error(
-                    NO_VALID_ID,
-                    TwsError::NotConnected.code(),
-                    format!(
-                        "{}:{}:{}",
-                        TwsError::NotConnected.message(),
-                        text.len(),
-                        text
-                    )
-                    .as_str(),
-                );
-                self.disconnect();
-                break;
-            } else {
-                let fields = read_fields((&text).as_ref());
-
-                self.decoder.interpret(fields.as_slice());
-            }
-        }
-        // });
-    }
-
     fn start_api(&mut self) {
         //Initiates the message exchange between the client application and
         //the TWS/IB Gateway. """
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -312,7 +285,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -322,7 +295,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
             if let Some(value) = &contract.delta_neutral_contract {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     req_id,
                     TwsError::UpdateTws.code(),
                     format!(
@@ -337,7 +310,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_MKT_DATA_CONID && contract.con_id > 0 {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -351,7 +324,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && "" != contract.trading_class {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -434,7 +407,7 @@ where
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             // current doc says this part is for "internal use only" -> won't support it
             if mkt_data_options.len() > 0 {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     req_id,
                     TwsError::Unsupported.code(),
                     format!(
@@ -463,7 +436,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -497,7 +470,7 @@ where
         // // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -506,7 +479,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_MARKET_DATA_TYPE {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -534,7 +507,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -543,7 +516,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_SMART_COMPONENTS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -571,7 +544,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -580,7 +553,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_MARKET_RULES {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -614,7 +587,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -623,7 +596,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -637,9 +610,9 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK_IGNORE_SIZE {
-            self.decoder.wrapper.lock().unwrap().error(NO_VALID_ID,
-                                                       TwsError::UpdateTws.code(),
-                                                       format!("{}{}", TwsError::UpdateTws.message(),
+            self.wrapper.lock().unwrap().error(NO_VALID_ID,
+                                               TwsError::UpdateTws.code(),
+                                               format!("{}{}", TwsError::UpdateTws.message(),
                                                                " It does not support ignore_size && number_of_ticks parameters in tick-by-tick data requests.").as_ref());
             return;
         }
@@ -678,7 +651,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -687,7 +660,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -734,7 +707,7 @@ where
         // // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -743,7 +716,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -757,7 +730,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && "" != contract.trading_class {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -836,7 +809,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -845,7 +818,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -860,8 +833,8 @@ where
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if "" != contract.trading_class {
-                self.decoder.wrapper.lock().unwrap().error(req_id, TwsError::UpdateTws.code(),
-                                                           format!("{}{}", TwsError::UpdateTws.message(),
+                self.wrapper.lock().unwrap().error(req_id, TwsError::UpdateTws.code(),
+                                                   format!("{}{}", TwsError::UpdateTws.message(),
                                                                    "  It does not support trading_class parameter in calculateImpliedVolatility.").as_ref());
                 return;
             }
@@ -922,7 +895,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -931,7 +904,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -984,7 +957,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -994,7 +967,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if !contract.trading_class.is_empty() {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     req_id, TwsError::UpdateTws.code(),
                     format!("{}{}", TwsError::UpdateTws.message(),
                             "  It does not support con_id, multiplier, trading_class parameter in exercise_options.").as_ref());
@@ -1057,7 +1030,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -1067,7 +1040,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
             if contract.delta_neutral_contract.is_some() {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     order_id,
                     TwsError::UpdateTws.code(),
                     format!(
@@ -1084,7 +1057,7 @@ where
         if self.server_version() < MIN_SERVER_VER_SCALE_ORDERS2
             && order.scale_subs_level_size != UNSET_INTEGER
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1098,7 +1071,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_ALGO_ORDERS && !order.algo_strategy.is_empty() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1112,7 +1085,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_NOT_HELD && order.not_held {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1128,7 +1101,7 @@ where
         if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE
             && (!contract.sec_id_type.is_empty() || !contract.sec_id.is_empty())
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1142,7 +1115,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_PLACE_ORDER_CONID && contract.con_id > 0 {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1157,7 +1130,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_SSHORTX {
             if order.exempt_code != -1 {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     order_id,
                     TwsError::UpdateTws.code(),
                     format!(
@@ -1172,7 +1145,7 @@ where
             if contract.combo_legs.len() > 0
                 && contract.combo_legs.iter().any(|x| x.exempt_code != -1)
             {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     order_id,
                     TwsError::UpdateTws.code(),
                     format!(
@@ -1186,7 +1159,7 @@ where
             }
         }
         if self.server_version() < MIN_SERVER_VER_HEDGE_ORDERS && !order.hedge_type.is_empty() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1202,7 +1175,7 @@ where
         if self.server_version() < MIN_SERVER_VER_OPT_OUT_SMART_ROUTING
             && order.opt_out_smart_routing
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1221,7 +1194,7 @@ where
                 || !order.delta_neutral_clearing_account.is_empty()
                 || !order.delta_neutral_clearing_intent.is_empty())
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id, TwsError::UpdateTws.code(),
                 format!("{}{}", TwsError::UpdateTws.message(),
                         "  It does not support deltaNeutral parameters: con_id, SettlingFirm, ClearingAccount, ClearingIntent.").as_ref());
@@ -1234,7 +1207,7 @@ where
                 || order.delta_neutral_short_sale_slot > 0
                 || !order.delta_neutral_designated_location.is_empty())
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!("{}{}", TwsError::UpdateTws.message(),
@@ -1253,7 +1226,7 @@ where
                 || order.scale_init_fill_qty != UNSET_INTEGER
                 || order.scale_random_percent)
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!("{}{}", TwsError::UpdateTws.message(),
@@ -1270,7 +1243,7 @@ where
                 .iter()
                 .any(|x| x.price != UNSET_DOUBLE)
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1286,7 +1259,7 @@ where
         if self.server_version() < MIN_SERVER_VER_TRAILING_PERCENT
             && order.trailing_percent != UNSET_DOUBLE
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1302,7 +1275,7 @@ where
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
             && !contract.trading_class.is_empty()
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1320,7 +1293,7 @@ where
                 || !order.active_start_time.is_empty()
                 || !order.active_stop_time.is_empty())
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!("{}{}", TwsError::UpdateTws.message(),
@@ -1329,7 +1302,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_ALGO_ID && order.algo_id != "" {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1343,7 +1316,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_ORDER_SOLICITED && order.solicited {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1357,7 +1330,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT && !order.model_code.is_empty() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1371,7 +1344,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_EXT_OPERATOR && !order.ext_operator.is_empty() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1387,7 +1360,7 @@ where
         if self.server_version() < MIN_SERVER_VER_SOFT_DOLLAR_TIER
             && (!order.soft_dollar_tier.name.is_empty() || !order.soft_dollar_tier.val.is_empty())
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1401,7 +1374,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_CASH_QTY && order.cash_qty != 0.0 {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1417,7 +1390,7 @@ where
         if self.server_version() < MIN_SERVER_VER_DECISION_MAKER
             && (!order.mifid2decision_maker.is_empty() || !order.mifid2decision_algo.is_empty())
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1433,7 +1406,7 @@ where
         if self.server_version() < MIN_SERVER_VER_MIFID_EXECUTION
             && (!order.mifid2execution_trader.is_empty() || !order.mifid2execution_algo.is_empty())
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1449,7 +1422,7 @@ where
         if self.server_version() < MIN_SERVER_VER_AUTO_PRICE_FOR_HEDGE
             && order.dont_use_auto_price_for_hedge
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1463,7 +1436,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_ORDER_CONTAINER && order.is_oms_container {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1478,7 +1451,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_PRICE_MGMT_ALGO && order.use_price_mgmt_algo != 0
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -1913,7 +1886,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -1947,7 +1920,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -1982,7 +1955,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2014,7 +1987,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2044,7 +2017,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2076,7 +2049,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2118,7 +2091,7 @@ where
         );
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2203,7 +2176,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2234,7 +2207,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2262,7 +2235,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2271,7 +2244,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2300,7 +2273,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2309,7 +2282,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2344,7 +2317,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2353,7 +2326,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2385,7 +2358,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2394,7 +2367,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2430,7 +2403,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2439,7 +2412,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2474,7 +2447,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2483,7 +2456,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2515,7 +2488,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2524,7 +2497,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_PNL {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2551,7 +2524,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2560,7 +2533,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_PNL {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2591,7 +2564,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2600,7 +2573,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_PNL {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2628,7 +2601,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2637,7 +2610,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_PNL {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2680,7 +2653,7 @@ where
         // // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2723,7 +2696,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2733,7 +2706,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE {
             if contract.sec_id_type != "" || contract.sec_id != "" {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     req_id,
                     TwsError::UpdateTws.code(),
                     format!(
@@ -2749,7 +2722,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if contract.trading_class != "" {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     req_id,
                     TwsError::UpdateTws.code(),
                     format!(
@@ -2765,7 +2738,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             if contract.primary_exchange != "" {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     req_id,
                     TwsError::UpdateTws.code(),
                     format!(
@@ -2841,7 +2814,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2850,7 +2823,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_MKT_DEPTH_EXCHANGES {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2900,7 +2873,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2910,7 +2883,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if &contract.trading_class != "" || *&contract.con_id > 0 {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     req_id,
                     TwsError::UpdateTws.code(),
                     format!(
@@ -2924,7 +2897,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_SMART_DEPTH && is_smart_depth {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2940,7 +2913,7 @@ where
         if self.server_version() < MIN_SERVER_VER_MKT_DEPTH_PRIM_EXCHANGE
             && contract.primary_exchange != ""
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -2991,7 +2964,7 @@ where
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             // current doc says this part if for "internal use only" -> won't support it
             if mkt_depth_options.len() > 0 {
-                self.decoder.wrapper.lock().unwrap().error(
+                self.wrapper.lock().unwrap().error(
                     req_id,
                     TwsError::Unsupported.code(),
                     TwsError::Unsupported.message(),
@@ -3015,7 +2988,7 @@ where
         // // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3024,7 +2997,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_SMART_DEPTH && is_smart_depth {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -3067,7 +3040,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3099,7 +3072,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3130,7 +3103,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3163,7 +3136,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3257,7 +3230,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3267,8 +3240,8 @@ where
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if &contract.trading_class != "" || contract.con_id > 0 {
-                self.decoder.wrapper.lock().unwrap().error(req_id, TwsError::UpdateTws.code(),
-                                                           format!("{}{}", TwsError::UpdateTws.message(), "  It does not support con_id and trading_class parameters in req_historical_data.").as_ref());
+                self.wrapper.lock().unwrap().error(req_id, TwsError::UpdateTws.code(),
+                                                   format!("{}{}", TwsError::UpdateTws.message(), "  It does not support con_id and trading_class parameters in req_historical_data.").as_ref());
                 return;
             }
         }
@@ -3347,7 +3320,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3380,7 +3353,7 @@ where
     ) {
         // self.logRequest(current_fn_name()); vars())
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3389,7 +3362,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_HEAD_TIMESTAMP {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -3431,7 +3404,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3440,7 +3413,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_CANCEL_HEADTIMESTAMP {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 req_id,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -3472,7 +3445,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3481,7 +3454,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTOGRAM {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -3522,7 +3495,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3531,7 +3504,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTOGRAM {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -3567,7 +3540,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3576,7 +3549,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_HISTORICAL_TICKS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -3634,7 +3607,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3667,7 +3640,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3678,7 +3651,7 @@ where
         if self.server_version() < MIN_SERVER_VER_SCANNER_GENERIC_OPTS
             && scanner_subscription_filter_options.len() > 0
         {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -3752,7 +3725,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3813,7 +3786,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3823,8 +3796,8 @@ where
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if !contract.trading_class.is_empty() {
-                self.decoder.wrapper.lock().unwrap().error(req_id, TwsError::UpdateTws.code(),
-                                                           format!("{}{}", TwsError::UpdateTws.message(), "  It does not support con_id and trading_class parameter in req_real_time_bars.").as_ref());
+                self.wrapper.lock().unwrap().error(req_id, TwsError::UpdateTws.code(),
+                                                   format!("{}{}", TwsError::UpdateTws.message(), "  It does not support con_id and trading_class parameter in req_real_time_bars.").as_ref());
                 return;
             }
         }
@@ -3880,7 +3853,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3937,7 +3910,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -3948,7 +3921,7 @@ where
         let version = 2;
 
         if self.server_version() < MIN_SERVER_VER_FUNDAMENTAL_DATA {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -3962,7 +3935,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4016,7 +3989,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4025,7 +3998,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_FUNDAMENTAL_DATA {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4058,7 +4031,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4067,7 +4040,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_NEWS_PROVIDERS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4097,7 +4070,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4106,7 +4079,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_NEWS_ARTICLE {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4152,7 +4125,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4161,7 +4134,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTORICAL_NEWS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4211,7 +4184,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4220,7 +4193,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4252,7 +4225,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4261,7 +4234,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4300,7 +4273,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4309,7 +4282,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4341,7 +4314,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4350,7 +4323,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4382,7 +4355,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4391,7 +4364,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4405,7 +4378,7 @@ where
         }
 
         if !self.extra_auth {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::BadMessage.code(),
                 format!("{}{}", TwsError::BadMessage.message(),
@@ -4435,7 +4408,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4444,7 +4417,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4481,7 +4454,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4490,7 +4463,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4504,7 +4477,7 @@ where
         }
 
         if !self.extra_auth {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::BadMessage.code(),
                 format!("{}{}", TwsError::BadMessage.message(),
@@ -4535,7 +4508,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4544,7 +4517,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4589,7 +4562,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4598,7 +4571,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_SEC_DEF_OPT_PARAMS_REQ {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4632,7 +4605,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4653,7 +4626,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4662,7 +4635,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_FAMILY_CODES {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4686,7 +4659,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -4695,7 +4668,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_MATCHING_SYMBOLS {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code(),
                 format!(
@@ -4727,7 +4700,7 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.decoder.wrapper.lock().unwrap().error(
+            self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),

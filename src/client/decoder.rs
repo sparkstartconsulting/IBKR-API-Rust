@@ -4,6 +4,7 @@ use std::net::TcpStream;
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
 use std::string::ToString;
+use std::sync::mpsc::Receiver;
 use std::sync::{Arc, Mutex};
 use std::u8;
 
@@ -12,7 +13,9 @@ use from_ascii::{FromAscii, FromAsciiRadix};
 use num_traits::FromPrimitive;
 
 use crate::client;
-use crate::client::messages::IncomingMessageIds;
+use crate::client::common::{MAX_MSG_LEN, NO_VALID_ID};
+use crate::client::errors::TwsError;
+use crate::client::messages::{read_fields, IncomingMessageIds};
 use crate::client::wrapper::Wrapper;
 
 const SEP: u8 = '\0' as u8;
@@ -87,6 +90,7 @@ impl Sender<&str> for Builder {
 }
 
 pub struct Decoder<T: Wrapper> {
+    msg_queue: Receiver<String>,
     pub wrapper: Arc<Mutex<T>>,
     pub server_version: i32,
 }
@@ -95,9 +99,14 @@ impl<T> Decoder<T>
 where
     T: Wrapper + Sync,
 {
-    pub fn new(the_wrapper: T, server_version: i32) -> Self {
+    pub fn new(
+        the_wrapper: Arc<Mutex<T>>,
+        msg_queue: Receiver<String>,
+        server_version: i32,
+    ) -> Self {
         Decoder {
-            wrapper: Arc::new(Mutex::new(the_wrapper)),
+            wrapper: the_wrapper,
+            msg_queue: msg_queue,
             server_version,
         }
     }
@@ -276,7 +285,10 @@ where
     fn process_complete_orders_end(&mut self, fields: &[String]) {}
     fn process_contract_data(&mut self, fields: &[String]) {}
     fn process_contract_data_end(&mut self, fields: &[String]) {}
-    fn process_current_time(&mut self, fields: &[String]) {}
+    fn process_current_time(&mut self, fields: &[String]) {
+        print!("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$  process_current_time");
+        print!("{:?}", fields);
+    }
     fn process_delta_neutral_validation(&mut self, fields: &[String]) {}
     fn process_display_group_list(&mut self, fields: &[String]) {}
     fn process_display_group_updated(&mut self, fields: &[String]) {}
@@ -347,4 +359,38 @@ where
     fn process_verify_and_auth_message_api(&mut self, fields: &[String]) {}
     fn process_verify_completed(&mut self, fields: &[String]) {}
     fn process_verify_message_api(&mut self, fields: &[String]) {}
+
+    //==============================================================================================
+    pub fn run(&mut self) {
+        //This is the function that has the message loop.
+
+        info!("Starting run...");
+        // !self.done &&
+        while true {
+            info!("Client waiting for message...");
+            {
+                let text = self.msg_queue.recv().unwrap();
+
+                if text.len() > MAX_MSG_LEN as usize {
+                    self.wrapper.lock().unwrap().deref_mut().error(
+                        NO_VALID_ID,
+                        TwsError::NotConnected.code(),
+                        format!(
+                            "{}:{}:{}",
+                            TwsError::NotConnected.message(),
+                            text.len(),
+                            text
+                        )
+                        .as_str(),
+                    );
+                    //self.disconnect();
+                    break;
+                } else {
+                    let fields = read_fields((&text).as_ref());
+
+                    self.interpret(fields.as_slice());
+                }
+            }
+        }
+    }
 }
