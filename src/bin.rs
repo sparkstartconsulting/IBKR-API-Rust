@@ -74,15 +74,51 @@ fn main() {
         //    });
         //app2.lock().into_inner().unwrap().req_current_time();
     }
+    {
+        app.lock().unwrap().cancel_account_summary(2);
+    }
+    thread::sleep(Duration::new(2, 0));
+    {
+        app.lock()
+            .unwrap()
+            .req_account_summary(3, "All", "NetLiquidation");
+    }
+    thread::sleep(Duration::new(2, 0));
+    {
+        app.lock().unwrap().cancel_account_summary(2);
+    }
+    thread::sleep(Duration::new(2, 0));
+    {
+        app.lock()
+            .unwrap()
+            .req_account_summary(3, "All", "NetLiquidation");
+    }
+    thread::sleep(Duration::new(2, 0));
+    {
+        app.lock().unwrap().cancel_account_summary(2);
+    }
+    thread::sleep(Duration::new(2, 0));
+    {
+        app.lock()
+            .unwrap()
+            .req_account_summary(3, "All", "NetLiquidation");
+    }
+    thread::sleep(Duration::new(2, 0));
+    {
+        app.lock().unwrap().cancel_account_summary(2);
+    }
+    {
+        app.lock()
+            .unwrap()
+            .req_account_summary(4, "All", "NetLiquidation");
+    }
 
-    //    app.lock().unwrap().req_current_time();
-    //    thread::sleep(Duration::new(2, 0));
-    //    app.lock().unwrap().req_current_time();
-    //    thread::sleep(Duration::new(2, 0));
-    //    app.lock().unwrap().req_current_time();
+    {
+        app.lock().unwrap().disconnect();
+    }
     //    thread::sleep(Duration::new(2, 0));
     //    app.lock().unwrap().req_current_time();
     //    thread::sleep(Duration::new(2, 0));
 
-    thread::sleep(Duration::new(200, 0));
+    thread::sleep(Duration::new(18600, 0));
 }

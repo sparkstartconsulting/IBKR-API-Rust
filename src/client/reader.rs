@@ -4,9 +4,9 @@ use std::io::BufReader;
 use std::io::Read;
 use std::net::{Shutdown, TcpStream};
 use std::ops::Deref;
-use std::sync::atomic::AtomicBool;
-use std::sync::mpsc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
+use std::sync::{mpsc, Arc};
 use std::thread;
 
 use log;
@@ -19,11 +19,20 @@ use crate::client::messages::EMessage;
 pub struct Reader {
     stream: TcpStream,
     messages: Sender<String>,
+    disconnect_requested: Arc<AtomicBool>,
 }
 
 impl Reader {
-    pub fn new(stream: TcpStream, messages: Sender<String>) -> Self {
-        Reader { stream, messages }
+    pub fn new(
+        stream: TcpStream,
+        messages: Sender<String>,
+        disconnect_requested: Arc<AtomicBool>,
+    ) -> Self {
+        Reader {
+            stream,
+            messages,
+            disconnect_requested,
+        }
     }
 
     pub fn recv_packet(&mut self) -> Vec<u8> {
@@ -33,7 +42,9 @@ impl Reader {
         // closed or broken
         if buf.len() == 0 {
             debug!("socket either closed or broken, disconnecting");
-            self.stream.shutdown(Shutdown::Both).unwrap();
+            if !self.disconnect_requested.load(Ordering::Acquire) {
+                self.stream.shutdown(Shutdown::Both).unwrap();
+            }
         }
         buf
     }
@@ -102,6 +113,9 @@ impl Reader {
     pub fn run(&mut self) {
         debug!("starting reader loop");
         loop {
+            if self.disconnect_requested.load(Ordering::Acquire) {
+                break;
+            }
             self.process_reader_msgs();
         }
         //debug!("EReader thread finished")

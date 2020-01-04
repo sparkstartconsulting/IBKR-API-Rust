@@ -3,20 +3,28 @@ use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
 use crate::client::common::TagValue;
-use crate::client::order_condition::OrderCondition;
+use crate::client::order_condition::{Condition, OrderCondition, OrderConditionEnum};
 
 // enum Origin
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive)]
 pub enum Origin {
     Customer = 0,
     Firm = 1,
     Unknown = 2,
 }
 
+impl Default for Origin {
+    fn default() -> Self {
+        Origin::Unknown
+    }
+}
+
 // enum AuctionStrategy
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive)]
 pub enum AuctionStrategy {
     AuctionUnset = 0,
     AuctionMatch = 1,
@@ -24,8 +32,14 @@ pub enum AuctionStrategy {
     AuctionTransparent = 3,
 }
 
+impl Default for AuctionStrategy {
+    fn default() -> Self {
+        AuctionStrategy::AuctionUnset
+    }
+}
+
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct SoftDollarTier {
     pub name: String,
     pub val: String,
@@ -53,7 +67,7 @@ impl Display for SoftDollarTier {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct OrderState {
     pub status: String,
     pub init_margin_before: String,
@@ -159,7 +173,7 @@ impl Display for OrderState {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct OrderComboLeg {
     pub(crate) price: f64, // type: float
 }
@@ -177,7 +191,7 @@ impl Display for OrderComboLeg {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Order {
     pub soft_dollar_tier: SoftDollarTier,
     // order identifier
@@ -370,7 +384,7 @@ pub struct Order {
     pub adjustable_trailing_unit: i32,
     pub lmt_price_offset: f64,
 
-    pub conditions: Vec<OrderCondition>,
+    pub conditions: Vec<OrderConditionEnum>,
     // std::vector<std::shared_ptr<OrderCondition>>
     pub conditions_cancel_order: bool,
     pub conditions_ignore_rth: bool,
@@ -401,7 +415,7 @@ pub struct Order {
     pub route_marketable_to_bbo: bool,
     pub parent_perm_id: i32,
 
-    pub use_price_mgmt_algo: i32,
+    pub use_price_mgmt_algo: bool,
 }
 
 impl Order {
@@ -515,7 +529,7 @@ impl Order {
         adjusted_trailing_amount: f64,
         adjustable_trailing_unit: i32,
         lmt_price_offset: f64,
-        conditions: Vec<OrderCondition>,
+        conditions: Vec<OrderConditionEnum>,
         conditions_cancel_order: bool,
         conditions_ignore_rth: bool,
         ext_operator: String,
@@ -535,7 +549,7 @@ impl Order {
         imbalance_only: bool,
         route_marketable_to_bbo: bool,
         parent_perm_id: i32,
-        use_price_mgmt_algo: i32,
+        use_price_mgmt_algo: bool,
     ) -> Self {
         Order {
             soft_dollar_tier,
@@ -697,7 +711,7 @@ impl Display for Order {
             if !self.conditions.is_empty() {
                 self.conditions
                     .iter()
-                    .map(|x| format!("{}", x))
+                    .map(|x| format!("{}", x.to_string()))
                     .collect::<Vec<String>>()
                     .join(",")
             } else {

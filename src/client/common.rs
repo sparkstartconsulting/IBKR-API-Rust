@@ -105,6 +105,8 @@ const DELAYED_LAST_TIMESTAMP: (i32, &str) = (90, "DELAYED_LAST_TIMESTAMP");
 const SHORTABLE_SHARES: (i32, &str) = (91, "SHORTABLE_SHARES");
 const NOT_SET: (i32, &str) = (92, "NOT_SET");
 
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]
 pub enum TickType {
     BidSize,
     Bid,
@@ -399,100 +401,6 @@ impl fmt::Display for TickType {
     }
 }
 
-/*
-TickTypeEnum = Enum("BidSize",
-                "BID",
-                "ASK",
-                "AskSize",
-                "LAST",
-                "LAST_SIZE",
-                "HIGH",
-                "LOW",
-                "VOLUME",
-                "CLOSE",
-                "BID_OPTION_COMPUTATION",
-                "ASK_OPTION_COMPUTATION",
-                "LAST_OPTION_COMPUTATION",
-                "MODEL_OPTION",
-                "OPEN",
-                "LOW_13_WEEK",
-                "HIGH_13_WEEK",
-                "LOW_26_WEEK",
-                "HIGH_26_WEEK",
-                "LOW_52_WEEK",
-                "HIGH_52_WEEK",
-                "AVG_VOLUME",
-                "OPEN_INTEREST",
-                "OPTION_HISTORICAL_VOL",
-                "OPTION_IMPLIED_VOL",
-                "OPTION_BID_EXCH",
-                "OPTION_ASK_EXCH",
-                "OPTION_CALL_OPEN_INTEREST",
-                "OPTION_PUT_OPEN_INTEREST",
-                "OPTION_CALL_VOLUME",
-                "OPTION_PUT_VOLUME",
-                "INDEX_FUTURE_PREMIUM",
-                "BID_EXCH",
-                "ASK_EXCH",
-                "AUCTION_VOLUME",
-                "AUCTION_PRICE",
-                "AUCTION_IMBALANCE",
-                "MARK_PRICE",
-                "BID_EFP_COMPUTATION",
-                "ASK_EFP_COMPUTATION",
-                "LAST_EFP_COMPUTATION",
-                "OPEN_EFP_COMPUTATION",
-                "HIGH_EFP_COMPUTATION",
-                "LOW_EFP_COMPUTATION",
-                "CLOSE_EFP_COMPUTATION",
-                "LAST_TIMESTAMP",
-                "SHORTABLE",
-                "FUNDAMENTAL_RATIOS",
-                "RT_VOLUME",
-                "HALTED",
-                "BID_YIELD",
-                "ASK_YIELD",
-                "LAST_YIELD",
-                "CUST_OPTION_COMPUTATION",
-                "TRADE_COUNT",
-                "TRADE_RATE",
-                "VOLUME_RATE",
-                "LAST_RTH_TRADE",
-                "RT_HISTORICAL_VOL",
-                "IB_DIVIDENDS",
-                "BOND_FACTOR_MULTIPLIER",
-                "REGULATORY_IMBALANCE",
-                "NEWS_TICK",
-                "SHORT_TERM_VOLUME_3_MIN",
-                "SHORT_TERM_VOLUME_5_MIN",
-                "SHORT_TERM_VOLUME_10_MIN",
-                "DELAYED_BID",
-                "DELAYED_ASK",
-                "DELAYED_LAST",
-                "DELAYED_BID_SIZE",
-                "DELAYED_ASK_SIZE",
-                "DELAYED_LAST_SIZE",
-                "DELAYED_HIGH",
-                "DELAYED_LOW",
-                "DELAYED_VOLUME",
-                "DELAYED_CLOSE",
-                "DELAYED_OPEN",
-                "RT_TRD_VOLUME",
-                "CREDITMAN_MARK_PRICE",
-                "CREDITMAN_SLOW_MARK_PRICE",
-                "DELAYED_BID_OPTION",
-                "DELAYED_ASK_OPTION",
-                "DELAYED_LAST_OPTION",
-                "DELAYED_MODEL_OPTION",
-                "LAST_EXCH",
-                "LAST_REG_TIME",
-                "FUTURES_OPEN_INTEREST",
-                "AVG_OPT_VOLUME",
-                "DELAYED_LAST_TIMESTAMP",
-                "SHORTABLE_SHARES",
-                "NOT_SET")
-*/
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum FaDataType {
     NA = 0,
@@ -508,7 +416,7 @@ impl fmt::Display for FaDataType {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct BarData {
     pub date: String,
     pub open: f64,
@@ -552,7 +460,7 @@ impl fmt::Display for BarData {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct RealTimeBar {
     pub time: String,
     pub end_time: String,
@@ -599,7 +507,7 @@ impl fmt::Display for RealTimeBar {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HistogramData {
     pub price: f64,
     pub count: i32,
@@ -618,7 +526,7 @@ impl fmt::Display for HistogramData {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DepthMktDataDescription {
     pub exchange: String,
     pub sec_type: String,
@@ -664,7 +572,7 @@ impl fmt::Display for DepthMktDataDescription {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct SmartComponent {
     pub bit_number: i32,
     pub exchange: String,
@@ -692,7 +600,7 @@ impl fmt::Display for SmartComponent {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TickAttrib {
     pub can_auto_execute: bool,
     pub past_limit: bool,
@@ -720,7 +628,7 @@ impl fmt::Display for TickAttrib {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TickAttribBidAsk {
     pub bid_past_low: bool,
     pub ask_past_high: bool,
@@ -746,7 +654,7 @@ impl fmt::Display for TickAttribBidAsk {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TickAttribLast {
     pub past_limit: bool,
     pub unreported: bool,
@@ -772,7 +680,7 @@ impl fmt::Display for TickAttribLast {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct FamilyCode {
     pub account_id: String,
     pub family_code_str: String,
@@ -798,7 +706,7 @@ impl fmt::Display for FamilyCode {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PriceIncrement {
     pub low_edge: f64,
     pub increment: f64,
@@ -824,7 +732,7 @@ impl fmt::Display for PriceIncrement {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HistoricalTick {
     pub time: i32,
     pub price: f64,
@@ -848,7 +756,7 @@ impl fmt::Display for HistoricalTick {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HistoricalTickBidAsk {
     pub time: i32,
     pub tick_attrib_bid_ask: TickAttribBidAsk,
@@ -894,7 +802,7 @@ impl fmt::Display for HistoricalTickBidAsk {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HistoricalTickLast {
     pub time: i32,
     pub tick_attrib_last: TickAttribLast,
@@ -937,7 +845,7 @@ impl fmt::Display for HistoricalTickLast {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CommissionReport {
     pub exec_id: String,
     pub commission: f64,
@@ -980,7 +888,7 @@ impl fmt::Display for CommissionReport {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct NewsProvider {
     pub code: String,
     pub name: String,
@@ -999,7 +907,7 @@ impl fmt::Display for NewsProvider {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TagValue {
     pub tag: String,
     pub value: String,
@@ -1013,7 +921,7 @@ impl TagValue {
 
 impl fmt::Display for TagValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "tag: {}, value: {}", self.tag, self.value,)
+        write!(f, "{}={};", self.tag, self.value,)
     }
 }
 /*

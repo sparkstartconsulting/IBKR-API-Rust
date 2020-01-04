@@ -7,7 +7,7 @@ use std::marker::Sync;
 use std::net::TcpStream;
 use std::net::{Shutdown, SocketAddr};
 use std::ops::{Deref, DerefMut};
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -36,7 +36,7 @@ use crate::client::wrapper::Wrapper;
 use crate::connection::Connection;
 use crate::make_field;
 
-enum ConnStatus {
+pub enum ConnStatus {
     DISCONNECTED,
     CONNECTING,
     CONNECTED,
@@ -55,9 +55,10 @@ pub struct EClient<T: Wrapper + Sync + Send> {
     client_id: i32,
     server_version: i32,
     conn_time: String,
-    conn_state: ConnStatus,
+    pub conn_state: Arc<Mutex<ConnStatus>>,
     opt_capab: String,
     asynchronous: bool,
+    disconnect_requested: Arc<AtomicBool>,
 }
 
 impl<T> EClient<T>
@@ -77,9 +78,10 @@ where
             client_id: 0,
             server_version: 0,
             conn_time: "".to_string(),
-            conn_state: ConnStatus::DISCONNECTED,
+            conn_state: Arc::new(Mutex::new(ConnStatus::DISCONNECTED)),
             opt_capab: "".to_string(),
             asynchronous: false,
+            disconnect_requested: Arc::new(AtomicBool::new(false)),
         }
     }
     fn send_request(&self, request: &str) {
@@ -96,7 +98,10 @@ where
         self.port = port;
         self.client_id = client_id;
         debug!("Connecting");
+        self.disconnect_requested.store(false, Ordering::Release);
+        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTING;
         let thestream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port)).unwrap();
+        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTED;
         debug!("Connected");
 
         self.stream = Option::from(thestream.try_clone().unwrap());
@@ -104,7 +109,7 @@ where
         let reader_stream = thestream.try_clone().unwrap();
 
         let (tx, rx) = channel::<String>();
-        let mut reader = Reader::new(thestream, tx.clone());
+        let mut reader = Reader::new(thestream, tx.clone(), self.disconnect_requested.clone());
 
         //self.msg_queue = Option::from(Mutex::new(rx));
 
@@ -121,7 +126,12 @@ where
         let mut fields: Vec<String> = Vec::new();
 
         //let mut decoder = Decoder::new(self.wrapper.clone(), rx, self.server_version);
-        let mut decoder = Decoder::new(self.wrapper.clone(), rx, self.server_version);
+        let mut decoder = Decoder::new(
+            self.wrapper.clone(),
+            rx,
+            self.server_version,
+            self.conn_state.clone(),
+        );
         //sometimes I get news before the server version, thus the loop
         while fields.len() != 2 {
             if fields.len() > 0 {
@@ -155,7 +165,12 @@ where
     }
 
     pub fn is_connected(&self) -> bool {
-        true
+        match (*self.conn_state.lock().unwrap().deref()) {
+            ConnStatus::DISCONNECTED => false,
+            ConnStatus::CONNECTED => true,
+            ConnStatus::CONNECTING => false,
+            ConnStatus::REDIRECT => false,
+        }
     }
 
     pub fn server_version(&self) -> i32 {
@@ -208,14 +223,18 @@ where
         msg.push_str(&make_field(&message_id));
         msg.push_str(&make_field(&version));
 
-        debug!(
-            "#########################    Requesting current time: {}",
-            msg.as_str()
-        );
+        debug!("Requesting current time: {}", msg.as_str());
         self.send_request(msg.as_str())
     }
     pub fn disconnect(&mut self) {
+        if !self.is_connected() {
+            info!("Already disconnected...");
+            return;
+        }
+        info!("Disconnect requested.  Shutting down stream...");
+        self.disconnect_requested.store(true, Ordering::Release);
         self.stream.as_mut().unwrap().shutdown(Shutdown::Both);
+        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
     }
 
     fn start_api(&mut self) {
@@ -248,9 +267,9 @@ where
         self.send_request(msg.as_str())
     }
 
-    //# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    //# # # # # # # # # # # # # # # # # # Market Data
-    //# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    //##############################################################################################
+    //################################### Market Data
+    //##############################################################################################
 
     pub fn req_mkt_data(
         &mut self,
@@ -1449,8 +1468,7 @@ where
             return;
         }
 
-        if self.server_version() < MIN_SERVER_VER_PRICE_MGMT_ALGO && order.use_price_mgmt_algo != 0
-        {
+        if self.server_version() < MIN_SERVER_VER_PRICE_MGMT_ALGO && order.use_price_mgmt_algo {
             self.wrapper.lock().unwrap().error(
                 order_id,
                 TwsError::UpdateTws.code(),
@@ -1818,8 +1836,8 @@ where
 
             if order.conditions.len() > 0 {
                 for cond in &order.conditions {
-                    msg.push_str(&make_field(&cond.cond_type));
-                    msg.push_str(&make_field(&cond.make_fields()));
+                    msg.push_str(&make_field(&(cond.get_condition().get_type() as i32)));
+                    msg.push_str(&make_field(&cond.get_condition().make_fields()));
                 }
 
                 msg.push_str(&make_field(&order.conditions_ignore_rth));

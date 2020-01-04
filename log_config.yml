@@ -2,7 +2,7 @@ appenders:
   console:
     kind: console
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S)} {M} {f} {l} - {m}\n"
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} {M} {f} line: {L} {l} - {m}\n"
     filters:
       - kind: threshold
         level: debug
@@ -10,7 +10,7 @@ appenders:
     kind: file
     path: log/output.log
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S)} {M} {f} {l} - {m}\n"
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} {M} {f} line: {L} {l} - {m}\n"
     filters:
       - kind: threshold
         level: debug

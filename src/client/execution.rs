@@ -5,7 +5,7 @@ use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Execution {
     pub exec_id: String,
     pub time: String,
@@ -116,7 +116,7 @@ impl Display for Execution {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ExecutionFilter {
     pub client_id: i32,
     pub acct_code: String,

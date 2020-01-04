@@ -9,6 +9,7 @@ pub mod execution;
 pub mod messages;
 pub mod order;
 pub mod order_condition;
+pub mod order_decoder;
 pub mod reader;
 pub mod scanner;
 pub mod server_versions;

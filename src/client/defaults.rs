@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::marker::{Send, Sync};
 use std::sync::{Arc, Mutex, RwLock};
 
-use crate::client::client::EClient;
+use crate::client::client::{ConnStatus, EClient};
 use crate::client::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, NewsProvider, PriceIncrement, SmartComponent, TickAttrib,
@@ -386,13 +386,14 @@ impl Wrapper for DefaultWrapper {
             "account_summary -- req_id: {}, account: {}, tag: {}, value: {}, currency: {}",
             req_id, account, tag, value, currency
         );
-
-        self.client
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .req_current_time();
+        {
+            self.client
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .req_current_time();
+        }
     }
 
     fn account_summary_end(&self, req_id: i32) {

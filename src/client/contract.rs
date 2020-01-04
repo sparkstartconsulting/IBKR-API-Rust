@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 use crate::client::common::TagValue;
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum PositionType {
     SamePos = 0,
     //open/close leg value is same as combo
@@ -27,8 +28,14 @@ impl Display for PositionType {
     }
 }
 
+impl Default for PositionType {
+    fn default() -> Self {
+        PositionType::SamePos
+    }
+}
+
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ComboLeg {
     pub con_id: i32,
     // type: int
@@ -94,7 +101,7 @@ impl Display for ComboLeg {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DeltaNeutralContract {
     pub con_id: i32,
     // type: int
@@ -124,7 +131,7 @@ impl Display for DeltaNeutralContract {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Contract {
     pub con_id: i32,
     pub symbol: String,
@@ -246,7 +253,7 @@ impl Display for Contract {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ContractDetails {
     pub contract: Contract,
     pub market_name: String,
@@ -473,7 +480,7 @@ impl Display for ContractDetails {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ContractDescription {
     pub contract: Contract,
     pub derivative_sec_types: Vec<String>, // type: list of strings

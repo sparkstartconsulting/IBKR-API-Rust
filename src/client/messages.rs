@@ -12,7 +12,7 @@ use byteorder::{BigEndian, ByteOrder};
 
 use crate::bytebuffer::ByteBuffer;
 use crate::client::common::{UNSET_DOUBLE, UNSET_INTEGER, UNSET_LONG};
-use crate::client::decoder::{Builder, Decoder};
+use crate::client::decoder::Decoder;
 use crate::client::wrapper::Wrapper;
 
 trait EClientMsgSink {
@@ -216,13 +216,13 @@ impl NewEmessageFrom<&[u8]> for EMessage {
     }
 }
 
-impl NewEmessageFrom<&Builder> for EMessage {
-    fn new(builder: &Builder) -> EMessage {
-        let mut msg = EMessage::new();
-        builder.write_out(&mut msg.buffer);
-        msg
-    }
-}
+//impl NewEmessageFrom<&Builder> for EMessage {
+//    fn new(builder: &Builder) -> EMessage {
+//        let mut msg = EMessage::new();
+//        builder.write_out(&mut msg.buffer);
+//        msg
+//    }
+//}
 
 impl EMessage {
     pub fn new() -> Self {

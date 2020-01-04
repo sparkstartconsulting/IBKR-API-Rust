@@ -1,4 +1,5 @@
-use std::fmt;
+use std::num::{ParseFloatError, ParseIntError};
+use std::{error, fmt, io};
 
 const BITS: (i32, &str) = (501, "message");
 
@@ -18,6 +19,7 @@ const SOCKET_EXCEPTION: (i32, &str) = (509, "Exception caught while reading sock
 const FAIL_CREATE_SOCK: (i32, &str) = (520, "Failed to create socket.");
 const SSL_FAIL: (i32, &str) = (530, "SSL specific TwsError.");
 
+#[derive(Clone, Debug)]
 pub enum TwsError {
     AlreadyConnected,
     ConnectFail,
@@ -68,5 +70,56 @@ impl TwsError {
 impl fmt::Display for TwsError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "Code: {}, Message: {}", self.code(), self.message())
+    }
+}
+
+#[derive(Debug)]
+pub enum IBKRApiLibError {
+    Io(io::Error),
+    ParseFloat(ParseFloatError),
+    ParseInt(ParseIntError),
+}
+
+impl fmt::Display for IBKRApiLibError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            // Both underlying errors already impl `Display`, so we defer to
+            // their implementations.
+            IBKRApiLibError::Io(ref err) => write!(f, "IO error: {}", err),
+            IBKRApiLibError::ParseFloat(ref err) => write!(f, "Parse error: {}", err),
+            IBKRApiLibError::ParseInt(ref err) => write!(f, "Parse error: {}", err),
+        }
+    }
+}
+
+impl error::Error for IBKRApiLibError {
+    fn cause(&self) -> Option<&dyn error::Error> {
+        match *self {
+            // N.B. Both of these implicitly cast `err` from their concrete
+            // types (either `&io::Error` or `&num::ParseIntError`)
+            // to a trait object `&Error`. This works because both error types
+            // implement `Error`.
+            IBKRApiLibError::Io(ref err) => Some(err),
+            IBKRApiLibError::ParseFloat(ref err) => Some(err),
+            IBKRApiLibError::ParseInt(ref err) => Some(err),
+        }
+    }
+}
+
+impl From<io::Error> for IBKRApiLibError {
+    fn from(err: io::Error) -> IBKRApiLibError {
+        IBKRApiLibError::Io(err)
+    }
+}
+
+impl From<ParseIntError> for IBKRApiLibError {
+    fn from(err: ParseIntError) -> IBKRApiLibError {
+        IBKRApiLibError::ParseInt(err)
+    }
+}
+
+impl From<ParseFloatError> for IBKRApiLibError {
+    fn from(err: ParseFloatError) -> IBKRApiLibError {
+        IBKRApiLibError::ParseFloat(err)
     }
 }
