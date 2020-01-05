@@ -4,13 +4,13 @@ use serde::export::fmt::Error;
 use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
-use crate::client::contract::Contract;
+use crate::client::contract::{Contract, ContractDetails};
 
 //==================================================================================================
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug)]
 pub struct ScanData {
-    pub contract: Contract,
+    pub contract: ContractDetails,
     pub rank: i32,
     pub distance: String,
     pub benchmark: String,
@@ -20,7 +20,7 @@ pub struct ScanData {
 
 impl ScanData {
     pub fn new(
-        contract: Contract,
+        contract: ContractDetails,
         rank: i32,
         distance: String,
         benchmark: String,
@@ -41,7 +41,7 @@ impl ScanData {
 impl Display for ScanData {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "Rank: {}, Symbol: {}, SecType: {}, Currency: {}, Distance: {}, Benchmark: {}, Projection: {}, Legs: {}",
-               self.rank, self.contract.symbol, self.contract.sec_type, self.contract.currency,
+               self.rank, self.contract.contract.symbol, self.contract.contract.sec_type, self.contract.contract.currency,
                self.distance, self.benchmark, self.projection, self.legs)
     }
 }

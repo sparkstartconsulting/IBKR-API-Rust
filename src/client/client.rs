@@ -13,7 +13,6 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use byteorder::{BigEndian, ByteOrder};
-use crossbeam_utils;
 use encoding::all::ASCII;
 use encoding::types::RawEncoder;
 use encoding::{ByteWriter, DecoderTrap, EncoderTrap, Encoding};

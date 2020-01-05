@@ -3,11 +3,13 @@ use std::collections::{HashMap, HashSet};
 use std::marker::{Send, Sync};
 use std::sync::{Arc, Mutex, RwLock};
 
+use bigdecimal::BigDecimal;
+
 use crate::client::client::{ConnStatus, EClient};
 use crate::client::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
-    HistoricalTick, HistoricalTickBidAsk, NewsProvider, PriceIncrement, SmartComponent, TickAttrib,
-    TickAttribBidAsk, TickAttribLast, TickType,
+    HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
+    SmartComponent, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType,
 };
 use crate::client::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
@@ -327,7 +329,7 @@ impl Wrapper for DefaultWrapper {
         high: f64,
         low: f64,
         close: f64,
-        volume: i32,
+        volume: i64,
         wap: f64,
         count: i32,
     ) {
@@ -515,7 +517,7 @@ impl Wrapper for DefaultWrapper {
         trading_class: &str,
         multiplier: &str,
         expirations: HashSet<String>,
-        strikes: HashSet<f64>,
+        strikes: HashSet<BigDecimal>,
     ) {
         info!(
             "tick_option_computation -- req_id: {}, exchange: {}, underlying_con_id: {}, \
@@ -529,7 +531,10 @@ impl Wrapper for DefaultWrapper {
                 .iter()
                 .map(|x| x.as_str())
                 .collect::<Vec<&str>>(),
-            strikes.iter().map(|x| *x).collect::<Vec<f64>>()
+            strikes
+                .iter()
+                .map(|x| x.clone())
+                .collect::<Vec<BigDecimal>>()
         );
     }
 
@@ -640,8 +645,8 @@ impl Wrapper for DefaultWrapper {
         );
     }
 
-    fn histogram_data(&self, req_id: i32, items: HistogramData) {
-        info!("histogram_data -- req_id: {}, items: {}", req_id, items);
+    fn histogram_data(&self, req_id: i32, items: Vec<HistogramData>) {
+        info!("histogram_data -- req_id: {}, items: {:?}", req_id, items);
     }
 
     fn historical_data_update(&self, req_id: i32, bar: BarData) {
@@ -705,11 +710,18 @@ impl Wrapper for DefaultWrapper {
         );
     }
 
+    fn historical_ticks_last(&self, req_id: i32, ticks: Vec<HistoricalTickLast>, done: bool) {
+        info!(
+            "historical_ticks_last -- req_id: {}, ticks: {:?}, done: {}",
+            req_id, ticks, done
+        );
+    }
+
     fn tick_by_tick_all_last(
         &self,
         req_id: i32,
         tick_type: TickType,
-        time: i32,
+        time: i64,
         price: f64,
         size: i32,
         tick_attrib_last: TickAttribLast,
@@ -726,7 +738,7 @@ impl Wrapper for DefaultWrapper {
     fn tick_by_tick_bid_ask(
         &self,
         req_id: i32,
-        time: i32,
+        time: i64,
         bid_price: f64,
         ask_price: f64,
         bid_size: i32,
@@ -740,7 +752,7 @@ impl Wrapper for DefaultWrapper {
         );
     }
 
-    fn tick_by_tick_mid_point(&self, req_id: i32, time: i32, mid_point: f64) {
+    fn tick_by_tick_mid_point(&self, req_id: i32, time: i64, mid_point: f64) {
         info!(
             "tick_by_tick_mid_point -- req_id: {}, time: {}, mid_point: {}",
             req_id, time, mid_point

@@ -3,10 +3,12 @@ use std::collections::{HashMap, HashSet};
 use std::marker::{Send, Sync};
 use std::sync::{Arc, Mutex};
 
+use bigdecimal::BigDecimal;
+
 use crate::client::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
-    HistoricalTick, HistoricalTickBidAsk, NewsProvider, PriceIncrement, SmartComponent, TickAttrib,
-    TickAttribBidAsk, TickAttribLast, TickType,
+    HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
+    SmartComponent, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType,
 };
 use crate::client::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
@@ -321,7 +323,7 @@ pub trait Wrapper: Send + Sync + 'static {
         high: f64,
         low: f64,
         close: f64,
-        volume: i32,
+        volume: i64,
         wap: f64,
         count: i32,
     );
@@ -466,7 +468,7 @@ pub trait Wrapper: Send + Sync + 'static {
         trading_class: &str,
         multiplier: &str,
         expirations: HashSet<String>,
-        strikes: HashSet<f64>,
+        strikes: HashSet<BigDecimal>,
     );
 
     /// Called when all callbacks to security_definition_option_parameter are complete
@@ -536,7 +538,7 @@ pub trait Wrapper: Send + Sync + 'static {
     fn head_timestamp(&self, req_id: i32, head_timestamp: &str);
 
     /// returns histogram data for a contract
-    fn histogram_data(&self, req_id: i32, items: HistogramData);
+    fn histogram_data(&self, req_id: i32, items: Vec<HistogramData>);
 
     /// returns updates in real time when keepUpToDate is set to True
     fn historical_data_update(&self, req_id: i32, bar: BarData);
@@ -571,13 +573,13 @@ pub trait Wrapper: Send + Sync + 'static {
     fn historical_ticks_bid_ask(&self, req_id: i32, ticks: Vec<HistoricalTickBidAsk>, done: bool);
 
     /// returns historical tick data when whatToShow=TRADES
-
+    fn historical_ticks_last(&self, req_id: i32, ticks: Vec<HistoricalTickLast>, done: bool);
     /// returns tick-by-tick data for tickType = "Last" or "AllLast"
     fn tick_by_tick_all_last(
         &self,
         req_id: i32,
         tick_type: TickType,
-        time: i32,
+        time: i64,
         price: f64,
         size: i32,
         tick_attrib_last: TickAttribLast,
@@ -589,7 +591,7 @@ pub trait Wrapper: Send + Sync + 'static {
     fn tick_by_tick_bid_ask(
         &self,
         req_id: i32,
-        time: i32,
+        time: i64,
         bid_price: f64,
         ask_price: f64,
         bid_size: i32,
@@ -598,7 +600,7 @@ pub trait Wrapper: Send + Sync + 'static {
     );
 
     /// returns tick-by-tick data for tickType = "MidPoint"
-    fn tick_by_tick_mid_point(&self, req_id: i32, time: i32, mid_point: f64);
+    fn tick_by_tick_mid_point(&self, req_id: i32, time: i64, mid_point: f64);
 
     /// returns order_bound notification
     fn order_bound(&self, req_id: i32, api_client_id: i32, api_order_id: i32);

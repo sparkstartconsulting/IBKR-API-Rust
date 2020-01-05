@@ -1,6 +1,7 @@
 extern crate ascii;
+extern crate bigdecimal;
 extern crate bytebuffer;
-extern crate crossbeam_utils;
+extern crate float_cmp;
 extern crate from_ascii;
 #[macro_use]
 extern crate log;

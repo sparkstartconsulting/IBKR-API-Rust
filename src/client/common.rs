@@ -401,7 +401,8 @@ impl fmt::Display for TickType {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum FaDataType {
     NA = 0,
     GROUPS = 1,
@@ -423,7 +424,7 @@ pub struct BarData {
     pub high: f64,
     pub low: f64,
     pub close: f64,
-    pub volume: i32,
+    pub volume: i64,
     pub bar_count: i32,
     pub average: f64,
 }
@@ -435,7 +436,7 @@ impl BarData {
         high: f64,
         low: f64,
         close: f64,
-        volume: i32,
+        volume: i64,
         bar_count: i32,
         average: f64,
     ) -> Self {
@@ -468,7 +469,7 @@ pub struct RealTimeBar {
     pub high: f64,
     pub low: f64,
     pub close: f64,
-    pub volume: i32,
+    pub volume: i64,
     pub wap: f64,
     pub count: i32,
 }
@@ -481,7 +482,7 @@ impl RealTimeBar {
         high: f64,
         low: f64,
         close: f64,
-        volume: i32,
+        volume: i64,
         wap: f64,
         count: i32,
     ) -> Self {
