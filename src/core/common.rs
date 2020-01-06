@@ -4,7 +4,7 @@ use serde::export::fmt::Error;
 use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
-use crate::client::common::TickType::ShortableShares;
+use crate::core::common::TickType::ShortableShares;
 
 pub const NO_VALID_ID: i32 = -1;
 pub const MAX_MSG_LEN: i64 = 0xFFFFFF; //16Mb - 1byte

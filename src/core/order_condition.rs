@@ -7,10 +7,10 @@ use serde::export::fmt::Error;
 use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
-use crate::client::decoder::{decode_bool, decode_i32, decode_string};
-use crate::client::errors::IBKRApiLibError;
-use crate::client::messages::{make_field, make_message};
-use crate::client::order_condition::ConditionType::{
+use crate::core::decoder::{decode_bool, decode_i32, decode_string};
+use crate::core::errors::IBKRApiLibError;
+use crate::core::messages::{make_field, make_message};
+use crate::core::order_condition::ConditionType::{
     Execution, Margin, PercentChange, Price, Time, Volume,
 };
 

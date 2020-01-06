@@ -19,22 +19,24 @@ use encoding::{ByteWriter, DecoderTrap, EncoderTrap, Encoding};
 use from_ascii::{FromAscii, FromAsciiRadix};
 use num_traits::FromPrimitive;
 
-use crate::client::common::*;
-use crate::client::contract::Contract;
-use crate::client::decoder::Decoder;
-use crate::client::errors;
-use crate::client::errors::TwsError;
-use crate::client::execution::ExecutionFilter;
-use crate::client::messages::{make_field_handle_empty, read_msg};
-use crate::client::messages::{make_message, read_fields, OutgoingMessageIds};
-use crate::client::order::Order;
-use crate::client::reader::Reader;
-use crate::client::scanner::ScannerSubscription;
-use crate::client::server_versions::*;
-use crate::client::wrapper::Wrapper;
-use crate::connection::Connection;
-use crate::make_field;
+use crate::core::common::*;
+use crate::core::connection;
+use crate::core::contract::Contract;
+use crate::core::decoder::Decoder;
+use crate::core::errors;
+use crate::core::errors::{IBKRApiLibError, TwsError};
+use crate::core::execution::ExecutionFilter;
+use crate::core::messages::make_field;
+use crate::core::messages::{make_field_handle_empty, read_msg};
+use crate::core::messages::{make_message, read_fields, OutgoingMessageIds};
+use crate::core::order::Order;
+use crate::core::reader::Reader;
+use crate::core::scanner::ScannerSubscription;
+use crate::core::server_versions::*;
+use crate::core::wrapper::Wrapper;
 
+#[repr(i32)]
+#[derive(FromPrimitive, Copy, Clone)]
 pub enum ConnStatus {
     DISCONNECTED,
     CONNECTING,
@@ -44,7 +46,7 @@ pub enum ConnStatus {
 
 pub struct EClient<T: Wrapper + Sync + Send> {
     //decoder: Decoder<'a, T>,
-    pub(crate) wrapper: Arc<Mutex<T>>,
+    pub wrapper: Arc<Mutex<T>>,
     done: bool,
     n_keyb_int_hard: i32,
     stream: Option<TcpStream>,
@@ -92,7 +94,12 @@ where
         self.stream.as_ref().unwrap().write(bytes);
     }
 
-    pub fn connect(&mut self, host: String, port: u32, client_id: i32) {
+    pub fn connect(
+        &mut self,
+        host: String,
+        port: u32,
+        client_id: i32,
+    ) -> Result<(), IBKRApiLibError> {
         self.host = host;
         self.port = port;
         self.client_id = client_id;
@@ -134,10 +141,10 @@ where
         //sometimes I get news before the server version, thus the loop
         while fields.len() != 2 {
             if fields.len() > 0 {
-                decoder.interpret(fields.as_slice());
+                decoder.interpret(fields.as_slice())?;
             }
 
-            let buf = reader.recv_packet();
+            let buf = reader.recv_packet()?;
 
             if buf.len() > 0 {
                 let (size, msg, remaining_messages) = read_msg(buf.as_slice());
@@ -161,6 +168,7 @@ where
             decoder.run();
         });
         self.start_api();
+        Ok(())
     }
 
     pub fn is_connected(&self) -> bool {
@@ -237,7 +245,7 @@ where
     }
 
     fn start_api(&mut self) {
-        //Initiates the message exchange between the client application and
+        //Initiates the message exchange between the core application and
         //the TWS/IB Gateway. """
 
         if !self.is_connected() {
@@ -1043,7 +1051,7 @@ where
         //        contract:&Contract - This structure contains a description of the
         //            contract which is being traded.
         //        order:Order - This structure contains the details of tradedhe order.
-        //            Note: Each client MUST connect with a unique clientId.
+        //            Note: Each core MUST connect with a unique clientId.
 
         //// self.logRequest(current_fn_name()); vars())
 
@@ -1926,11 +1934,11 @@ where
 
     pub fn req_open_orders(&mut self) {
         //        Call this function to request the open orders that were
-        //        placed from this client. Each open order will be fed back through the
+        //        placed from this core. Each open order will be fed back through the
         //        openOrder() and orderStatus() functions on the EWrapper.
         //
-        //        Note:  The client with a clientId of 0 will also receive the TWS-owned
-        //        open orders. These orders will be associated with the client and a new
+        //        Note:  The core with a clientId of 0 will also receive the TWS-owned
+        //        open orders. These orders will be associated with the core and a new
         //        orderId will be generated. This association will persist over multiple
         //        API and TWS sessions
 
@@ -1959,14 +1967,14 @@ where
 
     pub fn req_auto_open_orders(&mut self, b_auto_bind: bool) {
         //        Call this function to request that newly created TWS orders
-        //        be implicitly associated with the client.When a new TWS order is
-        //        created, the order will be associated with the client, and fed back
+        //        be implicitly associated with the core.When a new TWS order is
+        //        created, the order will be associated with the core, and fed back
         //        through the openOrder() and orderStatus() functions on the EWrapper.
         //
-        //            Note: This request can only be made from a client with clientId of 0.
+        //            Note: This request can only be made from a core with clientId of 0.
         //
         //        b_auto_bind: If set to TRUE, newly created TWS orders will be implicitly
-        //        associated with the client.If set to FALSE, no association will be
+        //        associated with the core.If set to FALSE, no association will be
         //        made.
 
         //// self.logRequest(current_fn_name()); vars())
@@ -1999,7 +2007,7 @@ where
         //        openOrder() and orderStatus() functions on the EWrapper.
         //
         //        Note:  No association is made between the returned orders and the
-        //        requesting client.
+        //        requesting core.
 
         //// self.logRequest(current_fn_name()); vars())
 
@@ -2095,8 +2103,8 @@ where
         and last update time information via EWrapper.updateAccountValue());
         EWrapperi.updatePortfolio() and Wrapper.updateAccountTime().
 
-        subscribe:bool - If set to TRUE, the client will start receiving account
-            and Portfoliolio updates. If set to FALSE, the client will stop
+        subscribe:bool - If set to TRUE, the core will start receiving account
+            and Portfoliolio updates. If set to FALSE, the core will stop
             receiving this information.
         acctCode:&'static str -The account code for which to receive account and
             portfolio updates.*/
@@ -2239,10 +2247,6 @@ where
         msg.push_str(&make_field(&version));
         msg.push_str(&make_field(&req_id));
 
-        debug!(
-            "#########################    Requesting current time: {}",
-            msg.as_str()
-        );
         self.send_request(msg.as_str())
     }
 
@@ -2654,7 +2658,7 @@ where
 
     pub fn req_executions(&mut self, req_id: i32, exec_filter: &ExecutionFilter) {
         //    When this function is called, the execution reports that meet the
-        //    filter criteria are downloaded to the client via the execDetails()
+        //    filter criteria are downloaded to the core via the execDetails()
         //    function. To view executions beyond the past 24 hours, open the
         //    Trade Log in TWS and, while the Trade Log is displayed, request
         //    the executions again from the API.

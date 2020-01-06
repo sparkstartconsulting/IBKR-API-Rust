@@ -2,7 +2,7 @@ use serde::export::fmt::{Display, Error};
 use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
-use crate::client::common::TagValue;
+use crate::core::common::TagValue;
 
 //==================================================================================================
 #[repr(i32)]

@@ -12,9 +12,10 @@ use std::thread;
 use log;
 use log4rs;
 
-use crate::client::connection::Connection;
-use crate::client::messages::read_msg;
-use crate::client::messages::EMessage;
+use crate::core::connection::Connection;
+use crate::core::errors::IBKRApiLibError;
+use crate::core::messages::read_msg;
+use crate::core::messages::EMessage;
 
 pub struct Reader {
     stream: TcpStream,
@@ -35,45 +36,45 @@ impl Reader {
         }
     }
 
-    pub fn recv_packet(&mut self) -> Vec<u8> {
-        debug!("_recv_all_msg");
-        let buf = self._recv_all_msg();
+    pub fn recv_packet(&mut self) -> Result<Vec<u8>, IBKRApiLibError> {
+        //debug!("_recv_all_msg");
+        let buf = self._recv_all_msg()?;
         // receiving 0 bytes outside a timeout means the connection is either
         // closed or broken
         if buf.len() == 0 {
-            debug!("socket either closed or broken, disconnecting");
             if !self.disconnect_requested.load(Ordering::Acquire) {
+                info!("socket either closed or broken, disconnecting");
                 self.stream.shutdown(Shutdown::Both).unwrap();
             }
         }
-        buf
+        Ok(buf)
     }
 
-    fn _recv_all_msg(&mut self) -> Vec<u8> {
+    fn _recv_all_msg(&mut self) -> Result<Vec<u8>, IBKRApiLibError> {
         let mut cont = true;
         let mut allbuf: Vec<u8> = Vec::new();
 
         while cont {
             let mut buf: [u8; 4096] = [0; 4096];
-            debug!("Getting bytes");
-            let bytes_read = self.stream.read(&mut buf).unwrap();
-            debug!("got bytes: {}", bytes_read);
+            //debug!("Getting bytes");
+            let bytes_read = self.stream.read(&mut buf)?;
+            //debug!("got bytes: {}", bytes_read);
 
             allbuf.extend_from_slice(&buf[0..bytes_read]);
             //logger.debug("len %d raw:%s|", len(buf), buf)
 
             if bytes_read < 4096 {
-                debug!("bytes_read: {}", bytes_read);
+                //debug!("bytes_read: {}", bytes_read);
                 cont = false;
             }
         }
-        allbuf
+        Ok(allbuf)
     }
 
-    pub fn process_reader_msgs(&mut self) {
+    pub fn process_reader_msgs(&mut self) -> Result<(), IBKRApiLibError> {
         /// grab a packet of messages from the socket
-        let mut message_packet = self.recv_packet();
-        debug!(" recvd size {}", message_packet.len());
+        let mut message_packet = self.recv_packet()?;
+        //debug!(" recvd size {}", message_packet.len());
 
         /// Read messages from the packet until there are no more.
         /// When this loop ends, break into the outer loop and grab another packet.  
@@ -90,16 +91,16 @@ impl Reader {
             message_packet.clear();
             message_packet.extend_from_slice(remaining_messages.as_slice());
 
-            debug!(
-                "size:{} msg.size:{} msg:|{}| buf:{:?}|",
-                size,
-                msg.len(),
-                msg,
-                message_packet.to_owned()
-            );
+            //            debug!(
+            //                "size:{} msg.size:{} msg:|{}| buf:{:?}|",
+            //                size,
+            //                msg.len(),
+            //                msg,
+            //                message_packet.to_owned()
+            //            );
 
             if msg.as_str() != "" {
-                debug!("sending message to client... ");
+                debug!("sending message to core... ");
                 self.messages.send(msg).unwrap();
             } else {
                 ///Break to the outer loop and get another packet of messages.
@@ -108,15 +109,16 @@ impl Reader {
                 break;
             }
         }
+        Ok(())
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<(), IBKRApiLibError> {
         debug!("starting reader loop");
         loop {
             if self.disconnect_requested.load(Ordering::Acquire) {
-                break;
+                return Ok(());
             }
-            self.process_reader_msgs();
+            self.process_reader_msgs()?;
         }
         //debug!("EReader thread finished")
     }

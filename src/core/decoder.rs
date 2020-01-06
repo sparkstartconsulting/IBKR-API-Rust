@@ -1,6 +1,7 @@
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::io::Write;
+use std::io::{ErrorKind, Write};
 use std::marker::Sync;
 use std::net::TcpStream;
 use std::num::ParseIntError;
@@ -8,7 +9,7 @@ use std::ops::{Deref, DerefMut};
 use std::slice::Iter;
 use std::str::FromStr;
 use std::string::ToString;
-use std::sync::mpsc::Receiver;
+use std::sync::mpsc::{Receiver, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::{thread, u8};
 
@@ -19,24 +20,23 @@ use from_ascii::{FromAscii, FromAsciiRadix};
 use num_traits::float::FloatCore;
 use num_traits::FromPrimitive;
 
-use crate::client;
-use crate::client::client::{ConnStatus, EClient};
-use crate::client::common::{
+use crate::core;
+use crate::core::client::{ConnStatus, EClient};
+use crate::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FamilyCode, HistogramData, HistoricalTick,
     HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement, RealTimeBar,
     SmartComponent, TagValue, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType, MAX_MSG_LEN,
     NO_VALID_ID, UNSET_DOUBLE, UNSET_INTEGER,
 };
-use crate::client::contract::{
-    Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
-};
-use crate::client::errors::{IBKRApiLibError, TwsError};
-use crate::client::execution::Execution;
-use crate::client::messages::{read_fields, IncomingMessageIds};
-use crate::client::order::{Order, OrderState, SoftDollarTier};
-use crate::client::order_decoder::OrderDecoder;
-use crate::client::scanner::ScanData;
-use crate::client::server_versions::{
+use crate::core::contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract};
+use crate::core::errors::IBKRApiLibError::RecvError;
+use crate::core::errors::{IBKRApiLibError, TwsError};
+use crate::core::execution::Execution;
+use crate::core::messages::{read_fields, IncomingMessageIds};
+use crate::core::order::{Order, OrderState, SoftDollarTier};
+use crate::core::order_decoder::OrderDecoder;
+use crate::core::scanner::ScanData;
+use crate::core::server_versions::{
     MIN_SERVER_VER_AGG_GROUP, MIN_SERVER_VER_FRACTIONAL_POSITIONS, MIN_SERVER_VER_LAST_LIQUIDITY,
     MIN_SERVER_VER_MARKET_CAP_PRICE, MIN_SERVER_VER_MARKET_RULES,
     MIN_SERVER_VER_MD_SIZE_MULTIPLIER, MIN_SERVER_VER_MODELS_SUPPORT,
@@ -44,7 +44,7 @@ use crate::client::server_versions::{
     MIN_SERVER_VER_REALIZED_PNL, MIN_SERVER_VER_SERVICE_DATA_TYPE, MIN_SERVER_VER_SMART_DEPTH,
     MIN_SERVER_VER_SYNT_REALTIME_BARS, MIN_SERVER_VER_UNREALIZED_PNL,
 };
-use crate::client::wrapper::Wrapper;
+use crate::core::wrapper::Wrapper;
 
 const SEP: u8 = '\0' as u8;
 const EMPTY_LENGTH_HEADER: [u8; 4] = [0; 4];
@@ -122,9 +122,9 @@ where
         if fields.is_empty() {
             return Ok(());
         }
-        for field in fields {
-            debug!("inside interpret: {:?}", field);
-        }
+        //        for field in fields {
+        //            debug!("inside interpret: {:?}", field);
+        //        }
         let msg_id = i32::from_str(fields.get(0).unwrap().as_str()).unwrap();
 
         match FromPrimitive::from_i32(msg_id) {
@@ -415,6 +415,8 @@ where
 
         //throw away message_id
         fields_itr.next();
+        //throw away version
+        fields_itr.next();
 
         self.wrapper
             .lock()
@@ -430,6 +432,8 @@ where
         let mut fields_itr = fields.iter();
 
         //throw away message_id
+        fields_itr.next();
+        //throw away version
         fields_itr.next();
 
         self.wrapper
@@ -550,6 +554,8 @@ where
         let mut fields_itr = fields.iter();
 
         //throw away message_id
+        fields_itr.next();
+        //throw away version
         fields_itr.next();
 
         let mut commission_report = CommissionReport::default();
@@ -703,8 +709,8 @@ where
 
         //throw away message_id
         fields_itr.next();
-
-        let version: i32 = decode_i32(&mut fields_itr)?;
+        //throw away version
+        fields_itr.next();
 
         let mut req_id = decode_i32(&mut fields_itr)?;
 
@@ -723,12 +729,14 @@ where
 
         //throw away message_id
         fields_itr.next();
+        //throw away version
+        fields_itr.next();
 
         self.wrapper
             .lock()
             .unwrap()
             .deref_mut()
-            .current_time(decode_i32(&mut fields_itr)?);
+            .current_time(decode_i64(&mut fields_itr)?);
 
         Ok(())
     }
@@ -1259,6 +1267,9 @@ where
 
         //throw away message_id
         fields_itr.next();
+        //throw away version
+        fields_itr.next();
+
         let accounts_list = decode_string(&mut fields_itr)?;
 
         self.wrapper
@@ -2482,6 +2493,8 @@ where
 
         //throw away message_id
         fields_itr.next();
+        //throw away version
+        fields_itr.next();
 
         let ticker_id = decode_i32(&mut fields_itr)?;
         let tick_type = decode_i32(&mut fields_itr)?;
@@ -2626,7 +2639,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<(), IBKRApiLibError> {
         //This is the function that has the message loop.
 
         info!("Starting run...");
@@ -2634,40 +2647,44 @@ where
         while true {
             info!("Client waiting for message...");
 
-            {
-                let text = self.msg_queue.recv();
+            let text = self.msg_queue.recv();
 
-                match text {
-                    Result::Ok(val) => {
-                        if val.len() > MAX_MSG_LEN as usize {
-                            self.wrapper.lock().unwrap().deref_mut().error(
-                                NO_VALID_ID,
-                                TwsError::NotConnected.code(),
-                                format!(
-                                    "{}:{}:{}",
-                                    TwsError::NotConnected.message(),
-                                    val.len(),
-                                    val
-                                )
+            match text {
+                Result::Ok(val) => {
+                    if val.len() > MAX_MSG_LEN as usize {
+                        self.wrapper.lock().unwrap().deref_mut().error(
+                            NO_VALID_ID,
+                            TwsError::NotConnected.code(),
+                            format!("{}:{}:{}", TwsError::NotConnected.message(), val.len(), val)
                                 .as_str(),
-                            );
-                            self.wrapper.lock().unwrap().deref_mut().connection_closed();
-                            *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
-                            break;
-                        } else {
-                            let fields = read_fields((&val).as_ref());
-
-                            self.interpret(fields.as_slice());
-                        }
-                    }
-                    Result::Err(err) => {
-                        error!("Error receiving message.  Disconnected: {:?}", err);
+                        );
                         self.wrapper.lock().unwrap().deref_mut().connection_closed();
                         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
-                        break;
+                        error!("Error receiving message.  Invalid size.  Disconnected.");
+                        return Err(IBKRApiLibError::Io(std::io::Error::new(
+                            ErrorKind::InvalidData,
+                            "Invalid message length.",
+                        )));
+                    } else {
+                        let fields = read_fields((&val).as_ref());
+
+                        self.interpret(fields.as_slice())?;
+                    }
+                }
+                Result::Err(err) => {
+                    if *self.conn_state.lock().unwrap().deref() as i32
+                        != ConnStatus::DISCONNECTED as i32
+                    {
+                        self.wrapper.lock().unwrap().deref_mut().connection_closed();
+                        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
+                        error!("Error receiving message.  Disconnected: {:?}", err);
+                        return Result::Err(IBKRApiLibError::from(err));
+                    } else {
+                        return Ok(());
                     }
                 }
             }
         }
+        Ok(())
     }
 }

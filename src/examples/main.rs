@@ -1,16 +1,6 @@
-extern crate ascii;
-extern crate bigdecimal;
-extern crate bytebuffer;
-extern crate float_cmp;
-extern crate from_ascii;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
-extern crate num;
-#[macro_use]
-extern crate num_derive;
-extern crate serde;
-extern crate twsapi;
 
 use std::borrow::{Borrow, BorrowMut};
 use std::io::Read;
@@ -20,16 +10,12 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 
-use client::connection;
-use client::messages::make_field;
+use twsapi::core::client::EClient;
+use twsapi::core::errors::IBKRApiLibError;
+use twsapi::core::wrapper::Wrapper;
+use twsapi::examples::defaults::DefaultWrapper;
 
-use crate::client::client::EClient;
-use crate::client::defaults::DefaultWrapper;
-use crate::client::wrapper::Wrapper;
-
-mod client;
-
-fn main() {
+fn main() -> Result<(), IBKRApiLibError> {
     log4rs::init_file("log_config.yml", Default::default()).unwrap();
     debug!("starting");
     error!("test logging");
@@ -122,4 +108,5 @@ fn main() {
     //    thread::sleep(Duration::new(2, 0));
 
     thread::sleep(Duration::new(18600, 0));
+    Ok(())
 }

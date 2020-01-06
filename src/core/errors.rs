@@ -1,4 +1,7 @@
+use std::borrow::Borrow;
+use std::io::{Error, ErrorKind};
 use std::num::{ParseFloatError, ParseIntError};
+use std::sync::mpsc::RecvError;
 use std::{error, fmt, io};
 
 const BITS: (i32, &str) = (501, "message");
@@ -78,6 +81,7 @@ pub enum IBKRApiLibError {
     Io(io::Error),
     ParseFloat(ParseFloatError),
     ParseInt(ParseIntError),
+    RecvError(RecvError),
 }
 
 impl fmt::Display for IBKRApiLibError {
@@ -88,6 +92,7 @@ impl fmt::Display for IBKRApiLibError {
             IBKRApiLibError::Io(ref err) => write!(f, "IO error: {}", err),
             IBKRApiLibError::ParseFloat(ref err) => write!(f, "Parse error: {}", err),
             IBKRApiLibError::ParseInt(ref err) => write!(f, "Parse error: {}", err),
+            IBKRApiLibError::RecvError(ref err) => write!(f, "Recieve error: {}", err),
         }
     }
 }
@@ -102,6 +107,7 @@ impl error::Error for IBKRApiLibError {
             IBKRApiLibError::Io(ref err) => Some(err),
             IBKRApiLibError::ParseFloat(ref err) => Some(err),
             IBKRApiLibError::ParseInt(ref err) => Some(err),
+            IBKRApiLibError::RecvError(ref err) => Some(err),
         }
     }
 }
@@ -121,5 +127,11 @@ impl From<ParseIntError> for IBKRApiLibError {
 impl From<ParseFloatError> for IBKRApiLibError {
     fn from(err: ParseFloatError) -> IBKRApiLibError {
         IBKRApiLibError::ParseFloat(err)
+    }
+}
+
+impl From<RecvError> for IBKRApiLibError {
+    fn from(err: RecvError) -> IBKRApiLibError {
+        IBKRApiLibError::RecvError(err)
     }
 }

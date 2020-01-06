@@ -4,16 +4,16 @@ use std::slice::Iter;
 
 use num_traits::FromPrimitive;
 
-use crate::client::common::{TagValue, UNSET_DOUBLE};
-use crate::client::contract::{ComboLeg, Contract, DeltaNeutralContract};
-use crate::client::decoder::{
+use crate::core::common::{TagValue, UNSET_DOUBLE};
+use crate::core::contract::{ComboLeg, Contract, DeltaNeutralContract};
+use crate::core::decoder::{
     decode_bool, decode_f64, decode_f64_show_unset, decode_i32, decode_i32_show_unset,
     decode_string,
 };
-use crate::client::errors::IBKRApiLibError;
-use crate::client::order::{Order, OrderComboLeg, OrderState, SoftDollarTier};
-use crate::client::order_condition;
-use crate::client::server_versions::{
+use crate::core::errors::IBKRApiLibError;
+use crate::core::order::{Order, OrderComboLeg, OrderState, SoftDollarTier};
+use crate::core::order_condition;
+use crate::core::server_versions::{
     MIN_SERVER_VER_AUTO_PRICE_FOR_HEDGE, MIN_SERVER_VER_CASH_QTY, MIN_SERVER_VER_D_PEG_ORDERS,
     MIN_SERVER_VER_FRACTIONAL_POSITIONS, MIN_SERVER_VER_MODELS_SUPPORT,
     MIN_SERVER_VER_ORDER_CONTAINER, MIN_SERVER_VER_PEGGED_TO_BENCHMARK,

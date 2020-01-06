@@ -4,7 +4,7 @@ use serde::export::fmt::Error;
 use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
-use crate::client::contract::{Contract, ContractDetails};
+use crate::core::contract::{Contract, ContractDetails};
 
 //==================================================================================================
 

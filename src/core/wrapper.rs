@@ -5,20 +5,18 @@ use std::sync::{Arc, Mutex};
 
 use bigdecimal::BigDecimal;
 
-use crate::client::common::{
+use crate::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
     SmartComponent, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType,
 };
-use crate::client::contract::{
-    Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
-};
-use crate::client::execution::Execution;
-use crate::client::order::{Order, OrderState, SoftDollarTier};
+use crate::core::contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract};
+use crate::core::execution::Execution;
+use crate::core::order::{Order, OrderState, SoftDollarTier};
 
 pub trait Wrapper: Send + Sync + 'static {
     /// This event is called when there is an error with the
-    /// communication or when TWS wants to send a message to the client.
+    /// communication or when TWS wants to send a message to the core.
     fn error(&self, req_id: i32, error_code: i32, error_string: &str);
 
     fn win_error(&self, text: &str, last_error: i32);
@@ -76,7 +74,7 @@ pub trait Wrapper: Send + Sync + 'static {
     );
 
     ///        This event is called whenever the status of an order changes. It is
-    //        also fired after reconnecting to TWS if the client has any open orders.
+    //        also fired after reconnecting to TWS if the core has any open orders.
     //
     //        order_id: i32 - The order ID that was specified previously in the
     //            call to placeOrder()
@@ -95,7 +93,7 @@ pub trait Wrapper: Send + Sync + 'static {
     //        perm_id:i32 -  The TWS id used to identify orders. Remains the same over TWS sessions.
     //        parent_id:i32 - The order ID of the parent order, used for bracket and auto trailing stop orders.
     //        lastFilledPrice:f64 - The last price of the shares that have been executed. This parameter is valid only if the filled parameter value is greater than zero. Otherwise, the price parameter will be zero.
-    //        client_id:i32 - The ID of the client (or TWS) that placed the order. Note that TWS orders have a fixed client_id and order_id of 0 that distinguishes them from API orders.
+    //        client_id:i32 - The ID of the core (or TWS) that placed the order. Note that TWS orders have a fixed client_id and order_id of 0 that distinguishes them from API orders.
     //        why_held:&str - This field is used to identify an order held when TWS is trying to locate shares for a short sell. The value used to indicate this is 'locate'.
     fn order_status(
         &self,
@@ -174,7 +172,7 @@ pub trait Wrapper: Send + Sync + 'static {
     fn exec_details(&self, req_id: i32, contract: Contract, execution: Execution);
 
     /// This function is called once all executions have been sent to
-    /// a client in response to req_executions().
+    /// a core in response to req_executions().
     fn exec_details_end(&self, req_id: i32);
 
     /// Returns the order book.
@@ -330,7 +328,7 @@ pub trait Wrapper: Send + Sync + 'static {
 
     ///  Server's current time. This method will receive IB server's system
     ///  time resulting after the invokation of reqCurrentTime.
-    fn current_time(&self, time: i32);
+    fn current_time(&self, time: i64);
 
     /// This function is called to receive fundamental
     /// market data. The appropriate market data subscription must be set
@@ -384,7 +382,7 @@ pub trait Wrapper: Send + Sync + 'static {
     ///            new group; sorting can change though).
     fn display_group_list(&self, req_id: i32, groups: &str);
 
-    /// This is sent by TWS to the API client once after receiving
+    /// This is sent by TWS to the API core once after receiving
     ///        the subscription request subscribe_to_group_events(), and will be sent
     ///        again if the selected contract in the subscribed display group has
     ///        changed.

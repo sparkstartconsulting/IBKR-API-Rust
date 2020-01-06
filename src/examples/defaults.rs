@@ -2,21 +2,22 @@ use std::collections::hash_map::{Entry, RandomState};
 use std::collections::{HashMap, HashSet};
 use std::marker::{Send, Sync};
 use std::sync::{Arc, Mutex, RwLock};
+use std::time::{Duration, UNIX_EPOCH};
 
 use bigdecimal::BigDecimal;
+use chrono::prelude::DateTime;
+use chrono::Utc;
 
-use crate::client::client::{ConnStatus, EClient};
-use crate::client::common::{
+use crate::core::client::{ConnStatus, EClient};
+use crate::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
     SmartComponent, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType,
 };
-use crate::client::contract::{
-    Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
-};
-use crate::client::execution::Execution;
-use crate::client::order::{Order, OrderState, SoftDollarTier};
-use crate::client::wrapper::Wrapper;
+use crate::core::contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract};
+use crate::core::execution::Execution;
+use crate::core::order::{Order, OrderState, SoftDollarTier};
+use crate::core::wrapper::Wrapper;
 
 //==================================================================================================
 
@@ -347,8 +348,14 @@ impl Wrapper for DefaultWrapper {
         );
     }
 
-    fn current_time(&self, time: i32) {
-        info!("current_time -- time: {}", time);
+    fn current_time(&self, time: i64) {
+        // Creates a new SystemTime from the specified number of whole seconds
+        let d = UNIX_EPOCH + Duration::from_secs(time as u64);
+        // Create DateTime from SystemTime
+        let datetime = DateTime::<Utc>::from(d);
+        // Formats the combined date and time with the specified format string.
+        let timestamp_str = datetime.format("%Y-%m-%d %H:%M:%S.%f").to_string();
+        info!("current_time -- time: {}", timestamp_str);
     }
 
     fn fundamental_data(&self, req_id: i32, data: &str) {
@@ -388,14 +395,6 @@ impl Wrapper for DefaultWrapper {
             "account_summary -- req_id: {}, account: {}, tag: {}, value: {}, currency: {}",
             req_id, account, tag, value, currency
         );
-        {
-            self.client
-                .as_ref()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .req_current_time();
-        }
     }
 
     fn account_summary_end(&self, req_id: i32) {

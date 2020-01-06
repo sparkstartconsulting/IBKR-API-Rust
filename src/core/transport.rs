@@ -1,6 +1,6 @@
 use std::io::{Error, ErrorKind};
 
-use crate::client::messages::EMessage;
+use crate::core::messages::EMessage;
 
 trait Closeable {
     fn close() -> Result<(), Error>;

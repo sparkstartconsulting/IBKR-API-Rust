@@ -2,8 +2,8 @@ use serde::export::fmt::{Display, Error};
 use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
-use crate::client::common::TagValue;
-use crate::client::order_condition::{Condition, OrderCondition, OrderConditionEnum};
+use crate::core::common::TagValue;
+use crate::core::order_condition::{Condition, OrderCondition, OrderConditionEnum};
 
 // enum Origin
 //==================================================================================================

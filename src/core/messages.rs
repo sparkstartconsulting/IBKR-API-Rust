@@ -11,9 +11,9 @@ use ascii::AsAsciiStr;
 use byteorder::{BigEndian, ByteOrder};
 
 use crate::bytebuffer::ByteBuffer;
-use crate::client::common::{UNSET_DOUBLE, UNSET_INTEGER, UNSET_LONG};
-use crate::client::decoder::Decoder;
-use crate::client::wrapper::Wrapper;
+use crate::core::common::{UNSET_DOUBLE, UNSET_INTEGER, UNSET_LONG};
+use crate::core::decoder::Decoder;
+use crate::core::wrapper::Wrapper;
 
 trait EClientMsgSink {
     fn server_version(version: i32, time: &str);
@@ -246,10 +246,10 @@ pub fn make_message(msg: &str) -> Vec<u8> {
 
     buffer.write(msg.as_ascii_str().unwrap().as_bytes());
     let tmp = buffer.clone();
-    debug!("Message after create: {:?}", buffer);
+    //debug!("Message after create: {:?}", buffer);
 
     let (size, msg, buf) = read_msg(tmp.as_slice());
-    debug!("Message read: size:{}, msg:{}, bytes: {:?}", size, msg, buf);
+    //debug!("Message read: size:{}, msg:{}, bytes: {:?}", size, msg, buf);
 
     tmp
 }
@@ -258,16 +258,16 @@ pub fn read_msg<'a>(buf: &[u8]) -> (usize, String, Vec<u8>) {
     // first the size prefix and then the corresponding msg payload ""
     let mut text = String::new();
     if buf.len() < 4 {
-        debug!("read_msg:  buffer too small!! {:?}", buf.len());
+        error!("read_msg:  buffer too small!! {:?}", buf.len());
         return (0, String::new(), buf.to_vec());
     }
 
     let size = i32::from_be_bytes(buf[0..4].try_into().unwrap()) as usize;
-    debug!("read_msg: Message size: {:?}", size);
+    //debug!("read_msg: Message size: {:?}", size);
 
     if buf.len() - 4 >= size {
         text = String::from_utf8(buf[4..4 + size].to_vec()).unwrap();
-        debug!("read_msg: text in read message: {:?}", text);
+        //debug!("read_msg: text in read message: {:?}", text);
         (size, text, buf[4 + size..].to_vec())
     } else {
         (size, String::new(), buf.to_vec())
@@ -278,7 +278,7 @@ pub fn read_fields(buf: &str) -> Vec<String> {
     //msg payload is made of fields terminated/separated by NULL chars """
     let a = '\u{0}';
     let mut fields: Vec<&str> = buf.split(a).collect::<Vec<&str>>();
-    debug!("fields.len() in read_fields: {}", fields.len());
+    //debug!("fields.len() in read_fields: {}", fields.len());
     //last one is empty
     fields.remove(fields.len() - 1);
 

@@ -7,7 +7,7 @@ use bytebuffer::ByteBuffer;
 use log;
 use log4rs;
 
-use crate::client::wrapper::Wrapper;
+use crate::core::wrapper::Wrapper;
 
 //--------------------------------------------------------------------------------------------------
 pub struct Connection<'a, T> {
