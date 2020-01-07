@@ -263,7 +263,7 @@ pub struct Order {
     pub exempt_code: i32,
 
     // SMART routing only
-    pub discretionary_amt: i32,
+    pub discretionary_amt: f64,
     pub e_trade_only: bool,
     pub firm_quote_only: bool,
     pub nbbo_price_cap: f64,
@@ -461,7 +461,7 @@ impl Order {
         origin: Origin,
         short_sale_slot: i32,
         exempt_code: i32,
-        discretionary_amt: i32,
+        discretionary_amt: f64,
         e_trade_only: bool,
         firm_quote_only: bool,
         nbbo_price_cap: f64,

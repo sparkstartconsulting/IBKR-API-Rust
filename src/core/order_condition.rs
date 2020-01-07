@@ -95,87 +95,111 @@ impl Debug for TriggerMethod {
 }
 
 //==================================================================================================
+
 #[derive(Serialize, Deserialize, Clone)]
 pub enum OrderConditionEnum {
-    Price {
-        price_condition: PriceCondition,
-    },
-    Time {
-        time_condition: TimeCondition,
-    },
-    Margin {
-        margin_condition: MarginCondition,
-    },
-    Execution {
-        execution_condition: ExecutionCondition,
-    },
-    Volume {
-        volume_condition: VolumeCondition,
-    },
-    PercentChange {
-        percent_change_condition: PercentChangeCondition,
-    },
+    Price(PriceCondition),
+    Time(TimeCondition),
+    Margin(MarginCondition),
+    Execution(ExecutionCondition),
+    Volume(VolumeCondition),
+    PercentChange(PercentChangeCondition),
 }
 
-impl OrderConditionEnum {
-    pub fn get_condition(&self) -> Box<dyn Condition> {
+//impl OrderConditionEnum {
+//    pub fn as_condition(&self) -> Box<dyn Condition> {
+//        match (self) {
+//            OrderConditionEnum::Execution(s) => Box::new(s),
+//            OrderConditionEnum::Price(p) => Box::new(p),
+//            OrderConditionEnum::Margin(m) => Box::new(m),
+//            OrderConditionEnum::Time(t) => Box::new(t),
+//            OrderConditionEnum::Volume(v) => Box::new(v),
+//            OrderConditionEnum::PercentChange(pch) => Box::new(pch),
+//        }
+//    }
+//}
+
+impl Condition for OrderConditionEnum {
+    fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         match (self) {
-            OrderConditionEnum::Price { price_condition } => Box::new(price_condition.clone()),
-            OrderConditionEnum::Time { time_condition } => Box::new(time_condition.clone()),
-            OrderConditionEnum::Margin { margin_condition } => Box::new(margin_condition.clone()),
-            OrderConditionEnum::Execution {
-                execution_condition,
-            } => Box::new(execution_condition.clone()),
-            OrderConditionEnum::Volume { volume_condition } => Box::new(volume_condition.clone()),
-            OrderConditionEnum::PercentChange {
-                percent_change_condition,
-            } => Box::new(percent_change_condition.clone()),
+            OrderConditionEnum::Execution(s) => s.decode(fields_iter),
+            OrderConditionEnum::Price(p) => p.decode(fields_iter),
+            OrderConditionEnum::Margin(m) => m.decode(fields_iter),
+            OrderConditionEnum::Time(t) => t.decode(fields_iter),
+            OrderConditionEnum::Volume(v) => v.decode(fields_iter),
+            OrderConditionEnum::PercentChange(pch) => pch.decode(fields_iter),
+        }
+    }
+
+    fn make_fields(&self) -> Vec<String> {
+        match (self) {
+            OrderConditionEnum::Execution(s) => s.make_fields(),
+            OrderConditionEnum::Price(p) => p.make_fields(),
+            OrderConditionEnum::Margin(m) => m.make_fields(),
+            OrderConditionEnum::Time(t) => t.make_fields(),
+            OrderConditionEnum::Volume(v) => v.make_fields(),
+            OrderConditionEnum::PercentChange(pch) => pch.make_fields(),
+        }
+    }
+
+    fn value_to_string(&self) -> String {
+        match (self) {
+            OrderConditionEnum::Execution(s) => s.value_to_string(),
+            OrderConditionEnum::Price(p) => p.value_to_string(),
+            OrderConditionEnum::Margin(m) => m.value_to_string(),
+            OrderConditionEnum::Time(t) => t.value_to_string(),
+            OrderConditionEnum::Volume(v) => v.value_to_string(),
+            OrderConditionEnum::PercentChange(pch) => pch.value_to_string(),
+        }
+    }
+
+    fn set_value_from_string(&mut self, text: String) {
+        match (self) {
+            OrderConditionEnum::Execution(s) => s.set_value_from_string(text),
+            OrderConditionEnum::Price(p) => p.set_value_from_string(text),
+            OrderConditionEnum::Margin(m) => m.set_value_from_string(text),
+            OrderConditionEnum::Time(t) => t.set_value_from_string(text),
+            OrderConditionEnum::Volume(v) => v.set_value_from_string(text),
+            OrderConditionEnum::PercentChange(pch) => pch.set_value_from_string(text),
+        }
+    }
+
+    fn get_type(&self) -> ConditionType {
+        match (self) {
+            OrderConditionEnum::Execution(s) => s.get_type(),
+            OrderConditionEnum::Price(p) => p.get_type(),
+            OrderConditionEnum::Margin(m) => m.get_type(),
+            OrderConditionEnum::Time(t) => t.get_type(),
+            OrderConditionEnum::Volume(v) => v.get_type(),
+            OrderConditionEnum::PercentChange(pch) => pch.get_type(),
         }
     }
 }
 
 impl Display for OrderConditionEnum {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{}", self.get_condition().value_to_string())
+        write!(f, "{}", self.value_to_string())
     }
 }
 
 impl Debug for OrderConditionEnum {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match (self) {
-            OrderConditionEnum::Execution {
-                execution_condition,
-            } => write!(
-                f,
-                "{} = {}",
-                "Execution",
-                execution_condition.value_to_string()
-            ),
-            OrderConditionEnum::Price { price_condition } => {
-                write!(f, "{} = {}", "Price", price_condition.value_to_string())
+            OrderConditionEnum::Execution(s) => {
+                write!(f, "{} = {}", "Execution", s.value_to_string())
             }
-            OrderConditionEnum::Margin { margin_condition } => {
-                write!(f, "{} = {}", "Margin", margin_condition.value_to_string())
+            OrderConditionEnum::Price(p) => write!(f, "{} = {}", "Price", p.value_to_string()),
+            OrderConditionEnum::Margin(m) => write!(f, "{} = {}", "Margin", m.value_to_string()),
+            OrderConditionEnum::Time(t) => write!(f, "{} = {}", "Time", t.value_to_string()),
+            OrderConditionEnum::Volume(v) => write!(f, "{} = {}", "Volume", v.value_to_string()),
+            OrderConditionEnum::PercentChange(pch) => {
+                write!(f, "{} = {}", "Percentage Change", pch.value_to_string())
             }
-            OrderConditionEnum::Time { time_condition } => {
-                write!(f, "{} = {}", "Time", time_condition.value_to_string())
-            }
-            OrderConditionEnum::Volume { volume_condition } => {
-                write!(f, "{} = {}", "Volume", volume_condition.value_to_string())
-            }
-            OrderConditionEnum::PercentChange {
-                percent_change_condition,
-            } => write!(
-                f,
-                "{} = {}",
-                "Percentage Change",
-                percent_change_condition.value_to_string()
-            ),
         }
     }
 }
 
-pub trait Condition: Display + Debug {
+pub trait Condition: Display + Debug + Serialize {
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError>;
     fn make_fields(&self) -> Vec<String>;
     fn value_to_string(&self) -> String;
@@ -187,7 +211,7 @@ pub trait Condition: Display + Debug {
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Default)]
 pub struct OrderCondition {
     pub cond_type: ConditionType,
-    is_conjunction_connection: bool,
+    pub is_conjunction_connection: bool,
 }
 
 impl OrderCondition {
@@ -234,10 +258,10 @@ impl OrderCondition {
 //return "<AND>" if self.is_conjunction_connection else "<OR>"
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ExecutionCondition {
-    sec_type: String,
-    exchange: String,
-    symbol: String,
-    order_condition: OrderCondition,
+    pub sec_type: String,
+    pub exchange: String,
+    pub symbol: String,
+    pub order_condition: OrderCondition,
 }
 
 impl ExecutionCondition {
@@ -296,20 +320,26 @@ impl Debug for ExecutionCondition {
     }
 }
 
+impl From<OrderConditionEnum> for ExecutionCondition {
+    fn from(_: OrderConditionEnum) -> Self {
+        ExecutionCondition::default()
+    }
+}
+
 //pub fn  __str__(self):
 //return "trade occurs for " + self.symbol + " symbol on " + \
 //self.exchange + " exchange for " + self.secType + " security type"
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Default)]
 pub struct OperatorCondition {
-    order_condition: OrderCondition,
-    is_moore: bool,
+    pub order_condition: OrderCondition,
+    pub is_more: bool,
 }
 
 impl OperatorCondition {
     pub fn new(cond_type: ConditionType, is_more: bool) -> Self {
         OperatorCondition {
             order_condition: OrderCondition::new(cond_type),
-            is_moore: is_more,
+            is_more: is_more,
         }
     }
 
@@ -323,7 +353,7 @@ impl OperatorCondition {
 
     pub fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order_condition.decode(fields_iter)?;
-        self.is_moore = decode_bool(fields_iter)?;
+        self.is_more = decode_bool(fields_iter)?;
         let text = decode_string(fields_iter)?;
         self.set_value_from_string(text.as_ref());
         Ok(())
@@ -331,7 +361,7 @@ impl OperatorCondition {
 
     pub fn make_fields(&self) -> Vec<String> {
         let mut flds = self.order_condition.make_fields();
-        flds.push(make_field(&self.is_moore));
+        flds.push(make_field(&self.is_more));
         flds.push(make_field(&self.value_to_string()));
         flds
     }
@@ -344,8 +374,8 @@ impl OperatorCondition {
 
 #[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct MarginCondition {
-    operator_condition: OperatorCondition,
-    percent: f64,
+    pub operator_condition: OperatorCondition,
+    pub percent: f64,
 }
 
 impl MarginCondition {
@@ -392,11 +422,17 @@ impl Debug for MarginCondition {
     }
 }
 
+impl From<OrderConditionEnum> for MarginCondition {
+    fn from(_: OrderConditionEnum) -> Self {
+        MarginCondition::default()
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ContractCondition {
-    operator_condition: OperatorCondition,
-    con_id: i32,
-    exchange: String,
+    pub operator_condition: OperatorCondition,
+    pub con_id: i32,
+    pub exchange: String,
 }
 
 impl ContractCondition {
@@ -448,14 +484,20 @@ impl Debug for ContractCondition {
         write!(f, "{}", self.value_to_string())
     }
 }
+
+impl From<OrderConditionEnum> for ContractCondition {
+    fn from(_: OrderConditionEnum) -> Self {
+        ContractCondition::default()
+    }
+}
 //pub fn  __str__(self):
 //return "%s on %s is %s " % (self.conId, self.exchange,
 //OperatorCondition.__str__(self))
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct TimeCondition {
-    operator_condition: OperatorCondition,
-    time: String,
+    pub operator_condition: OperatorCondition,
+    pub time: String,
 }
 
 impl TimeCondition {
@@ -498,7 +540,13 @@ impl Display for TimeCondition {
 
 impl Debug for TimeCondition {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "TimeCondition = {}", self.value_to_string())
+        write!(f, "time_condition = {}", self.value_to_string())
+    }
+}
+
+impl From<OrderConditionEnum> for TimeCondition {
+    fn from(_: OrderConditionEnum) -> Self {
+        TimeCondition::default()
     }
 }
 
@@ -507,9 +555,9 @@ impl Debug for TimeCondition {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PriceCondition {
-    contract_condition: ContractCondition,
-    price: f64,
-    trigger_method: TriggerMethod,
+    pub contract_condition: ContractCondition,
+    pub price: f64,
+    pub trigger_method: TriggerMethod,
 }
 
 impl PriceCondition {
@@ -572,6 +620,12 @@ impl Display for PriceCondition {
         )
     }
 }
+
+impl From<OrderConditionEnum> for PriceCondition {
+    fn from(_: OrderConditionEnum) -> Self {
+        PriceCondition::default()
+    }
+}
 //pub fn  __str__(self):
 //return "%s price of %s " % (
 //price_condition.TriggerMethodEnum.to_str(self.triggerMethod),
@@ -579,8 +633,8 @@ impl Display for PriceCondition {
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct PercentChangeCondition {
-    contract_condition: ContractCondition,
-    change_percent: f64,
+    pub contract_condition: ContractCondition,
+    pub change_percent: f64,
 }
 
 impl PercentChangeCondition {
@@ -634,14 +688,20 @@ impl Debug for PercentChangeCondition {
         write!(f, "percent change of {}", self.value_to_string())
     }
 }
+
+impl From<OrderConditionEnum> for PercentChangeCondition {
+    fn from(_: OrderConditionEnum) -> Self {
+        PercentChangeCondition::default()
+    }
+}
 //pub fn  __str__(self):
 //return "percent change of %s " % (
 //ContractCondition.__str__(self))
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct VolumeCondition {
-    contract_condition: ContractCondition,
-    volume: i32,
+    pub contract_condition: ContractCondition,
+    pub volume: i32,
 }
 
 impl VolumeCondition {
@@ -695,29 +755,25 @@ impl Debug for VolumeCondition {
         write!(f, "volume of {}", self.value_to_string())
     }
 }
+
+impl From<OrderConditionEnum> for VolumeCondition {
+    fn from(_: OrderConditionEnum) -> Self {
+        VolumeCondition::default()
+    }
+}
 //pub fn  __str__(self):
 //return "volume of %s " % (
 //ContractCondition.__str__(self))
 
-pub fn create(cond_type: ConditionType) -> OrderConditionEnum {
+pub fn create_condition<'a>(cond_type: ConditionType) -> OrderConditionEnum {
     match (cond_type) {
-        ConditionType::Execution => OrderConditionEnum::Execution {
-            execution_condition: Default::default(),
-        },
-        ConditionType::Margin => OrderConditionEnum::Margin {
-            margin_condition: Default::default(),
-        },
-        ConditionType::PercentChange => OrderConditionEnum::PercentChange {
-            percent_change_condition: Default::default(),
-        },
-        ConditionType::Price => OrderConditionEnum::PercentChange {
-            percent_change_condition: Default::default(),
-        },
-        ConditionType::Time => OrderConditionEnum::Time {
-            time_condition: Default::default(),
-        },
-        ConditionType::Volume => OrderConditionEnum::Volume {
-            volume_condition: Default::default(),
-        },
+        ConditionType::Execution => OrderConditionEnum::Execution(ExecutionCondition::default()),
+        ConditionType::Margin => OrderConditionEnum::Margin(MarginCondition::default()),
+        ConditionType::PercentChange => {
+            OrderConditionEnum::PercentChange(PercentChangeCondition::default())
+        }
+        ConditionType::Price => OrderConditionEnum::Price(PriceCondition::default()),
+        ConditionType::Time => OrderConditionEnum::Time(TimeCondition::default()),
+        ConditionType::Volume => OrderConditionEnum::Volume(VolumeCondition::default()),
     }
 }

@@ -1,17 +1,14 @@
-extern crate ascii;
-extern crate bigdecimal;
-extern crate bytebuffer;
-extern crate chrono;
-#[macro_use]
-extern crate float_cmp;
-extern crate from_ascii;
-#[macro_use]
-extern crate log;
-extern crate log4rs;
-extern crate num;
-#[macro_use]
-extern crate num_derive;
-extern crate serde;
+use ascii;
+use bigdecimal;
+use bytebuffer;
+use chrono;
+use float_cmp;
+use from_ascii;
+use log;
+use log4rs;
+use num;
+use num_derive;
+use serde;
 
-pub mod core;
-pub mod examples;
+mod core;
+mod examples;

@@ -8,9 +8,9 @@ use std::vec::Vec;
 
 use ascii;
 use ascii::AsAsciiStr;
+use bytebuffer::ByteBuffer;
 use byteorder::{BigEndian, ByteOrder};
 
-use crate::bytebuffer::ByteBuffer;
 use crate::core::common::{UNSET_DOUBLE, UNSET_INTEGER, UNSET_LONG};
 use crate::core::decoder::Decoder;
 use crate::core::wrapper::Wrapper;

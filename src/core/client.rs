@@ -30,6 +30,7 @@ use crate::core::messages::make_field;
 use crate::core::messages::{make_field_handle_empty, read_msg};
 use crate::core::messages::{make_message, read_fields, OutgoingMessageIds};
 use crate::core::order::Order;
+use crate::core::order_condition::Condition;
 use crate::core::reader::Reader;
 use crate::core::scanner::ScannerSubscription;
 use crate::core::server_versions::*;
@@ -1689,7 +1690,7 @@ where
 
         msg.push_str(&make_field(&order.override_percentage_constraints)); //srv v22 && above
 
-        // Volatility orders (srv v26 && above)
+        // volatility orders (srv v26 && above)
         msg.push_str(&make_field_handle_empty(&order.volatility));
         msg.push_str(&make_field_handle_empty(&order.volatility_type));
         msg.push_str(&make_field(&order.delta_neutral_order_type)); // srv v28 && above
@@ -1843,8 +1844,8 @@ where
 
             if order.conditions.len() > 0 {
                 for cond in &order.conditions {
-                    msg.push_str(&make_field(&(cond.get_condition().get_type() as i32)));
-                    msg.push_str(&make_field(&cond.get_condition().make_fields()));
+                    msg.push_str(&make_field(&(cond.get_type() as i32)));
+                    msg.push_str(&make_field(&cond.make_fields()));
                 }
 
                 msg.push_str(&make_field(&order.conditions_ignore_rth));

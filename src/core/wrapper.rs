@@ -541,10 +541,10 @@ pub trait Wrapper: Send + Sync + 'static {
     /// returns updates in real time when keepUpToDate is set to True
     fn historical_data_update(&self, req_id: i32, bar: BarData);
 
-    /// returns reroute CFD contract information for market data request
+    /// returns reroute cfd contract information for market data request
     fn reroute_mkt_data_req(&self, req_id: i32, con_id: i32, exchange: &str);
 
-    /// returns reroute CFD contract information for market depth request
+    /// returns reroute cfd contract information for market depth request
     fn reroute_mkt_depth_req(&self, req_id: i32, con_id: i32, exchange: &str);
 
     /// returns minimum price increment structure for a particular market rule ID

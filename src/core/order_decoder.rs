@@ -13,6 +13,7 @@ use crate::core::decoder::{
 use crate::core::errors::IBKRApiLibError;
 use crate::core::order::{Order, OrderComboLeg, OrderState, SoftDollarTier};
 use crate::core::order_condition;
+use crate::core::order_condition::{create_condition, Condition};
 use crate::core::server_versions::{
     MIN_SERVER_VER_AUTO_PRICE_FOR_HEDGE, MIN_SERVER_VER_CASH_QTY, MIN_SERVER_VER_D_PEG_ORDERS,
     MIN_SERVER_VER_FRACTIONAL_POSITIONS, MIN_SERVER_VER_MODELS_SUPPORT,
@@ -309,7 +310,7 @@ impl<'a> OrderDecoder<'a> {
         &mut self,
         fields_iter: &mut Iter<String>,
     ) -> Result<(), IBKRApiLibError> {
-        self.order.discretionary_amt = decode_i32(fields_iter)?;
+        self.order.discretionary_amt = decode_f64(fields_iter)?;
         Ok(())
     }
 
@@ -785,8 +786,8 @@ impl<'a> OrderDecoder<'a> {
                 self.order.conditions = vec![];
                 for _ in 0..conditions_size {
                     let condition_type = FromPrimitive::from_i32(decode_i32(fields_iter)?).unwrap();
-                    let mut condition = order_condition::create(condition_type);
-                    condition.get_condition().decode(fields_iter);
+                    let mut condition = create_condition(condition_type);
+                    condition.decode(fields_iter);
                     self.order.conditions.push(condition);
 
                     self.order.conditions_ignore_rth = decode_bool(fields_iter)?;

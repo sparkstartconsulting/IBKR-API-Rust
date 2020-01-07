@@ -100,7 +100,7 @@ impl Reader {
             //            );
 
             if msg.as_str() != "" {
-                debug!("sending message to core... ");
+                //debug!("sending message to core... ");
                 self.messages.send(msg).unwrap();
             } else {
                 ///Break to the outer loop and get another packet of messages.

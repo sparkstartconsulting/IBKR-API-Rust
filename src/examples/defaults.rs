@@ -20,7 +20,7 @@ use crate::core::order::{Order, OrderState, SoftDollarTier};
 use crate::core::wrapper::Wrapper;
 
 //==================================================================================================
-
+/// Example implementation of the Wrapper callback trait.  Just logs callback methods
 pub struct DefaultWrapper {
     pub client: Option<Arc<Mutex<EClient<DefaultWrapper>>>>,
 }
