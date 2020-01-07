@@ -1,7 +1,7 @@
+// 0.2.6 (the trait)
 use std::any::Any;
 use std::convert::TryInto;
 use std::io::Write;
-use std::ops::Deref;
 use std::string::String;
 use std::sync::{Arc, RwLock};
 use std::vec::Vec;
@@ -9,10 +9,11 @@ use std::vec::Vec;
 use ascii;
 use ascii::AsAsciiStr;
 use bytebuffer::ByteBuffer;
-use byteorder::{BigEndian, ByteOrder};
+use log::*;
+use num_derive::FromPrimitive;
+// 0.2.4 (the derive)
+use num_traits::FromPrimitive;
 
-use crate::core::common::{UNSET_DOUBLE, UNSET_INTEGER, UNSET_LONG};
-use crate::core::decoder::Decoder;
 use crate::core::wrapper::Wrapper;
 
 trait EClientMsgSink {
@@ -248,7 +249,7 @@ pub fn make_message(msg: &str) -> Vec<u8> {
     let tmp = buffer.clone();
     //debug!("Message after create: {:?}", buffer);
 
-    let (size, msg, buf) = read_msg(tmp.as_slice());
+    let (_size, _msg, _buf) = read_msg(tmp.as_slice());
     //debug!("Message read: size:{}, msg:{}, bytes: {:?}", size, msg, buf);
 
     tmp

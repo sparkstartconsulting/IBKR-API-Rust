@@ -1,21 +1,13 @@
-use std::borrow::Borrow;
-use std::convert::TryInto;
-use std::io::BufReader;
 use std::io::Read;
 use std::net::{Shutdown, TcpStream};
-use std::ops::Deref;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{mpsc, Arc};
-use std::thread;
+use std::sync::mpsc::Sender;
+use std::sync::Arc;
 
-use log;
-use log4rs;
+use log::*;
 
-use crate::core::connection::Connection;
 use crate::core::errors::IBKRApiLibError;
 use crate::core::messages::read_msg;
-use crate::core::messages::EMessage;
 
 pub struct Reader {
     stream: TcpStream,
@@ -80,10 +72,10 @@ impl Reader {
         /// When this loop ends, break into the outer loop and grab another packet.  
         /// Repeat until the connection is closed
         ///
-        let mut msg = String::new();
+        let _msg = String::new();
         while message_packet.len() > 0 {
             /// Read a message from the packet then add it to the message queue below.
-            let (size, msg, remaining_messages) = read_msg(message_packet.as_slice());
+            let (_size, msg, remaining_messages) = read_msg(message_packet.as_slice());
 
             /// clear the Vec that holds the bytes from the packet
             /// and reload with the bytes that haven't been read.

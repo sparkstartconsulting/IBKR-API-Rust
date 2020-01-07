@@ -1,14 +1,14 @@
-use std::collections::hash_map::{Entry, RandomState};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::marker::{Send, Sync};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, UNIX_EPOCH};
 
 use bigdecimal::BigDecimal;
 use chrono::prelude::DateTime;
 use chrono::Utc;
+use log::*;
 
-use crate::core::client::{ConnStatus, EClient};
+use crate::core::client::EClient;
 use crate::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,

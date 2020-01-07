@@ -1,10 +1,12 @@
 use std::fmt;
 
+use num_derive::FromPrimitive;
+// 0.2.4 (the derive)
+use num_traits::FromPrimitive;
+use serde::{Deserialize, Serialize};
+// 0.2.6 (the trait)
 use serde::export::fmt::Error;
 use serde::export::Formatter;
-use serde::{Deserialize, Serialize};
-
-use crate::core::common::TickType::ShortableShares;
 
 pub const NO_VALID_ID: i32 = -1;
 pub const MAX_MSG_LEN: i64 = 0xFFFFFF; //16Mb - 1byte
@@ -203,7 +205,7 @@ pub enum TickType {
 
 impl TickType {
     pub fn code(&self) -> i32 {
-        match (*self) {
+        match *self {
             TickType::BidSize => BID_SIZE.0,
             TickType::Bid => BID.0,
             TickType::Ask => ASK.0,
@@ -299,7 +301,7 @@ impl TickType {
     }
 
     pub fn value(&self) -> &str {
-        match (*self) {
+        match *self {
             TickType::BidSize => BID_SIZE.1,
             TickType::Bid => BID.1,
             TickType::Ask => ASK.1,

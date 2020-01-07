@@ -1,29 +1,24 @@
-use std::any::Any;
 use std::borrow::{Borrow, BorrowMut, Cow};
-use std::collections::vec_deque::VecDeque;
-use std::convert::TryFrom;
 use std::io::Write;
 use std::marker::Sync;
+use std::net::Shutdown;
 use std::net::TcpStream;
-use std::net::{Shutdown, SocketAddr};
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{channel, Receiver};
+use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use byteorder::{BigEndian, ByteOrder};
-use encoding::all::ASCII;
-use encoding::types::RawEncoder;
-use encoding::{ByteWriter, DecoderTrap, EncoderTrap, Encoding};
-use from_ascii::{FromAscii, FromAsciiRadix};
+use encoding::Encoding;
+use from_ascii::FromAscii;
+use log::*;
+use num_derive::FromPrimitive;
+// 0.2.4 (the derive)
 use num_traits::FromPrimitive;
 
 use crate::core::common::*;
-use crate::core::connection;
 use crate::core::contract::Contract;
 use crate::core::decoder::Decoder;
-use crate::core::errors;
 use crate::core::errors::{IBKRApiLibError, TwsError};
 use crate::core::execution::ExecutionFilter;
 use crate::core::messages::make_field;
@@ -35,6 +30,8 @@ use crate::core::reader::Reader;
 use crate::core::scanner::ScannerSubscription;
 use crate::core::server_versions::*;
 use crate::core::wrapper::Wrapper;
+
+// 0.2.6 (the trait)
 
 #[repr(i32)]
 #[derive(FromPrimitive, Copy, Clone)]
@@ -113,7 +110,7 @@ where
 
         self.stream = Option::from(thestream.try_clone().unwrap());
 
-        let reader_stream = thestream.try_clone().unwrap();
+        let _reader_stream = thestream.try_clone().unwrap();
 
         let (tx, rx) = channel::<String>();
         let mut reader = Reader::new(thestream, tx.clone(), self.disconnect_requested.clone());
@@ -123,7 +120,7 @@ where
         let v_100_prefix = "API\0";
         let v_100_version = format!("v{}..{}", MIN_CLIENT_VER, MAX_CLIENT_VER);
 
-        let mut msg = make_message(v_100_version.as_str());
+        let msg = make_message(v_100_version.as_str());
 
         let mut bytearray: Vec<u8> = Vec::new();
         bytearray.extend_from_slice(v_100_prefix.as_bytes());
@@ -148,7 +145,7 @@ where
             let buf = reader.recv_packet()?;
 
             if buf.len() > 0 {
-                let (size, msg, remaining_messages) = read_msg(buf.as_slice());
+                let (_size, msg, _remaining_messages) = read_msg(buf.as_slice());
 
                 fields.clear();
                 fields.extend_from_slice(read_fields(msg.as_ref()).as_slice());
@@ -173,7 +170,7 @@ where
     }
 
     pub fn is_connected(&self) -> bool {
-        match (*self.conn_state.lock().unwrap().deref()) {
+        match *self.conn_state.lock().unwrap().deref() {
             ConnStatus::DISCONNECTED => false,
             ConnStatus::CONNECTED => true,
             ConnStatus::CONNECTING => false,
@@ -209,7 +206,7 @@ where
         let mut msg = "".to_string();
 
         let message_id = OutgoingMessageIds::SetServerLoglevel as i32;
-        let x = message_id.to_be_bytes();
+        let _x = message_id.to_be_bytes();
         msg.push_str(&make_field(&message_id));
         msg.push_str(&make_field(&version));
         msg.push_str(&make_field(&_log_level));
@@ -264,7 +261,7 @@ where
             opt_capab = make_field(&self.opt_capab);
         }
 
-        let mut msg = format!(
+        let msg = format!(
             "{}{}{}{}",
             make_field(&mut (Some(OutgoingMessageIds::StartApi).unwrap() as i32)),
             make_field(&mut version.to_string()),
@@ -321,7 +318,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
-            if let Some(value) = &contract.delta_neutral_contract {
+            if let Some(_value) = &contract.delta_neutral_contract {
                 self.wrapper.lock().unwrap().error(
                     req_id,
                     TwsError::UpdateTws.code(),
@@ -802,7 +799,7 @@ where
         msg.push_str(&make_field(&under_price));
 
         if self.server_version() >= MIN_SERVER_VER_LINKING {
-            let mut impl_vol_opt_str = "".to_string();
+            let _impl_vol_opt_str = "".to_string();
             let tag_values_count = impl_vol_options.len();
             if tag_values_count > 0 {
                 let impl_vol_opt_str = impl_vol_options
@@ -898,7 +895,7 @@ where
         msg.push_str(&make_field(&under_price));
 
         if self.server_version() >= MIN_SERVER_VER_LINKING {
-            let mut opt_prc_opt_str = "".to_string();
+            let _opt_prc_opt_str = "".to_string();
             let tag_values_count = opt_prc_options.len();
             if tag_values_count > 0 {
                 let opt_prc_opt_str = opt_prc_options
@@ -2225,7 +2222,7 @@ where
         self.send_request(msg.as_str())
     }
 
-    pub fn cancel_account_summary(&mut self, mut req_id: i32) {
+    pub fn cancel_account_summary(&mut self, req_id: i32) {
         //        """Cancels the request for Account Window Summary tab data.
         //
         //        reqId:i32 - The ID of the data request being canceled."""
@@ -2800,8 +2797,8 @@ where
             msg.push_str(&make_field(&contract.exchange));
             msg.push_str(&make_field(&contract.primary_exchange));
         } else if self.server_version() >= MIN_SERVER_VER_LINKING {
-            if (contract.primary_exchange != ""
-                && (contract.exchange == "BEST" || contract.exchange == "SMART"))
+            if contract.primary_exchange != ""
+                && (contract.exchange == "BEST" || contract.exchange == "SMART")
             {
                 msg.push_str(&make_field(&format!(
                     "{}:{}",

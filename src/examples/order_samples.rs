@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use num_traits::FromPrimitive;
 
 use crate::core::common::TagValue;

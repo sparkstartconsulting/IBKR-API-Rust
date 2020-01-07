@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-use std::io::{Error, ErrorKind};
 use std::num::{ParseFloatError, ParseIntError};
 use std::sync::mpsc::RecvError;
 use std::{error, fmt, io};
@@ -39,7 +37,7 @@ pub enum TwsError {
 
 impl TwsError {
     pub fn code(&self) -> i32 {
-        match (*self) {
+        match *self {
             TwsError::AlreadyConnected => ALREADY_CONNECTED.0,
             TwsError::ConnectFail => CONNECT_FAIL.0,
             TwsError::UpdateTws => UPDATE_TWS.0,
@@ -54,7 +52,7 @@ impl TwsError {
         }
     }
     pub fn message(&self) -> &'static str {
-        match (*self) {
+        match *self {
             TwsError::AlreadyConnected => ALREADY_CONNECTED.1,
             TwsError::ConnectFail => CONNECT_FAIL.1,
             TwsError::UpdateTws => UPDATE_TWS.1,

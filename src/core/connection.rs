@@ -4,8 +4,7 @@ use std::net::{Shutdown, TcpStream};
 use std::str;
 
 use bytebuffer::ByteBuffer;
-use log;
-use log4rs;
+use log::*;
 
 use crate::core::wrapper::Wrapper;
 

@@ -1,27 +1,21 @@
-use std::borrow::Borrow;
-use std::collections::{HashMap, HashSet};
-use std::error::Error;
-use std::io::{ErrorKind, Write};
+use std::collections::HashSet;
+use std::io::ErrorKind;
 use std::marker::Sync;
-use std::net::TcpStream;
-use std::num::ParseIntError;
 use std::ops::{Deref, DerefMut};
 use std::slice::Iter;
 use std::str::FromStr;
 use std::string::ToString;
-use std::sync::mpsc::{Receiver, TryRecvError};
+use std::sync::mpsc::Receiver;
 use std::sync::{Arc, Mutex};
-use std::{thread, u8};
+use std::u8;
 
 use bigdecimal::BigDecimal;
-use bytebuffer::ByteBuffer;
 use float_cmp::*;
-use from_ascii::{FromAscii, FromAsciiRadix};
+use log::*;
 use num_traits::float::FloatCore;
 use num_traits::FromPrimitive;
 
-use crate::core;
-use crate::core::client::{ConnStatus, EClient};
+use crate::core::client::ConnStatus;
 use crate::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FamilyCode, HistogramData, HistoricalTick,
     HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement, RealTimeBar,
@@ -29,7 +23,6 @@ use crate::core::common::{
     NO_VALID_ID, UNSET_DOUBLE, UNSET_INTEGER,
 };
 use crate::core::contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract};
-use crate::core::errors::IBKRApiLibError::RecvError;
 use crate::core::errors::{IBKRApiLibError, TwsError};
 use crate::core::execution::Execution;
 use crate::core::messages::{read_fields, IncomingMessageIds};
@@ -249,11 +242,11 @@ where
         fields_itr.next();
 
         let req_id = decode_i32(&mut fields_itr)?;
-        let ticker_id: i32 = decode_i32(&mut fields_itr)?;
+        let _ticker_id: i32 = decode_i32(&mut fields_itr)?;
         let tick_type: i32 = decode_i32(&mut fields_itr)?;
         let price: f64 = decode_f64(&mut fields_itr)?;
-        let mut size = decode_i32(&mut fields_itr)?;
-        let mut attr_mask: i32 = decode_i32(&mut fields_itr)?;
+        let size = decode_i32(&mut fields_itr)?;
+        let attr_mask: i32 = decode_i32(&mut fields_itr)?;
         let mut tick_arrtibute = TickAttrib::new(false, false, false);
 
         tick_arrtibute.can_auto_execute = attr_mask == 1;
@@ -478,7 +471,7 @@ where
         let version: i32 = decode_i32(&mut fields_itr)?;
 
         let mut req_id = -1;
-        if (version >= 3) {
+        if version >= 3 {
             req_id = decode_i32(&mut fields_itr)?;
         }
 
@@ -503,27 +496,27 @@ where
         contract.contract.trading_class = decode_string(&mut fields_itr)?;
         contract.contract.con_id = decode_i32(&mut fields_itr)?;
         contract.min_tick = decode_f64(&mut fields_itr)?;
-        if (self.server_version >= MIN_SERVER_VER_MD_SIZE_MULTIPLIER) {
+        if self.server_version >= MIN_SERVER_VER_MD_SIZE_MULTIPLIER {
             contract.md_size_multiplier = decode_i32(&mut fields_itr)?;
         }
         contract.order_types = decode_string(&mut fields_itr)?;
         contract.valid_exchanges = decode_string(&mut fields_itr)?;
-        if (version >= 2) {
+        if version >= 2 {
             contract.next_option_date = decode_string(&mut fields_itr)?;
             contract.next_option_type = decode_string(&mut fields_itr)?;
             contract.next_option_partial = decode_bool(&mut fields_itr)?;
             contract.notes = decode_string(&mut fields_itr)?;
         }
-        if (version >= 4) {
+        if version >= 4 {
             contract.long_name = decode_string(&mut fields_itr)?;
         }
-        if (version >= 6) {
+        if version >= 6 {
             contract.ev_rule = decode_string(&mut fields_itr)?;
             contract.ev_multiplier = decode_f64(&mut fields_itr)?;
         }
-        if (version >= 5) {
+        if version >= 5 {
             let sec_id_list_count = decode_i32(&mut fields_itr)?;
-            if (sec_id_list_count > 0) {
+            if sec_id_list_count > 0 {
                 contract.sec_id_list = vec![];
                 for _ in 0..sec_id_list_count {
                     contract.sec_id_list.push(TagValue::new(
@@ -533,10 +526,10 @@ where
                 }
             }
         }
-        if (self.server_version >= MIN_SERVER_VER_AGG_GROUP) {
+        if self.server_version >= MIN_SERVER_VER_AGG_GROUP {
             contract.agg_group = decode_i32(&mut fields_itr)?;
         }
-        if (self.server_version >= MIN_SERVER_VER_MARKET_RULES) {
+        if self.server_version >= MIN_SERVER_VER_MARKET_RULES {
             contract.market_rule_ids = decode_string(&mut fields_itr)?;
         }
 
@@ -630,7 +623,7 @@ where
         let version: i32 = decode_i32(&mut fields_itr)?;
 
         let mut req_id = -1;
-        if (version >= 3) {
+        if version >= 3 {
             req_id = decode_i32(&mut fields_itr)?;
         }
 
@@ -647,21 +640,21 @@ where
         contract.contract.trading_class = decode_string(&mut fields_itr)?;
         contract.contract.con_id = decode_i32(&mut fields_itr)?;
         contract.min_tick = decode_f64(&mut fields_itr)?;
-        if (self.server_version >= MIN_SERVER_VER_MD_SIZE_MULTIPLIER) {
+        if self.server_version >= MIN_SERVER_VER_MD_SIZE_MULTIPLIER {
             contract.md_size_multiplier = decode_i32(&mut fields_itr)?;
         }
         contract.order_types = decode_string(&mut fields_itr)?;
         contract.valid_exchanges = decode_string(&mut fields_itr)?;
         contract.price_magnifier = decode_i32(&mut fields_itr)?;
-        if (version >= 4) {
+        if version >= 4 {
             contract.under_con_id = decode_i32(&mut fields_itr)?;
         }
-        if (version >= 5) {
+        if version >= 5 {
             contract.long_name = decode_string(&mut fields_itr)?;
             contract.contract.primary_exchange = decode_string(&mut fields_itr)?;
         }
 
-        if (version >= 6) {
+        if version >= 6 {
             contract.contract_month = decode_string(&mut fields_itr)?;
             contract.industry = decode_string(&mut fields_itr)?;
             contract.category = decode_string(&mut fields_itr)?;
@@ -670,14 +663,14 @@ where
             contract.trading_hours = decode_string(&mut fields_itr)?;
             contract.liquid_hours = decode_string(&mut fields_itr)?;
         }
-        if (version >= 8) {
+        if version >= 8 {
             contract.ev_rule = decode_string(&mut fields_itr)?;
             contract.ev_multiplier = decode_f64(&mut fields_itr)?;
         }
 
-        if (version >= 7) {
+        if version >= 7 {
             let sec_id_list_count = decode_i32(&mut fields_itr)?;
-            if (sec_id_list_count > 0) {
+            if sec_id_list_count > 0 {
                 contract.sec_id_list = vec![];
                 for _ in 0..sec_id_list_count {
                     contract.sec_id_list.push(TagValue::new(
@@ -687,10 +680,10 @@ where
                 }
             }
         }
-        if (self.server_version >= MIN_SERVER_VER_AGG_GROUP) {
+        if self.server_version >= MIN_SERVER_VER_AGG_GROUP {
             contract.agg_group = decode_i32(&mut fields_itr)?;
         }
-        if (self.server_version >= MIN_SERVER_VER_MARKET_RULES) {
+        if self.server_version >= MIN_SERVER_VER_MARKET_RULES {
             contract.market_rule_ids = decode_string(&mut fields_itr)?;
         }
 
@@ -712,7 +705,7 @@ where
         //throw away version
         fields_itr.next();
 
-        let mut req_id = decode_i32(&mut fields_itr)?;
+        let req_id = decode_i32(&mut fields_itr)?;
 
         self.wrapper
             .lock()
@@ -753,7 +746,7 @@ where
         //throw away version
         fields_itr.next();
 
-        let mut req_id = decode_i32(&mut fields_itr)?;
+        let req_id = decode_i32(&mut fields_itr)?;
 
         let mut delta_neutral_contract = DeltaNeutralContract::default();
 
@@ -779,7 +772,7 @@ where
         //throw away version
         fields_itr.next();
 
-        let mut req_id = decode_i32(&mut fields_itr)?;
+        let req_id = decode_i32(&mut fields_itr)?;
 
         let groups = decode_string(&mut fields_itr)?;
 
@@ -801,7 +794,7 @@ where
         //throw away version
         fields_itr.next();
 
-        let mut req_id = decode_i32(&mut fields_itr)?;
+        let req_id = decode_i32(&mut fields_itr)?;
 
         let contract_info = decode_string(&mut fields_itr)?;
 
@@ -840,7 +833,7 @@ where
 
         let mut version = self.server_version;
 
-        if (self.server_version < MIN_SERVER_VER_LAST_LIQUIDITY) {
+        if self.server_version < MIN_SERVER_VER_LAST_LIQUIDITY {
             version = decode_i32(&mut fields_itr)?;
         }
 
@@ -928,7 +921,7 @@ where
         //throw away version
         fields_itr.next();
 
-        let mut req_id = decode_i32(&mut fields_itr)?;
+        let req_id = decode_i32(&mut fields_itr)?;
 
         self.wrapper
             .lock()
@@ -946,7 +939,7 @@ where
         //throw away message_id
         fields_itr.next();
 
-        let mut family_codes_count = decode_i32(&mut fields_itr)?;
+        let family_codes_count = decode_i32(&mut fields_itr)?;
         let mut family_codes: Vec<FamilyCode> = vec![];
         for _ in 0..family_codes_count {
             let mut fam_code = FamilyCode::default();
@@ -1558,7 +1551,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    fn process_open_order_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+    fn process_open_order_end(&mut self, _fields: &[String]) -> Result<(), IBKRApiLibError> {
         self.wrapper.lock().unwrap().deref_mut().open_order_end();
         Ok(())
     }
@@ -1817,7 +1810,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    fn process_position_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+    fn process_position_end(&mut self, _fields: &[String]) -> Result<(), IBKRApiLibError> {
         self.wrapper.lock().unwrap().deref_mut().position_end();
         Ok(())
     }
@@ -2228,7 +2221,7 @@ where
         let tick_type = decode_i32(&mut fields_itr)?;
         let time = decode_i64(&mut fields_itr)?;
 
-        match (tick_type) {
+        match tick_type {
             0 => Ok(()), // None
             1..=2 =>
             // Last (1) or AllLast (2)
@@ -2407,9 +2400,9 @@ where
         let mut vega = f64::max_value();
         let mut theta = f64::max_value();
         let mut und_price = f64::max_value();
-        if (version >= 6
+        if version >= 6
             || tick_type == TickType::ModelOption.code()
-            || tick_type == TickType::DelayedModelOption.code())
+            || tick_type == TickType::DelayedModelOption.code()
         {
             // introduced in version == 5
             opt_price = decode_f64(&mut fields_itr)?;
@@ -2423,7 +2416,7 @@ where
                 pv_dividend = f64::max_value();
             }
         }
-        if (version >= 6) {
+        if version >= 6 {
             gamma = decode_f64(&mut fields_itr)?;
             if approx_eq!(f64, gamma, -2.0, ulps = 2) {
                 // -2 is the "not yet computed" indicator
@@ -2540,7 +2533,7 @@ where
         fields_itr.next();
         //throw away version
         fields_itr.next();
-        let is_successful_str = decode_string(&mut fields_itr)?;
+        let _is_successful_str = decode_string(&mut fields_itr)?;
         let is_successful = "true" == decode_string(&mut fields_itr)?;
         let error_text = decode_string(&mut fields_itr)?;
 
@@ -2585,7 +2578,7 @@ where
         //throw away version
         fields_itr.next();
 
-        let is_successful_str = decode_string(&mut fields_itr)?;
+        let _is_successful_str = decode_string(&mut fields_itr)?;
         let is_successful = "true" == decode_string(&mut fields_itr)?;
         let error_text = decode_string(&mut fields_itr)?;
 
@@ -2622,14 +2615,14 @@ where
         if read_date != "" {
             let splitted = read_date.split_whitespace().collect::<Vec<&str>>();
             if splitted.len() > 0 {
-                if (is_bond) {
+                if is_bond {
                     contract.maturity = splitted.get(0).unwrap().to_string();
                 } else {
                     contract.contract.last_trade_date_or_contract_month =
                         splitted.get(0).unwrap().to_string();
                 }
             }
-            if (splitted.len() > 1) {
+            if splitted.len() > 1 {
                 contract.last_trade_time = splitted.get(1).unwrap().to_string();
             }
             if is_bond && splitted.len() > 2 {
@@ -2644,7 +2637,7 @@ where
 
         info!("Starting run...");
         // !self.done &&
-        while true {
+        loop {
             info!("Client waiting for message...");
 
             let text = self.msg_queue.recv();

@@ -2,14 +2,15 @@ use std::borrow::{Borrow, BorrowMut};
 use std::io::Read;
 use std::io::Stdin;
 use std::net::{TcpListener, ToSocketAddrs};
+use std::ops::Deref;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 
-use crate::core::client::EClient;
-use crate::core::errors::IBKRApiLibError;
-use crate::core::wrapper::Wrapper;
-use crate::examples::defaults::DefaultWrapper;
+use twsapi::core::client::EClient;
+use twsapi::core::errors::IBKRApiLibError;
+use twsapi::core::wrapper::Wrapper;
+use twsapi::examples::defaults::DefaultWrapper;
 
 fn main() -> Result<(), IBKRApiLibError> {
     log4rs::init_file("log_config.yml", Default::default()).unwrap();
@@ -17,7 +18,13 @@ fn main() -> Result<(), IBKRApiLibError> {
     let wrapper = DefaultWrapper::new();
     let app = Arc::new(Mutex::new(EClient::new(wrapper)));
     app.lock().unwrap().wrapper.lock().unwrap().client = Option::from(app.clone());
-    app.lock().unwrap().wrapper.lock().unwrap().next_valid_id(3);
+    app.lock()
+        .unwrap()
+        .wrapper
+        .lock()
+        .unwrap()
+        .deref()
+        .next_valid_id(3);
     app.lock()
         .unwrap()
         .connect("127.0.0.1".to_string(), 7497, 0);

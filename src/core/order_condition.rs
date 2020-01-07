@@ -1,18 +1,17 @@
-use std::borrow::Borrow;
 use std::fmt::{Debug, Display};
 use std::slice::Iter;
 
+use num_derive::FromPrimitive;
+// 0.2.4 (the derive)
 use num_traits::FromPrimitive;
+use serde::{Deserialize, Serialize};
+// 0.2.6 (the trait)
 use serde::export::fmt::Error;
 use serde::export::Formatter;
-use serde::{Deserialize, Serialize};
 
 use crate::core::decoder::{decode_bool, decode_i32, decode_string};
 use crate::core::errors::IBKRApiLibError;
-use crate::core::messages::{make_field, make_message};
-use crate::core::order_condition::ConditionType::{
-    Execution, Margin, PercentChange, Price, Time, Volume,
-};
+use crate::core::messages::make_field;
 
 //==================================================================================================
 #[repr(i32)]
@@ -121,7 +120,7 @@ pub enum OrderConditionEnum {
 
 impl Condition for OrderConditionEnum {
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
-        match (self) {
+        match self {
             OrderConditionEnum::Execution(s) => s.decode(fields_iter),
             OrderConditionEnum::Price(p) => p.decode(fields_iter),
             OrderConditionEnum::Margin(m) => m.decode(fields_iter),
@@ -132,7 +131,7 @@ impl Condition for OrderConditionEnum {
     }
 
     fn make_fields(&self) -> Vec<String> {
-        match (self) {
+        match self {
             OrderConditionEnum::Execution(s) => s.make_fields(),
             OrderConditionEnum::Price(p) => p.make_fields(),
             OrderConditionEnum::Margin(m) => m.make_fields(),
@@ -143,7 +142,7 @@ impl Condition for OrderConditionEnum {
     }
 
     fn value_to_string(&self) -> String {
-        match (self) {
+        match self {
             OrderConditionEnum::Execution(s) => s.value_to_string(),
             OrderConditionEnum::Price(p) => p.value_to_string(),
             OrderConditionEnum::Margin(m) => m.value_to_string(),
@@ -154,7 +153,7 @@ impl Condition for OrderConditionEnum {
     }
 
     fn set_value_from_string(&mut self, text: String) {
-        match (self) {
+        match self {
             OrderConditionEnum::Execution(s) => s.set_value_from_string(text),
             OrderConditionEnum::Price(p) => p.set_value_from_string(text),
             OrderConditionEnum::Margin(m) => m.set_value_from_string(text),
@@ -165,7 +164,7 @@ impl Condition for OrderConditionEnum {
     }
 
     fn get_type(&self) -> ConditionType {
-        match (self) {
+        match self {
             OrderConditionEnum::Execution(s) => s.get_type(),
             OrderConditionEnum::Price(p) => p.get_type(),
             OrderConditionEnum::Margin(m) => m.get_type(),
@@ -184,7 +183,7 @@ impl Display for OrderConditionEnum {
 
 impl Debug for OrderConditionEnum {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        match (self) {
+        match self {
             OrderConditionEnum::Execution(s) => {
                 write!(f, "{} = {}", "Execution", s.value_to_string())
             }
@@ -299,7 +298,7 @@ impl Condition for ExecutionCondition {
         )
     }
 
-    fn set_value_from_string(&mut self, text: String) {
+    fn set_value_from_string(&mut self, _text: String) {
         unimplemented!()
     }
 
@@ -347,7 +346,7 @@ impl OperatorCondition {
         unimplemented!();
     }
 
-    pub fn set_value_from_string(&self, text: &str) {
+    pub fn set_value_from_string(&self, _text: &str) {
         unimplemented!();
     }
 
@@ -464,7 +463,7 @@ impl Condition for ContractCondition {
         format!("contract id: {}, Exchange: {}", self.con_id, self.exchange)
     }
 
-    fn set_value_from_string(&mut self, text: String) {
+    fn set_value_from_string(&mut self, _text: String) {
         unimplemented!()
     }
 
@@ -766,7 +765,7 @@ impl From<OrderConditionEnum> for VolumeCondition {
 //ContractCondition.__str__(self))
 
 pub fn create_condition<'a>(cond_type: ConditionType) -> OrderConditionEnum {
-    match (cond_type) {
+    match cond_type {
         ConditionType::Execution => OrderConditionEnum::Execution(ExecutionCondition::default()),
         ConditionType::Margin => OrderConditionEnum::Margin(MarginCondition::default()),
         ConditionType::PercentChange => {
