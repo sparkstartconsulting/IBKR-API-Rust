@@ -63,7 +63,8 @@ pub fn decode_i64(iter: &mut Iter<String>) -> Result<i64, IBKRApiLibError> {
 
 //==================================================================================================
 pub fn decode_f64(iter: &mut Iter<String>) -> Result<f64, IBKRApiLibError> {
-    let val = iter.next().unwrap().parse()?;
+    let next = iter.next();
+    let val = next.unwrap().parse()?;
     Ok(val)
 }
 
@@ -546,7 +547,7 @@ where
     //----------------------------------------------------------------------------------------------
     fn process_commission_report(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-
+        info!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!   Processing commision report");
         //throw away message_id
         fields_itr.next();
         //throw away version
@@ -556,10 +557,26 @@ where
         commission_report.exec_id = fields_itr.next().unwrap().to_string();
         commission_report.commission = decode_f64(&mut fields_itr)?;
         commission_report.currency = fields_itr.next().unwrap().to_string();
-        commission_report.realized_pnl = decode_f64(&mut fields_itr)?;
-        commission_report.yield_ = decode_f64(&mut fields_itr)?;
-        commission_report.yield_redemption_date = decode_i32(&mut fields_itr)?;
+        let pnl = decode_f64(&mut fields_itr);
+        match { pnl } {
+            Ok(val) => commission_report.realized_pnl = val,
+            Err(err) => {
+                error!("ERROR!! {:?}", err);
+                return Err(err);
+            }
+        }
 
+        let yield_ = decode_f64(&mut fields_itr);
+        match { yield_ } {
+            Ok(val) => commission_report.yield_ = val,
+            Err(err) => {
+                error!("ERROR!! {:?}", err);
+                return Err(err);
+            }
+        }
+        info!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!   Processing commision report");
+        commission_report.yield_redemption_date = decode_string(&mut fields_itr)?;
+        info!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!   Processing commision report");
         self.wrapper
             .lock()
             .unwrap()
@@ -863,6 +880,7 @@ where
         if version >= 10 {
             contract.trading_class = decode_string(&mut fields_itr)?;
         }
+
         // decode execution fields
         let mut execution = Execution::default();
         execution.order_id = order_id;
@@ -894,7 +912,13 @@ where
 
         if version >= 9 {
             execution.ev_rule = decode_string(&mut fields_itr)?;
-            execution.ev_multiplier = decode_f64(&mut fields_itr)?;
+
+            let tmp_ev_mult = (&mut fields_itr).peekable().peek().unwrap().as_str();
+            if tmp_ev_mult != "" {
+                execution.ev_multiplier = decode_f64(&mut fields_itr)?;
+            } else {
+                execution.ev_multiplier = 1.0;
+            }
         }
 
         if self.server_version >= MIN_SERVER_VER_MODELS_SUPPORT {
@@ -1578,17 +1602,12 @@ where
 
     //----------------------------------------------------------------------------------------------
     fn process_order_status(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
-        info!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  Processing order status 1");
         let mut fields_itr = fields.iter();
 
         //throw away message_id
         fields_itr.next();
-        info!(
-            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  server version: {}",
-            self.server_version
-        );
+
         if self.server_version < MIN_SERVER_VER_MARKET_CAP_PRICE {
-            info!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  calling next");
             fields_itr.next();
         }
 

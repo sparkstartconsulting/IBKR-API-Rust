@@ -110,194 +110,221 @@ impl TestWrapper {
             self.next_order_id += 1;
         }
 
-        thread::sleep(Duration::from_secs(2));
+        //thread::sleep(Duration::from_secs(2));
 
         //        // ! [order_submission]
 
         // ! [faorderoneaccount]
-        //        let mut fa_order_one_account = order_samples::market_order("BUY", 100.0);
-        //        // Specify the Account Number directly
-        //        fa_order_one_account.account = "DU228250".to_string();
-        //        {
-        //            self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //                self.next_order_id,
-        //                &contract_samples::usstock().borrow(),
-        //                fa_order_one_account.borrow(),
-        //            );
-        //        }
-        //        self.next_order_id += 1;
+        let mut fa_order_one_account = order_samples::market_order("BUY", 100.0);
+        // Specify the Account Number directly
+        fa_order_one_account.account = "DU228250".to_string();
+        {
+            self.client.as_ref().unwrap().lock().unwrap().place_order(
+                self.next_order_id,
+                &contract_samples::usstock().borrow(),
+                fa_order_one_account.borrow(),
+            );
+        }
+        self.next_order_id += 1;
         // ! [faorderoneaccount]
         //
         //        // ! [faordergroupequalquantity]
-        //        let mut fa_order_group_eq = order_samples::limit_order("SELL", 200.0, 2000.0);
-        //        fa_order_group_eq.fa_group = "Group_Equal_Quantity".to_string();
-        //        fa_order_group_eq.fa_method = "EqualQuantity".to_string();
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::simple_future(),
-        //            fa_order_group_eq.borrow(),
-        //        );
+        let mut fa_order_group_eq = order_samples::limit_order("SELL", 200.0, 2000.0);
+        fa_order_group_eq.fa_group = "Group_Equal_Quantity".to_string();
+        fa_order_group_eq.fa_method = "EqualQuantity".to_string();
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::simple_future(),
+            fa_order_group_eq.borrow(),
+        );
         //        // ! [faordergroupequalquantity]
         //
         //        // ! [faordergrouppctchange]
-        //        let mut fa_order_group_pc = order_samples::market_order("BUY", 0.0);
-        //        // You should not specify any order quantity for PctChange allocation method
-        //        fa_order_group_pc.fa_group = "Pct_Change".to_string();
-        //        fa_order_group_pc.fa_method = "PctChange".to_string();
-        //        fa_order_group_pc.fa_percentage = "100".to_string();
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::eur_gbp_fx(),
-        //            fa_order_group_pc.borrow(),
-        //        );
+        let mut fa_order_group_pc = order_samples::market_order("BUY", 0.0);
+        // You should not specify any order quantity for PctChange allocation method
+        fa_order_group_pc.fa_group = "Pct_Change".to_string();
+        fa_order_group_pc.fa_method = "PctChange".to_string();
+        fa_order_group_pc.fa_percentage = "100".to_string();
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::eur_gbp_fx(),
+            fa_order_group_pc.borrow(),
+        );
         //        // ! [faordergrouppctchange]
         //
         //        // ! [faorderprofile]
-        //        let mut fa_order_profile = order_samples::limit_order("BUY", 200.0, 100.0);
-        //        fa_order_profile.fa_profile = "Percent_60_40".to_string();
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::european_stock(),
-        //            fa_order_profile.borrow(),
-        //        );
+        let mut fa_order_profile = order_samples::limit_order("BUY", 200.0, 100.0);
+        fa_order_profile.fa_profile = "Percent_60_40".to_string();
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::european_stock(),
+            fa_order_profile.borrow(),
+        );
         //        // ! [faorderprofile]
         //
         //        // ! [modelorder]
-        //        let mut model_order = order_samples::limit_order("BUY", 200.0, 100.0);
-        //        model_order.account = "DF12345".to_string();
-        //        model_order.model_code = "Technology".to_string(); // model for tech stocks first created in TWS
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            model_order.borrow(),
-        //        );
+        let mut model_order = order_samples::limit_order("BUY", 200.0, 100.0);
+        model_order.account = "DF12345".to_string();
+        model_order.model_code = "Technology".to_string(); // model for tech stocks first created in TWS
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            model_order.borrow(),
+        );
         //        // ! [modelorder]
         //
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::option_at_box(),
-        //            order_samples::block("BUY", 50.0, 20.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::option_at_box(),
-        //            order_samples::box_top("SELL", 10.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::future_combo_contract(),
-        //            order_samples::combo_limit_order("SELL", 1.0, 1.0, false).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::stock_combo_contract(),
-        //            order_samples::combo_market_order("BUY", 1.0, true).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::option_combo_contract(),
-        //            order_samples::combo_market_order("BUY", 1.0, false).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::stock_combo_contract(),
-        //            &order_samples::limit_order_for_combo_with_leg_prices(
-        //                "BUY",
-        //                1.0,
-        //                vec![10.0, 5.0],
-        //                true,
-        //            ),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::discretionary("SELL", 1.0, 45.0, 0.5).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::option_at_box(),
-        //            order_samples::limit_if_touched("BUY", 1.0, 30.0, 34.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::limit_on_close("SELL", 1.0, 34.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::limit_on_open("BUY", 1.0, 35.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::market_if_touched("BUY", 1.0, 30.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::market_on_close("SELL", 1.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::market_on_open("BUY", 1.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::market_order("SELL", 1.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::market_to_limit("BUY", 1.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::option_at_ise(),
-        //            order_samples::midpoint_match("BUY", 1.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::market_to_limit("BUY", 1.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::stop("SELL", 1.0, 34.4).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            &order_samples::stop_limit("BUY", 1.0, 35.0, 33.0),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::simple_future(),
-        //            order_samples::stop_with_protection("SELL", 1.0, 45.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::sweep_to_fill("BUY", 1.0, 35.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::trailing_stop("SELL", 1.0, 0.5, 30.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::usstock().borrow(),
-        //            order_samples::trailing_stop_limit("BUY", 1.0, 2.0, 5.0, 50.0).borrow(),
-        //        );
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            self.next_order_id,
-        //            &contract_samples::us_option_contract(),
-        //            &order_samples::volatility("SELL", 1.0, 5.0, 2),
-        //        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::option_at_box(),
+            order_samples::block("BUY", 50.0, 20.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::option_at_box(),
+            order_samples::box_top("SELL", 10.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::future_combo_contract(),
+            order_samples::combo_limit_order("SELL", 1.0, 1.0, false).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::stock_combo_contract(),
+            order_samples::combo_market_order("BUY", 1.0, true).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::option_combo_contract(),
+            order_samples::combo_market_order("BUY", 1.0, false).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::stock_combo_contract(),
+            &order_samples::limit_order_for_combo_with_leg_prices(
+                "BUY",
+                1.0,
+                vec![10.0, 5.0],
+                true,
+            ),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::discretionary("SELL", 1.0, 45.0, 0.5).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::option_at_box(),
+            order_samples::limit_if_touched("BUY", 1.0, 30.0, 34.0).borrow(),
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::limit_on_close("SELL", 1.0, 34.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::limit_on_open("BUY", 1.0, 35.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::market_if_touched("BUY", 1.0, 30.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::market_on_close("SELL", 1.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::market_on_open("BUY", 1.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::market_order("SELL", 1.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::market_to_limit("BUY", 1.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::option_at_ise(),
+            order_samples::midpoint_match("BUY", 1.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::market_to_limit("BUY", 1.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::stop("SELL", 1.0, 34.4).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            &order_samples::stop_limit("BUY", 1.0, 35.0, 33.0),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::simple_future(),
+            order_samples::stop_with_protection("SELL", 1.0, 45.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::sweep_to_fill("BUY", 1.0, 35.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::trailing_stop("SELL", 1.0, 0.5, 30.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::usstock().borrow(),
+            order_samples::trailing_stop_limit("BUY", 1.0, 2.0, 5.0, 50.0).borrow(),
+        );
+        self.next_order_id += 1;
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            self.next_order_id,
+            &contract_samples::us_option_contract(),
+            &order_samples::volatility("SELL", 1.0, 5.0, 2),
+        );
         //
         //        self.bracket_sample();
         //

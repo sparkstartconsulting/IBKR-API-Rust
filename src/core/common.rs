@@ -856,7 +856,7 @@ pub struct CommissionReport {
     pub currency: String,
     pub realized_pnl: f64,
     pub yield_: f64,
-    pub yield_redemption_date: i32, //YYYYMMDD format
+    pub yield_redemption_date: String, //YYYYMMDD format
 }
 
 impl CommissionReport {
@@ -866,7 +866,7 @@ impl CommissionReport {
         currency: String,
         realized_pnl: f64,
         yield_: f64,
-        yield_redemption_date: i32,
+        yield_redemption_date: String,
     ) -> Self {
         CommissionReport {
             exec_id,
