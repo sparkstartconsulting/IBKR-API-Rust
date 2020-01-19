@@ -14,6 +14,7 @@ use num_derive::FromPrimitive;
 // 0.2.4 (the derive)
 use num_traits::FromPrimitive;
 
+use crate::core::common::{UNSET_DOUBLE, UNSET_INTEGER};
 use crate::core::wrapper::Wrapper;
 
 trait EClientMsgSink {
@@ -300,14 +301,33 @@ pub fn make_field(val: &dyn Any) -> String {
     } else if let Some(stringval) = val.downcast_ref::<&str>() {
         format!("{}\0", stringval)
     } else if let Some(stringval) = val.downcast_ref::<f64>() {
-        format!("{}\0", stringval)
+        if UNSET_DOUBLE == *stringval {
+            format!("{}\0", "")
+        } else {
+            format!("{}\0", *stringval as f64)
+        }
     } else if let Some(stringval) = val.downcast_ref::<i32>() {
-        format!("{}\0", stringval)
+        if UNSET_INTEGER == *stringval {
+            format!("{}\0", "")
+        } else {
+            format!("{}\0", *stringval as i32)
+        }
+    } else if let Some(stringval) = val.downcast_ref::<usize>() {
+        format!("{}\0", *stringval as i32)
     } else {
         "".to_string()
     }
 }
 
 pub fn make_field_handle_empty(val: &dyn Any) -> String {
+    if let Some(stringval) = val.downcast_ref::<f64>() {
+        if UNSET_DOUBLE == *stringval {
+            return make_field(&"");
+        }
+    } else if let Some(stringval) = val.downcast_ref::<i32>() {
+        if UNSET_INTEGER == *stringval {
+            return make_field(&"");
+        }
+    }
     make_field(val)
 }

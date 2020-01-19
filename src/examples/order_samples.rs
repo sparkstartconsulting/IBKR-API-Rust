@@ -381,6 +381,7 @@ pub fn limit_order(action: &str, quantity: f64, limit_price: f64) -> Order {
     order.order_type = "LMT".to_string();
     order.total_quantity = quantity;
     order.lmt_price = limit_price;
+    order.transmit = true;
     //limitorder]
     order
 }

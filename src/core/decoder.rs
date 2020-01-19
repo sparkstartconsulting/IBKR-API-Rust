@@ -44,7 +44,8 @@ const EMPTY_LENGTH_HEADER: [u8; 4] = [0; 4];
 
 //==================================================================================================
 pub fn decode_i32(iter: &mut Iter<String>) -> Result<i32, IBKRApiLibError> {
-    let val: i32 = iter.next().unwrap().parse()?;
+    let next = iter.next();
+    let val: i32 = next.unwrap().parse()?;
     Ok(val)
 }
 
@@ -1264,13 +1265,13 @@ where
         fields_itr.next();
 
         let accounts_list = decode_string(&mut fields_itr)?;
-
+        info!("calling managed_accounts");
         self.wrapper
             .lock()
             .unwrap()
             .deref_mut()
             .managed_accounts(accounts_list.as_ref());
-
+        info!("finished calling managed_accounts");
         Ok(())
     }
 
@@ -1517,7 +1518,7 @@ where
     //----------------------------------------------------------------------------------------------
     fn process_open_order(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-
+        info!("Processing open order");
         //throw away message_id
         fields_itr.next();
 
@@ -1577,15 +1578,22 @@ where
 
     //----------------------------------------------------------------------------------------------
     fn process_order_status(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+        info!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  Processing order status 1");
         let mut fields_itr = fields.iter();
 
         //throw away message_id
         fields_itr.next();
-
+        info!(
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  server version: {}",
+            self.server_version
+        );
         if self.server_version < MIN_SERVER_VER_MARKET_CAP_PRICE {
+            info!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  calling next");
             fields_itr.next();
         }
+
         let order_id = decode_i32(&mut fields_itr)?;
+
         let status = decode_string(&mut fields_itr)?;
 
         let mut filled = 0.0;
@@ -1616,7 +1624,7 @@ where
             mkt_cap_price = decode_f64(&mut fields_itr)?;
         }
 
-        self.wrapper.lock().unwrap().deref_mut().order_status(
+        self.wrapper.try_lock().unwrap().deref_mut().order_status(
             order_id,
             status.as_ref(),
             filled,
@@ -2651,6 +2659,7 @@ where
                             format!("{}:{}:{}", TwsError::NotConnected.message(), val.len(), val)
                                 .as_str(),
                         );
+                        info!("Error receiving message.  Disconnected: Message too big");
                         self.wrapper.lock().unwrap().deref_mut().connection_closed();
                         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
                         error!("Error receiving message.  Invalid size.  Disconnected.");
@@ -2660,17 +2669,20 @@ where
                         )));
                     } else {
                         let fields = read_fields((&val).as_ref());
-
+                        info!("interpret fields...{:?}", fields);
                         self.interpret(fields.as_slice())?;
+                        info!("finished interpret");
                     }
+                    info!("releasing lock");
                 }
                 Result::Err(err) => {
                     if *self.conn_state.lock().unwrap().deref() as i32
                         != ConnStatus::DISCONNECTED as i32
                     {
+                        info!("Error receiving message.  Disconnected: {:?}", err);
                         self.wrapper.lock().unwrap().deref_mut().connection_closed();
                         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
-                        error!("Error receiving message.  Disconnected: {:?}", err);
+
                         return Result::Err(IBKRApiLibError::from(err));
                     } else {
                         return Ok(());

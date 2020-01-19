@@ -12,6 +12,7 @@ use std::thread;
 use encoding::Encoding;
 use from_ascii::FromAscii;
 use log::*;
+use log4rs::append::Append;
 use num_derive::FromPrimitive;
 // 0.2.4 (the derive)
 use num_traits::FromPrimitive;
@@ -89,9 +90,13 @@ where
     }
 
     fn send_bytes(&self, bytes: &[u8]) {
+        info!("Sending bytes");
         self.stream.as_ref().unwrap().write(bytes);
+        self.stream.as_ref().unwrap().flush();
+        info!("finished Sending bytes");
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn connect(
         &mut self,
         host: String,
@@ -155,8 +160,11 @@ where
         }
 
         self.server_version = i32::from_ascii(fields.get(0).unwrap().as_bytes()).unwrap();
+
+        info!("Server version: {}", self.server_version);
+
         self.conn_time = fields.get(1).unwrap().to_string();
-        //self.decoder.server_version = self.server_version;
+        decoder.server_version = self.server_version;
 
         thread::spawn(move || {
             reader.run();
@@ -169,15 +177,21 @@ where
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn is_connected(&self) -> bool {
-        match *self.conn_state.lock().unwrap().deref() {
+        //info!("checking connected...");
+        let connected = match *self.conn_state.lock().unwrap().deref() {
             ConnStatus::DISCONNECTED => false,
             ConnStatus::CONNECTED => true,
             ConnStatus::CONNECTING => false,
             ConnStatus::REDIRECT => false,
-        }
+        };
+
+        //info!("finished checking connected...");
+        connected
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn server_version(&self) -> i32 {
         //        Returns the version of the TWS instance to which the API
         //        application is connected.
@@ -185,6 +199,7 @@ where
         self.server_version
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn set_server_log_level(&self, log_evel: i32) {
         //The pub fnault detail level is ERROR. For more details, see API
         //        Logging.
@@ -214,12 +229,14 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn tws_connection_time(&mut self) -> String {
         //"""Returns the time the API application made a connection to TWS."""
 
         self.conn_time.clone()
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_current_time(&self) {
         let version = 2;
 
@@ -231,6 +248,8 @@ where
         debug!("Requesting current time: {}", msg.as_str());
         self.send_request(msg.as_str())
     }
+
+    //----------------------------------------------------------------------------------------------
     pub fn disconnect(&mut self) {
         if !self.is_connected() {
             info!("Already disconnected...");
@@ -242,6 +261,7 @@ where
         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
     }
 
+    //----------------------------------------------------------------------------------------------
     fn start_api(&mut self) {
         //Initiates the message exchange between the core application and
         //the TWS/IB Gateway. """
@@ -450,6 +470,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_mkt_data(&mut self, req_id: i32) {
         //        """After calling this function, market data for the specified id
         //        will stop flowing.
@@ -479,6 +500,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_market_data_type(&mut self, market_data_type: i32) {
         // The API can receive frozen market data from Trader \
         // Workstation. Frozen market data is the last data recorded in our system. \
@@ -527,6 +549,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_smart_components(&mut self, req_id: i32, bbo_exchange: &'static str) {
         //// self.logRequest(current_fn_name()); vars())
 
@@ -564,6 +587,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_market_rule(&mut self, market_rule_id: i32) {
         //// self.logRequest(current_fn_name()); vars())
 
@@ -600,6 +624,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_tick_by_tick_data(
         &mut self,
         req_id: i32,
@@ -671,6 +696,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_tick_by_tick_data(&mut self, req_id: i32) {
         //// self.logRequest(current_fn_name()); vars())
 
@@ -815,6 +841,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn calculate_option_price(
         &mut self,
         req_id: i32,
@@ -910,6 +937,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_calculate_option_price(&mut self, req_id: i32) {
         //        Call this function to cancel a request to calculate the option
         //        price and greek values for a supplied volatility and underlying price.
@@ -954,6 +982,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn exercise_options(
         &mut self,
         req_id: i32,
@@ -1052,6 +1081,8 @@ where
         //            Note: Each core MUST connect with a unique clientId.
 
         //// self.logRequest(current_fn_name()); vars())
+
+        info!("!!!!!!!!!!   SERVER VERSION: {}", self.server_version());
 
         if !self.is_connected() {
             self.wrapper.lock().unwrap().deref_mut().error(
@@ -1487,7 +1518,7 @@ where
             return;
         }
 
-        let version = if &mut self.server_version() < &mut MIN_SERVER_VER_NOT_HELD.borrow_mut() {
+        let version: i32 = if self.server_version() < MIN_SERVER_VER_NOT_HELD {
             27
         } else {
             45
@@ -1536,27 +1567,26 @@ where
         if self.server_version() >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
             msg.push_str(&make_field(&order.total_quantity));
         } else {
-            msg.push_str(&make_field(&(*&order.total_quantity as i32)));
+            msg.push_str(&make_field(&(order.total_quantity as i32)));
         }
 
         msg.push_str(&make_field(&order.order_type));
+
         if self.server_version() < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE {
-            msg.push_str(&make_field(
-                &(if order.lmt_price != UNSET_DOUBLE {
-                    order.lmt_price
-                } else {
-                    0.0
-                }),
-            ));
+            msg.push_str(&make_field(if order.lmt_price != UNSET_DOUBLE {
+                &order.lmt_price
+            } else {
+                &0
+            }));
         } else {
             msg.push_str(&make_field_handle_empty(&order.lmt_price));
         }
 
         if self.server_version() < MIN_SERVER_VER_TRAILING_PERCENT {
-            msg.push_str(&make_field(&if order.aux_price != UNSET_DOUBLE {
-                order.aux_price
+            msg.push_str(&make_field(if order.aux_price != UNSET_DOUBLE {
+                &order.aux_price
             } else {
-                0.0
+                &0
             }));
         } else {
             msg.push_str(&make_field_handle_empty(&order.aux_price));
@@ -1567,7 +1597,7 @@ where
         msg.push_str(&make_field(&order.oca_group));
         msg.push_str(&make_field(&order.account));
         msg.push_str(&make_field(&order.open_close));
-        msg.push_str(&make_field(&order.origin));
+        msg.push_str(&make_field(&(order.origin as i32)));
         msg.push_str(&make_field(&order.order_ref));
         msg.push_str(&make_field(&order.transmit));
         msg.push_str(&make_field(&order.parent_id)); // srv v4 && above
@@ -1678,7 +1708,7 @@ where
         msg.push_str(&make_field(&order.e_trade_only));
         msg.push_str(&make_field(&order.firm_quote_only));
         msg.push_str(&make_field_handle_empty(&order.nbbo_price_cap));
-        msg.push_str(&make_field(&order.auction_strategy)); // AUCTION_MATCH, AUCTION_IMPROVEMENT, AUCTION_TRANSPARENT
+        msg.push_str(&make_field(&(order.auction_strategy as i32))); // AUCTION_MATCH, AUCTION_IMPROVEMENT, AUCTION_TRANSPARENT
         msg.push_str(&make_field_handle_empty(&order.starting_price));
         msg.push_str(&make_field_handle_empty(&order.stock_ref_price));
         msg.push_str(&make_field_handle_empty(&order.delta));
@@ -1754,6 +1784,7 @@ where
         // HEDGE orders
         if self.server_version() >= MIN_SERVER_VER_HEDGE_ORDERS {
             msg.push_str(&make_field(&order.hedge_type));
+
             if !order.hedge_type.is_empty() {
                 msg.push_str(&make_field(&order.hedge_param));
             }
@@ -1897,9 +1928,11 @@ where
             msg.push_str(&make_field_handle_empty(&order.use_price_mgmt_algo))
         }
 
+        info!("Placing order {:?}", msg);
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_order(&mut self, order_id: i32) {
         //"""Call this function to cancel an order.
 
@@ -1930,6 +1963,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_open_orders(&mut self) {
         //        Call this function to request the open orders that were
         //        placed from this core. Each open order will be fed back through the
@@ -1963,6 +1997,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_auto_open_orders(&mut self, b_auto_bind: bool) {
         //        Call this function to request that newly created TWS orders
         //        be implicitly associated with the core.When a new TWS order is
@@ -1999,6 +2034,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_all_open_orders(&mut self) {
         //        Call this function to request the open orders placed from all
         //        clients and also from TWS. Each open order will be fed back through the
@@ -2030,6 +2066,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_global_cancel(&mut self) {
         //        Use this function to cancel all open orders globally. It
         //        cancels both API and TWS open orders.
@@ -2060,7 +2097,8 @@ where
         self.send_request(msg.as_str());
     }
 
-    pub fn req_ids(&mut self, num_ids: i32) {
+    //----------------------------------------------------------------------------------------------
+    pub fn req_ids(&self, num_ids: i32) {
         //        Call this function to request from TWS the next valid ID that
         //        can be used when placing an order.  After calling this function, the
         //        nextValidId() event will be triggered, and the id returned is that next
@@ -2072,14 +2110,16 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
+            info!("Not connected, sending error...");
             self.wrapper.lock().unwrap().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
             );
+            info!("Not connected, returning...");
             return;
         }
-
+        info!("req_ids is connected...");
         let version = 1;
 
         let mut msg = "".to_string();
@@ -2089,7 +2129,7 @@ where
         msg.push_str(&make_field(&message_id));
         msg.push_str(&make_field(&version));
         msg.push_str(&make_field(&num_ids));
-
+        info!("req_ids... sending request...");
         self.send_request(msg.as_str());
     }
 
@@ -2136,6 +2176,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_account_summary(
         &mut self,
         req_id: i32,
@@ -2222,6 +2263,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_account_summary(&mut self, req_id: i32) {
         //        """Cancels the request for Account Window Summary tab data.
         //
@@ -2248,6 +2290,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_positions(&mut self) {
         //"""Requests real-time position data for all accounts."""
 
@@ -2286,6 +2329,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_positions(&mut self) {
         //"""Cancels real-time position updates."""
 
@@ -2323,6 +2367,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_positions_multi(
         &mut self,
         req_id: i32,
@@ -2373,6 +2418,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_positions_multi(&mut self, req_id: i32) {
         //// self.logRequest(current_fn_name()); vars())
 
@@ -2410,6 +2456,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_account_updates_multi(
         &mut self,
         req_id: i32,
@@ -2462,6 +2509,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_account_updates_multi(&mut self, req_id: i32) {
         //// self.logRequest(current_fn_name()); vars())
 
@@ -2539,6 +2587,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_pnl(&mut self, req_id: i32) {
         //// self.logRequest(current_fn_name()); vars())
 
@@ -2573,6 +2622,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_pnl_single(
         &mut self,
         req_id: i32,
@@ -2616,6 +2666,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_pnl_single(&mut self, req_id: i32) {
         //// self.logRequest(current_fn_name()); vars())
 
@@ -2862,6 +2913,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_mkt_depth(
         &mut self,
         req_id: i32,
@@ -2997,6 +3049,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_mkt_depth(&mut self, req_id: i32, is_smart_depth: bool) {
         //    After calling this function, market depth data for the specified id
         //    will stop flowing.
@@ -3109,6 +3162,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn request_fa(&mut self, fa_data: FaDataType) {
         //    Call this function to request FA configuration information from TWS.
         //    The data returns in an XML string via a "receiveFA" ActiveX event.
@@ -3140,6 +3194,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn replace_fa(&mut self, fa_data: FaDataType, cxml: &'static str) {
         //    Call this function to modify FA configuration information from the
         //    API. Note that this can also be done manually in TWS itself.
@@ -3329,6 +3384,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_historical_data(&mut self, req_id: i32) {
         /*Used if an internet disconnect has occurred or the results of a query
         are otherwise delayed and the application is no longer interested in receiving
@@ -3361,7 +3417,7 @@ where
 
     // Note that formatData parameter affects intraday bars only
     // 1-day bars always return with date in YYYYMMDD format
-
+    //----------------------------------------------------------------------------------------------
     pub fn req_head_time_stamp(
         &mut self,
         req_id: i32,
@@ -3419,6 +3475,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_head_time_stamp(&mut self, req_id: i32) {
         // self.logRequest(current_fn_name()); vars())
 
@@ -3454,6 +3511,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_histogram_data(
         &mut self,
         ticker_id: i32,
@@ -3510,6 +3568,7 @@ where
         self.send_request(msg.as_str());
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_histogram_data(&mut self, ticker_id: i32) {
         // self.logRequest(current_fn_name()); vars())
 
@@ -3544,6 +3603,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_historical_ticks(
         &mut self,
         req_id: i32,
@@ -3643,6 +3703,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_scanner_subscription(
         &mut self,
         req_id: i32,
@@ -3738,6 +3799,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_scanner_subscription(&mut self, req_id: i32) {
         /*reqId:i32 - The ticker ID. Must be a unique value*/
 
@@ -3864,6 +3926,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_real_time_bars(&mut self, req_id: i32) {
         /*Call the cancel_real_time_bars() function to stop receiving real time bar results.
 
@@ -4000,6 +4063,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn cancel_fundamental_data(&mut self, req_id: i32) {
         /*Call this function to stop receiving fundamental data.
 
@@ -4079,6 +4143,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_news_article(
         &mut self,
         req_id: i32,
@@ -4131,6 +4196,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_historical_news(
         &mut self,
         req_id: i32,
@@ -4236,6 +4302,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn subscribe_to_group_events(&mut self, req_id: i32, group_id: i32) {
         /*reqId:i32 - The unique number associated with the notification.
         group_id:i32 - The ID of the group, currently it is a number from 1 to 7.
@@ -4279,6 +4346,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn update_display_group(&mut self, req_id: i32, contract_info: &'static str) {
         /*reqId:i32 - The requestId specified in subscribe_to_group_events().
         contract_info:&'static str - The encoded value that uniquely represents the
@@ -4327,6 +4395,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn unsubscribe_from_group_events(&mut self, req_id: i32) {
         /*reqId:i32 - The requestId specified in subscribe_to_group_events()*/
 
@@ -4367,6 +4436,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn verify_request(&mut self, api_name: &'static str, api_version: &'static str) {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
@@ -4420,6 +4490,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn verify_message(&mut self, api_data: &'static str) {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
@@ -4461,6 +4532,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn verify_and_auth_request(
         &mut self,
         api_name: &'static str,
@@ -4520,6 +4592,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn verify_and_auth_message(&mut self, api_data: &'static str, xyz_response: &'static str) {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
@@ -4562,6 +4635,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_sec_def_opt_params(
         &mut self,
         req_id: i32,
@@ -4616,6 +4690,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_soft_dollar_tiers(&mut self, req_id: i32) {
         /*Requests pre-pub fnined Soft Dollar Tiers. This is only supported for
         registered professional advisors and hedge and mutual funds who have
@@ -4641,6 +4716,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_family_codes(&mut self) {
         // self.logRequest(current_fn_name()); vars())
 
@@ -4674,6 +4750,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_matching_symbols(&mut self, req_id: i32, pattern: &'static str) {
         // self.logRequest(current_fn_name()); vars())
 
@@ -4710,6 +4787,7 @@ where
         self.send_request(msg.as_str())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn req_completed_orders(&mut self, api_only: bool) {
         /*Call this function to request the completed orders. If api_only parameter
         is true, then only completed orders placed from API are requested.

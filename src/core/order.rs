@@ -6,13 +6,15 @@ use serde::{Deserialize, Serialize};
 use serde::export::fmt::{Display, Error};
 use serde::export::Formatter;
 
-use crate::core::common::TagValue;
+use crate::core::common::{TagValue, UNSET_DOUBLE, UNSET_INTEGER};
+use crate::core::order::AuctionStrategy::AuctionUnset;
+use crate::core::order::Origin::Customer;
 use crate::core::order_condition::OrderConditionEnum;
 
 // enum Origin
 //==================================================================================================
 #[repr(i32)]
-#[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive)]
+#[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]
 pub enum Origin {
     Customer = 0,
     Firm = 1,
@@ -28,7 +30,7 @@ impl Default for Origin {
 // enum AuctionStrategy
 //==================================================================================================
 #[repr(i32)]
-#[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive)]
+#[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]
 pub enum AuctionStrategy {
     AuctionUnset = 0,
     AuctionMatch = 1,
@@ -195,7 +197,7 @@ impl Display for OrderComboLeg {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Order {
     pub soft_dollar_tier: SoftDollarTier,
     // order identifier
@@ -208,7 +210,7 @@ pub struct Order {
     pub total_quantity: f64,
     pub order_type: String,
     pub lmt_price: f64,
-    pub(crate) aux_price: f64,
+    pub aux_price: f64,
 
     // extended order fields
     pub tif: String,
@@ -722,5 +724,195 @@ impl Display for Order {
                 "".to_string()
             },
         )
+    }
+}
+
+impl Default for Order {
+    fn default() -> Self {
+        Order {
+            soft_dollar_tier: SoftDollarTier::new("".to_string(), "".to_string(), "".to_string()),
+            // order identifier
+            order_id: 0,
+            client_id: 0,
+            perm_id: 0,
+
+            // main order fields
+            action: "".to_string(),
+            total_quantity: 0.0,
+            order_type: "".to_string(),
+            lmt_price: UNSET_DOUBLE,
+            aux_price: UNSET_DOUBLE,
+
+            // extended order fields
+            tif: "".to_string(),               // "Time in Force" - DAY, GTC, etc.
+            active_start_time: "".to_string(), // for GTC orders
+            active_stop_time: "".to_string(),  // for GTC orders
+            oca_group: "".to_string(),         // one cancels all group name
+            oca_type: 0, // 1 = CANCEL_WITH_BLOCK, 2 = REDUCE_WITH_BLOCK, 3 = REDUCE_NON_BLOCK
+            order_ref: "".to_string(),
+            transmit: true, // if false, order will be created but not transmited
+            parent_id: 0, // Parent order Id, to associate Auto STP or TRAIL orders with the original order.
+            block_order: false,
+            sweep_to_fill: false,
+            display_size: 0,
+            trigger_method: 0, // 0=Default, 1=Double_Bid_Ask, 2=Last, 3=Double_Last, 4=Bid_Ask, 7=Last_or_Bid_Ask, 8=Mid-point
+            outside_rth: false,
+            hidden: false,
+            good_after_time: "".to_string(), // Format: 20060505 08:00:00 {time zone}
+            good_till_date: "".to_string(),  // Format: 20060505 08:00:00 {time zone}
+            rule80a: "".to_string(), // Individual = 'I', Agency = 'A', AgentOtherMember = 'W', IndividualPTIA = 'J', AgencyPTIA = 'U', AgentOtherMemberPTIA = 'M', IndividualPT = 'K', AgencyPT = 'Y', AgentOtherMemberPT = 'N'
+            all_or_none: false,
+            min_qty: UNSET_INTEGER,       //type: int
+            percent_offset: UNSET_DOUBLE, // type: float; REL orders only
+            override_percentage_constraints: false,
+            trail_stop_price: UNSET_DOUBLE, // type: float
+            trailing_percent: UNSET_DOUBLE, // type: float; TRAILLIMIT orders only
+
+            // financial advisors only
+            fa_group: "".to_string(),
+            fa_profile: "".to_string(),
+            fa_method: "".to_string(),
+            fa_percentage: "".to_string(),
+
+            // institutional (ie non-cleared) only
+            designated_location: "".to_string(), //used only when shortSaleSlot=2
+            open_close: "O".to_string(),         // O=Open, C=Close
+            origin: Customer,                    // 0=Customer, 1=Firm
+            short_sale_slot: 0, // type: int; 1 if you hold the shares, 2 if they will be delivered from elsewhere.  Only for Action=SSHORT
+            exempt_code: -1,
+
+            // SMART routing only
+            discretionary_amt: 0.0,
+            e_trade_only: true,
+            firm_quote_only: true,
+            nbbo_price_cap: UNSET_DOUBLE, // type: float
+            opt_out_smart_routing: false,
+
+            // BOX exchange orders only
+            auction_strategy: AuctionUnset, // type: int; AUCTION_MATCH, AUCTION_IMPROVEMENT, AUCTION_TRANSPARENT
+            starting_price: UNSET_DOUBLE,   // type: float
+            stock_ref_price: UNSET_DOUBLE,  // type: float
+            delta: UNSET_DOUBLE,            // type: float
+
+            // pegged to stock and VOL orders only
+            stock_range_lower: UNSET_DOUBLE, // type: float
+            stock_range_upper: UNSET_DOUBLE, // type: float
+
+            randomize_price: false,
+            randomize_size: false,
+
+            // VOLATILITY ORDERS ONLY
+            volatility: UNSET_DOUBLE,       // type: float
+            volatility_type: UNSET_INTEGER, // type: int   // 1=daily, 2=annual
+            delta_neutral_order_type: "".to_string(),
+            delta_neutral_aux_price: UNSET_DOUBLE, // type: float
+            delta_neutral_con_id: 0,
+            delta_neutral_settling_firm: "".to_string(),
+            delta_neutral_clearing_account: "".to_string(),
+            delta_neutral_clearing_intent: "".to_string(),
+            delta_neutral_open_close: "".to_string(),
+            delta_neutral_short_sale: false,
+            delta_neutral_short_sale_slot: 0,
+            delta_neutral_designated_location: "".to_string(),
+            continuous_update: false,
+            reference_price_type: UNSET_INTEGER, // type: int; 1=Average, 2 = BidOrAsk
+
+            // COMBO ORDERS ONLY
+            basis_points: UNSET_DOUBLE, // type: float; EFP orders only
+            basis_points_type: UNSET_INTEGER, // type: int;  EFP orders only
+
+            // SCALE ORDERS ONLY
+            scale_init_level_size: UNSET_INTEGER,   // type: int
+            scale_subs_level_size: UNSET_INTEGER,   // type: int
+            scale_price_increment: UNSET_DOUBLE,    // type: float
+            scale_price_adjust_value: UNSET_DOUBLE, // type: float
+            scale_price_adjust_interval: UNSET_INTEGER, // type: int
+            scale_profit_offset: UNSET_DOUBLE,      // type: float
+            scale_auto_reset: false,
+            scale_init_position: UNSET_INTEGER, // type: int
+            scale_init_fill_qty: UNSET_INTEGER, // type: int
+            scale_random_percent: false,
+            scale_table: "".to_string(),
+
+            // HEDGE ORDERS
+            hedge_type: "".to_string(), // 'D' - delta, 'B' - beta, 'F' - FX, 'P' - pair
+            hedge_param: "".to_string(), // 'beta=X' value for beta hedge, 'ratio=Y' for pair hedge
+
+            // Clearing info
+            account: "".to_string(), // IB account
+            settling_firm: "".to_string(),
+            clearing_account: "".to_string(), //True beneficiary of the order
+            clearing_intent: "".to_string(),  // "" (Default), "IB", "Away", "PTA" (PostTrade)
+
+            // ALGO ORDERS ONLY
+            algo_strategy: "".to_string(),
+
+            algo_params: vec![],                //TagValueList
+            smart_combo_routing_params: vec![], //TagValueList
+
+            algo_id: "".to_string(),
+
+            // What-if
+            what_if: false,
+
+            // Not Held
+            not_held: false,
+            solicited: false,
+
+            // models
+            model_code: "".to_string(),
+
+            // order combo legs
+            order_combo_legs: vec![], // OrderComboLegListSPtr
+
+            order_misc_options: vec![], // TagValueList
+
+            // VER PEG2BENCH fields:
+            reference_contract_id: 0,
+            pegged_change_amount: 0.0,
+            is_pegged_change_amount_decrease: false,
+            reference_change_amount: 0.0,
+            reference_exchange_id: "".to_string(),
+            adjusted_order_type: "".to_string(),
+
+            trigger_price: UNSET_DOUBLE,
+            adjusted_stop_price: UNSET_DOUBLE,
+            adjusted_stop_limit_price: UNSET_DOUBLE,
+            adjusted_trailing_amount: UNSET_DOUBLE,
+            adjustable_trailing_unit: 0,
+            lmt_price_offset: UNSET_DOUBLE,
+
+            conditions: vec![], // std::vector<std::shared_ptr<OrderCondition>>
+            conditions_cancel_order: false,
+            conditions_ignore_rth: false,
+
+            // ext operator
+            ext_operator: "".to_string(),
+
+            // native cash quantity
+            cash_qty: UNSET_DOUBLE,
+
+            mifid2decision_maker: "".to_string(),
+            mifid2decision_algo: "".to_string(),
+            mifid2execution_trader: "".to_string(),
+            mifid2execution_algo: "".to_string(),
+
+            dont_use_auto_price_for_hedge: false,
+
+            is_oms_container: false,
+
+            discretionary_up_to_limit_price: false,
+
+            auto_cancel_date: "".to_string(),
+            filled_quantity: UNSET_DOUBLE,
+            ref_futures_con_id: 0,
+            auto_cancel_parent: false,
+            shareholder: "".to_string(),
+            imbalance_only: false,
+            route_marketable_to_bbo: false,
+            parent_perm_id: 0,
+
+            use_price_mgmt_algo: false,
+        }
     }
 }

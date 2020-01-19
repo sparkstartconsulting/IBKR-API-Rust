@@ -58,6 +58,7 @@ where
                 debug!("disconnected");
             }
             _ => {
+                info!("Disconnect requested");
                 self.wrapper.connection_closed();
             }
         }

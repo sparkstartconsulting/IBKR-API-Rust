@@ -18,13 +18,7 @@ fn main() -> Result<(), IBKRApiLibError> {
     let wrapper = DefaultWrapper::new();
     let app = Arc::new(Mutex::new(EClient::new(wrapper)));
     app.lock().unwrap().wrapper.lock().unwrap().client = Option::from(app.clone());
-    app.lock()
-        .unwrap()
-        .wrapper
-        .lock()
-        .unwrap()
-        .deref()
-        .next_valid_id(3);
+    app.lock().unwrap().wrapper.lock().unwrap().next_valid_id(3);
     app.lock()
         .unwrap()
         .connect("127.0.0.1".to_string(), 7497, 0);

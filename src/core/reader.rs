@@ -3,6 +3,7 @@ use std::net::{Shutdown, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
+use std::thread;
 
 use log::*;
 
@@ -93,7 +94,7 @@ impl Reader {
 
             if msg.as_str() != "" {
                 //debug!("sending message to core... ");
-                self.messages.send(msg).unwrap();
+                self.messages.send(msg);
             } else {
                 ///Break to the outer loop and get another packet of messages.
 

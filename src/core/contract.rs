@@ -229,7 +229,7 @@ impl Display for Contract {
             sec_id: {},
             combo_legs_descrip: {},
             combo_legs: [{}],
-            delta_neutral_contract: [{}],",
+            delta_neutral_contract: [{:?}],",
             self.con_id,
             self.symbol,
             self.sec_type,
@@ -251,7 +251,7 @@ impl Display for Contract {
                 .map(|x| { format!("{}", x.to_string()) })
                 .collect::<Vec<String>>()
                 .join(","),
-            self.delta_neutral_contract.as_ref().unwrap()
+            self.delta_neutral_contract
         )
     }
 }
