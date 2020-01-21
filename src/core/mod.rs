@@ -1,7 +1,6 @@
 pub mod algo_params;
 pub mod client;
 pub mod common;
-pub mod connection;
 pub mod contract;
 pub mod decoder;
 pub mod errors;
@@ -13,5 +12,4 @@ pub mod order_decoder;
 pub mod reader;
 pub mod scanner;
 pub mod server_versions;
-pub mod transport;
 pub mod wrapper;

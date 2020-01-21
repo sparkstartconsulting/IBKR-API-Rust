@@ -13,6 +13,7 @@ use crate::core::order_condition::{
 //    #/ the limit price set to the COP or the best bid/ask after the market opens.
 //    #/ Products: FUT, STK
 //    */
+//==================================================================================================
 pub fn at_auction(action: &str, quantity: f64, price: f64) -> Order {
     //auction]
     let mut order = Order::default();
@@ -30,6 +31,7 @@ pub fn at_auction(action: &str, quantity: f64, price: f64) -> Order {
 //    #/ may be used to increase the price range over which the limit order is eligible to execute. The market sees only the limit price.
 //    #/ Products: STK
 //    */
+//==================================================================================================
 pub fn discretionary(action: &str, quantity: f64, price: f64, discretionary_amount: f64) -> Order {
     //discretionary]
     let mut order = Order::default();
@@ -48,6 +50,7 @@ pub fn discretionary(action: &str, quantity: f64, price: f64, discretionary_amou
 //    #/ lower/higher than the current displayed bid/ask.
 //    #/ Products: BOND, CFD, EFP, CASH, FUND, FUT, FOP, OPT, STK, WAR
 //    */
+//==================================================================================================
 pub fn market_order(action: &str, quantity: f64) -> Order {
     //market]
     let mut order = Order::default();
@@ -67,7 +70,7 @@ pub fn market_order(action: &str, quantity: f64) -> Order {
 #/ stop order, except that an MIT sell order is placed above the current market price, and a stop sell order is placed below
 #/ Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
 */
-
+//==================================================================================================
 pub fn market_if_touched(action: &str, quantity: f64, price: f64) -> Order {
     //market_if_touched]
     let mut order = Order::default();
@@ -83,7 +86,7 @@ pub fn market_if_touched(action: &str, quantity: f64, price: f64) -> Order {
 #/ A Market-on-Close (MOC) order is a market order that is submitted to execute as close to the closing price as possible.
 #/ Products: CFD, FUT, STK, WAR
 */
-
+//==================================================================================================
 pub fn market_on_close(action: &str, quantity: f64) -> Order {
     //market_on_close]
     let mut order = Order::default();
@@ -99,7 +102,7 @@ pub fn market_on_close(action: &str, quantity: f64) -> Order {
 #/ submitted at the market's open and fills at the market price.
 #/ Products: CFD, STK, OPT, WAR
 */
-
+//==================================================================================================
 pub fn market_on_open(action: &str, quantity: f64) -> Order {
     //market_on_open]
     let mut order = Order::default();
@@ -117,7 +120,7 @@ pub fn market_on_open(action: &str, quantity: f64) -> Order {
 #/ execute only when the midpoprice:is:i32 better than the limit price. Standard MPM orders are completely anonymous.
 #/ Products: STK
 */
-
+//==================================================================================================
 pub fn midpoint_match(action: &str, quantity: f64) -> Order {
     //midpoint_match]
     let mut order = Order::default();
@@ -133,7 +136,7 @@ pub fn midpoint_match(action: &str, quantity: f64) -> Order {
 #/ the NBBO or better. Set an optional price cap to define the highest price (for a buy order) or the lowest price (for a sell
 #/ order) you are willing to accept. Requires TWS 975+. Smart-routing to US stocks only.
 */
-
+//==================================================================================================
 pub fn midprice(action: &str, quantity: f64, price_cap: f64) -> Order {
     //midprice]
     let mut order = Order::default();
@@ -154,7 +157,7 @@ pub fn midprice(action: &str, quantity: f64, price_cap: f64) -> Order {
 #/     Buy order price = Ask price - offset amount
 #/ Products: STK
 */
-
+//==================================================================================================
 pub fn pegged_to_market(action: &str, quantity: f64, market_offset: f64) -> Order {
     //pegged_market]
     let mut order = Order::default();
@@ -176,7 +179,7 @@ pub fn pegged_to_market(action: &str, quantity: f64, market_offset: f64) -> Orde
 #/ price will be rounded to the nearest penny in favor of the order.
 #/ Products: OPT
 */
-
+//==================================================================================================
 pub fn pegged_to_stock(
     action: &str,
     quantity: f64,
@@ -208,7 +211,7 @@ pub fn pegged_to_stock(
 #/ Stocks, Options and Futures - not available on paper trading
 #/ Products: CFD, STK, OPT, FUT
 */
-
+//==================================================================================================
 pub fn relative_pegged_to_primary(
     action: &str,
     quantity: f64,
@@ -233,7 +236,7 @@ pub fn relative_pegged_to_primary(
 #/ immediate execution.
 #/ Products: CFD, STK, WAR
 */
-
+//==================================================================================================
 pub fn sweep_to_fill(action: &str, quantity: f64, price: f64) -> Order {
     //sweep_to_fill]
     let mut order = Order::default();
@@ -257,7 +260,7 @@ pub fn sweep_to_fill(action: &str, quantity: f64, price: f64) -> Order {
 #/ Products: OPT
 #/ Supported Exchanges: BOX
 */
-
+//==================================================================================================
 pub fn auction_limit(
     action: &str,
     quantity: f64,
@@ -289,7 +292,7 @@ pub fn auction_limit(
 #/ Products: OPT
 #/ Supported Exchanges: BOX
 */
-
+//==================================================================================================
 pub fn auction_pegged_to_stock(
     action: &str,
     quantity: f64,
@@ -321,7 +324,7 @@ pub fn auction_pegged_to_stock(
 #/ Products: OPT
 #/ Supported Exchanges: BOX
 */
-
+//==================================================================================================
 pub fn auction_relative(action: &str, quantity: f64, offset: f64) -> Order {
     //auction_relative]
     let mut order = Order::default();
@@ -338,7 +341,7 @@ pub fn auction_relative(action: &str, quantity: f64, offset: f64) -> Order {
 #/ orders over time without moving the market, use the Accumulate/Distribute algorithm.
 #/ Products: OPT
 */
-
+//==================================================================================================
 pub fn block(action: &str, quantity: f64, price: f64) -> Order {
     //block]
     let mut order = Order::default();
@@ -357,7 +360,7 @@ pub fn block(action: &str, quantity: f64, price: f64) -> Order {
 #/ Products: OPT
 #/ Supported Exchanges: BOX
 */
-
+//==================================================================================================
 pub fn box_top(action: &str, quantity: f64) -> Order {
     //boxtop]
     let mut order = Order::default();
@@ -373,7 +376,7 @@ pub fn box_top(action: &str, quantity: f64) -> Order {
 #/ it will not fill at a price less favorable than your limit price, but it does not guarantee a fill.
 #/ Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
 */
-
+//==================================================================================================
 pub fn limit_order(action: &str, quantity: f64, limit_price: f64) -> Order {
     //limitorder]
     let mut order = Order::default();
@@ -391,7 +394,7 @@ pub fn limit_order(action: &str, quantity: f64, limit_price: f64) -> Order {
 #/ Requires TWS or IBG 963+
 #/ https://www.interactivebrokers.com/en/index.php?f=23876#963-02
 */
-
+//==================================================================================================
 pub fn limit_order_with_cash_qty(
     action: &str,
     quantity: f64,
@@ -415,7 +418,7 @@ pub fn limit_order_with_cash_qty(
 #/ placed above the current market price, and a stop limit sell order is placed below.
 #/ Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
 */
-
+//==================================================================================================
 pub fn limit_if_touched(
     action: &str,
     quantity: f64,
@@ -438,7 +441,7 @@ pub fn limit_if_touched(
 #/ limit price.
 #/ Products: CFD, FUT, STK, WAR
 */
-
+//==================================================================================================
 pub fn limit_on_close(action: &str, quantity: f64, limit_price: f64) -> Order {
     //limitonclose]
     let mut order = Order::default();
@@ -455,7 +458,7 @@ pub fn limit_on_close(action: &str, quantity: f64, limit_price: f64) -> Order {
 #/ and that will only execute at the specified limit price or better. Orders are filled in accordance with specific exchange rules.
 #/ Products: CFD, STK, OPT, WAR
 */
-
+//==================================================================================================
 pub fn limit_on_open(action: &str, quantity: f64, limit_price: f64) -> Order {
     //limitonopen]
     let mut order = Order::default();
@@ -480,7 +483,7 @@ pub fn limit_on_open(action: &str, quantity: f64, limit_price: f64) -> Order {
 #/ the bid and the Relative adds the offset to the bid.
 #/ Products: STK, WAR
 */
-
+//==================================================================================================
 pub fn passive_relative(action: &str, quantity: f64, offset: f64) -> Order {
     //passive_relative]
     let mut order = Order::default();
@@ -499,7 +502,7 @@ pub fn passive_relative(action: &str, quantity: f64, offset: f64) -> Order {
 #/ to be more aggressive. If the market moves in the opposite direction, the order will execute.
 #/ Products: STK
 */
-
+//==================================================================================================
 pub fn pegged_to_midpoint(action: &str, quantity: f64, offset: f64, limit_price: f64) -> Order {
     //pegged_midpoint]
     let mut order = Order::default();
@@ -519,7 +522,7 @@ pub fn pegged_to_midpoint(action: &str, quantity: f64, offset: f64, limit_price:
 #/ Products: CFD, BAG, FOP, CASH, FUT, OPT, STK, WAR
 */
 //bracket]
-
+//==================================================================================================
 pub fn bracket_order(
     parent_order_id: i32,
     action: &str,
@@ -571,7 +574,7 @@ pub fn bracket_order(
 #/ partially filled, the remainder of the order is canceled and re-submitted as a limit order with the limit price equal to the price
 #/ at which the filled portion of the order executed.
 */
-
+//==================================================================================================
 pub fn market_to_limit(action: &str, quantity: f64) -> Order {
     //markettolimit]
     let mut order = Order::default();
@@ -588,7 +591,7 @@ pub fn market_to_limit(action: &str, quantity: f64) -> Order {
 #/ close to the current market price, slightly higher for a sell order and lower for a buy order.
 #/ Products: FUT, FOP
 */
-
+//==================================================================================================
 pub fn market_with_protection(action: &str, quantity: f64) -> Order {
     //marketwithprotection]
     let mut order = Order::default();
@@ -607,7 +610,7 @@ pub fn market_with_protection(action: &str, quantity: f64) -> Order {
 #/ profit on a short sale.
 #/ Products: CFD, BAG, CASH, FUT, FOP, OPT, STK, WAR
 */
-
+//==================================================================================================
 pub fn stop(action: &str, quantity: f64, stop_price: f64) -> Order {
     //stop]
     let mut order = Order::default();
@@ -625,7 +628,7 @@ pub fn stop(action: &str, quantity: f64, stop_price: f64) -> Order {
 #/ price, the order becomes executable and enters the market as a limit order, which is an order to buy or sell at a specified price or better.
 #/ Products: CFD, CASH, FUT, FOP, OPT, STK, WAR
 */
-
+//==================================================================================================
 pub fn stop_limit(action: &str, quantity: f64, limit_price: f64, stop_price: f64) -> Order {
     //stoplimit]
     let mut order = Order::default();
@@ -646,7 +649,7 @@ pub fn stop_limit(action: &str, quantity: f64, limit_price: f64, stop_price: f64
 #/ trigger price +/- the protection points.
 #/ Products: FUT
 */
-
+//==================================================================================================
 pub fn stop_with_protection(action: &str, quantity: f64, stop_price: f64) -> Order {
     //stopwithprotection]
     let mut order = Order::default();
@@ -666,7 +669,7 @@ pub fn stop_with_protection(action: &str, quantity: f64, stop_price: f64) -> Ord
 #/ trailing stop orders, and are most appropriate for use in falling markets.
 #/ Products: CFD, CASH, FOP, FUT, OPT, STK, WAR
 */
-
+//==================================================================================================
 pub fn trailing_stop(
     action: &str,
     quantity: f64,
@@ -694,7 +697,7 @@ pub fn trailing_stop(
 #/ and is generally used in falling markets.
 #/ Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
 */
-
+//==================================================================================================
 pub fn trailing_stop_limit(
     action: &str,
     quantity: f64,
@@ -721,7 +724,7 @@ pub fn trailing_stop_limit(
 #/ best execution.
 #/ Products: OPT, STK, FUT
 */
-
+//==================================================================================================
 pub fn combo_limit_order(
     action: &str,
     quantity: f64,
@@ -751,7 +754,7 @@ pub fn combo_limit_order(
 #/ best execution.
 #/ Products: OPT, STK, FUT
 */
-
+//==================================================================================================
 pub fn combo_market_order(action: &str, quantity: f64, non_guaranteed: bool) -> Order {
     //combomarket]
     let mut order = Order::default();
@@ -775,7 +778,7 @@ pub fn combo_market_order(action: &str, quantity: f64, non_guaranteed: bool) -> 
 #/ best execution.
 #/ Products: OPT, STK, FUT
 */
-
+//==================================================================================================
 pub fn limit_order_for_combo_with_leg_prices(
     action: &str,
     quantity: f64,
@@ -810,7 +813,7 @@ pub fn limit_order_for_combo_with_leg_prices(
 #/ best execution.
 #/ Products: OPT, STK, FUT
 */
-
+//==================================================================================================
 pub fn relative_limit_combo(
     action: &str,
     quantity: f64,
@@ -840,7 +843,7 @@ pub fn relative_limit_combo(
 #/ best execution.
 #/ Products: OPT, STK, FUT
 */
-
+//==================================================================================================
 pub fn relative_market_combo(action: &str, quantity: f64, non_guaranteed: bool) -> Order {
     //relativemarketcombo]
     let mut order = Order::default();
@@ -870,7 +873,7 @@ pub fn relative_market_combo(action: &str, quantity: f64, non_guaranteed: bool) 
 #/ Products: BOND, CASH, FUT, FOP, STK, OPT, WAR
 */
 //oca]
-
+//==================================================================================================
 pub fn one_cancels_all(oca_group: &str, oca_orders: Vec<Order>, oca_type: i32) {
     for mut order in oca_orders {
         order.oca_group = oca_group.to_string();
@@ -891,7 +894,7 @@ pub fn one_cancels_all(oca_group: &str, oca_orders: Vec<Order>, oca_type: i32) {
 #/ receive.
 #/ Products: FOP, OPT
 */
-
+//==================================================================================================
 pub fn volatility(
     action: &str,
     quantity: f64,
@@ -910,7 +913,7 @@ pub fn volatility(
 }
 
 //fhedge]
-
+//==================================================================================================
 pub fn market_fhedge(parent_order_id: i32, action: &str) -> Order {
     // FX Hedge orders can only have a quantity of 0
     let mut order = market_order(action, 0.0);
@@ -920,7 +923,7 @@ pub fn market_fhedge(parent_order_id: i32, action: &str) -> Order {
 }
 
 //fhedge]
-
+//==================================================================================================
 pub fn pegged_to_benchmark(
     action: &str,
     quantity: f64,
@@ -962,6 +965,7 @@ pub fn pegged_to_benchmark(
     order
 }
 
+//==================================================================================================
 pub fn attach_adjustable_to_stop(
     parent: Order,
     attached_order_stop_price: f64,
@@ -991,6 +995,7 @@ pub fn attach_adjustable_to_stop(
     order
 }
 
+//==================================================================================================
 pub fn attach_adjustable_to_stop_limit(
     parent: Order,
     attached_order_stop_price: f64,
@@ -1023,6 +1028,7 @@ pub fn attach_adjustable_to_stop_limit(
     order
 }
 
+//==================================================================================================
 pub fn attach_adjustable_to_trail(
     parent: Order,
     attached_order_stop_price: f64,
@@ -1058,6 +1064,7 @@ pub fn attach_adjustable_to_trail(
     order
 }
 
+//==================================================================================================
 pub fn price_condition(
     trigger_method: i32,
     con_id: i32,
@@ -1091,6 +1098,7 @@ pub fn price_condition(
     price_condition
 }
 
+//==================================================================================================
 pub fn execution_condition(
     symbol: &str,
     sec_type: &str,
@@ -1111,6 +1119,7 @@ pub fn execution_condition(
     exec_condition
 }
 
+//==================================================================================================
 pub fn margin_condition(percent: f64, is_more: bool, is_conjunction: bool) -> MarginCondition {
     //margin_condition]
     let mut margin_condition: MarginCondition = create_condition(ConditionType::Margin).into();
@@ -1127,6 +1136,7 @@ pub fn margin_condition(percent: f64, is_more: bool, is_conjunction: bool) -> Ma
     return margin_condition;
 }
 
+//==================================================================================================
 pub fn percentage_change_condition(
     pct_change: f64,
     con_id: i32,
@@ -1158,6 +1168,7 @@ pub fn percentage_change_condition(
     pct_change_condition
 }
 
+//==================================================================================================
 pub fn time_condition(time: &str, is_more: bool, is_conjunction: bool) -> TimeCondition {
     //time_condition]
     let mut time_condition: TimeCondition = create_condition(ConditionType::Time).into();
@@ -1174,6 +1185,7 @@ pub fn time_condition(time: &str, is_more: bool, is_conjunction: bool) -> TimeCo
     time_condition
 }
 
+//==================================================================================================
 pub fn volume_condition(
     con_id: i32,
     exchange: &str,

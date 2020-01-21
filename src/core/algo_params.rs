@@ -1,6 +1,7 @@
 use crate::core::common::TagValue;
 use crate::core::order::Order;
 
+//==================================================================================================
 pub fn fill_scale_params(
     base_order: &mut Order,
     scale_init_level_size: i32,
@@ -72,6 +73,7 @@ pub fn fill_arrival_price_params(
     ));
 }
 
+//==================================================================================================
 pub fn fill_dark_ice_params(
     base_order: &mut Order,
     display_size: i32,

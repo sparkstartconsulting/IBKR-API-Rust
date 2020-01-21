@@ -94,7 +94,6 @@ impl Debug for TriggerMethod {
 }
 
 //==================================================================================================
-
 #[derive(Serialize, Deserialize, Clone)]
 pub enum OrderConditionEnum {
     Price(PriceCondition),
@@ -130,6 +129,7 @@ impl Condition for OrderConditionEnum {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
         match self {
             OrderConditionEnum::Execution(s) => s.make_fields(),
@@ -141,6 +141,7 @@ impl Condition for OrderConditionEnum {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
     fn value_to_string(&self) -> String {
         match self {
             OrderConditionEnum::Execution(s) => s.value_to_string(),
@@ -152,6 +153,7 @@ impl Condition for OrderConditionEnum {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
     fn set_value_from_string(&mut self, text: String) {
         match self {
             OrderConditionEnum::Execution(s) => s.set_value_from_string(text),
@@ -163,6 +165,7 @@ impl Condition for OrderConditionEnum {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
     fn get_type(&self) -> ConditionType {
         match self {
             OrderConditionEnum::Execution(s) => s.get_type(),
@@ -198,6 +201,7 @@ impl Debug for OrderConditionEnum {
     }
 }
 
+//==================================================================================================
 pub trait Condition: Display + Debug + Serialize {
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError>;
     fn make_fields(&self) -> Vec<String>;
@@ -221,26 +225,31 @@ impl OrderCondition {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn get_type(&self) -> ConditionType {
         self.cond_type
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn and(&mut self) -> &OrderCondition {
         self.is_conjunction_connection = true;
         self
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn or(&mut self) -> &OrderCondition {
         self.is_conjunction_connection = false;
         self
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         let connector = decode_string(fields_iter)?;
         self.is_conjunction_connection = connector == "a";
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn make_fields(&self) -> Vec<String> {
         let mut flds = vec![];
         let val = if self.is_conjunction_connection {
@@ -255,6 +264,7 @@ impl OrderCondition {
 
 //pub fn  __str__(self):
 //return "<AND>" if self.is_conjunction_connection else "<OR>"
+//==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ExecutionCondition {
     pub sec_type: String,
@@ -275,6 +285,7 @@ impl ExecutionCondition {
 }
 
 impl Condition for ExecutionCondition {
+    //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order_condition.decode(fields_iter);
         self.sec_type = decode_string(fields_iter)?;
@@ -283,6 +294,7 @@ impl Condition for ExecutionCondition {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
         let mut flds = self.order_condition.make_fields();
         flds.push(make_field(&self.sec_type));
@@ -291,6 +303,7 @@ impl Condition for ExecutionCondition {
         flds
     }
 
+    //----------------------------------------------------------------------------------------------
     fn value_to_string(&self) -> String {
         format!(
             "sec_type: {}, exchange: {}, symbol: {}",
@@ -298,28 +311,33 @@ impl Condition for ExecutionCondition {
         )
     }
 
+    //----------------------------------------------------------------------------------------------
     fn set_value_from_string(&mut self, _text: String) {
         unimplemented!()
     }
 
+    //----------------------------------------------------------------------------------------------
     fn get_type(&self) -> ConditionType {
         self.order_condition.cond_type
     }
 }
 
 impl Display for ExecutionCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{}", self.value_to_string())
     }
 }
 
 impl Debug for ExecutionCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{}", self.value_to_string())
     }
 }
 
 impl From<OrderConditionEnum> for ExecutionCondition {
+    //----------------------------------------------------------------------------------------------
     fn from(_: OrderConditionEnum) -> Self {
         ExecutionCondition::default()
     }
@@ -328,6 +346,7 @@ impl From<OrderConditionEnum> for ExecutionCondition {
 //pub fn  __str__(self):
 //return "trade occurs for " + self.symbol + " symbol on " + \
 //self.exchange + " exchange for " + self.secType + " security type"
+//==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Default)]
 pub struct OperatorCondition {
     pub order_condition: OrderCondition,
@@ -342,14 +361,17 @@ impl OperatorCondition {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn value_to_string(&self) -> String {
         unimplemented!();
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn set_value_from_string(&self, _text: &str) {
         unimplemented!();
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order_condition.decode(fields_iter)?;
         self.is_more = decode_bool(fields_iter)?;
@@ -358,6 +380,7 @@ impl OperatorCondition {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn make_fields(&self) -> Vec<String> {
         let mut flds = self.order_condition.make_fields();
         flds.push(make_field(&self.is_more));
@@ -371,6 +394,7 @@ impl OperatorCondition {
     //}
 }
 
+//==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Copy, Default)]
 pub struct MarginCondition {
     pub operator_condition: OperatorCondition,
@@ -378,6 +402,7 @@ pub struct MarginCondition {
 }
 
 impl MarginCondition {
+    //----------------------------------------------------------------------------------------------
     pub fn new(is_more: bool, percent: f64) -> Self {
         MarginCondition {
             operator_condition: OperatorCondition::new(ConditionType::Margin, is_more),
@@ -387,10 +412,12 @@ impl MarginCondition {
 }
 
 impl Condition for MarginCondition {
+    //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.operator_condition.decode(fields_iter)
     }
 
+    //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
         let flds = self.operator_condition.make_fields();
         flds
@@ -410,18 +437,21 @@ impl Condition for MarginCondition {
 }
 
 impl Display for MarginCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{}", self.value_to_string())
     }
 }
 
 impl Debug for MarginCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "The margin cushion percent {}", self.value_to_string())
     }
 }
 
 impl From<OrderConditionEnum> for MarginCondition {
+    //----------------------------------------------------------------------------------------------
     fn from(_: OrderConditionEnum) -> Self {
         MarginCondition::default()
     }
@@ -435,6 +465,7 @@ pub struct ContractCondition {
 }
 
 impl ContractCondition {
+    //----------------------------------------------------------------------------------------------
     pub fn new(cond_type: ConditionType, con_id: i32, exchange: &str, is_more: bool) -> Self {
         ContractCondition {
             operator_condition: OperatorCondition::new(cond_type, is_more),
@@ -445,6 +476,7 @@ impl ContractCondition {
 }
 
 impl Condition for ContractCondition {
+    //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.operator_condition.decode(fields_iter)?;
         self.con_id = decode_i32(fields_iter)?;
@@ -452,6 +484,7 @@ impl Condition for ContractCondition {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
         let mut flds = self.operator_condition.make_fields();
         flds.push(make_field(&self.con_id));
@@ -459,32 +492,38 @@ impl Condition for ContractCondition {
         flds
     }
 
+    //----------------------------------------------------------------------------------------------
     fn value_to_string(&self) -> String {
         format!("contract id: {}, Exchange: {}", self.con_id, self.exchange)
     }
 
+    //----------------------------------------------------------------------------------------------
     fn set_value_from_string(&mut self, _text: String) {
         unimplemented!()
     }
 
+    //----------------------------------------------------------------------------------------------
     fn get_type(&self) -> ConditionType {
         self.operator_condition.order_condition.cond_type
     }
 }
 
 impl Display for ContractCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{}", self.value_to_string())
     }
 }
 
 impl Debug for ContractCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{}", self.value_to_string())
     }
 }
 
 impl From<OrderConditionEnum> for ContractCondition {
+    //----------------------------------------------------------------------------------------------
     fn from(_: OrderConditionEnum) -> Self {
         ContractCondition::default()
     }
@@ -493,6 +532,7 @@ impl From<OrderConditionEnum> for ContractCondition {
 //return "%s on %s is %s " % (self.conId, self.exchange,
 //OperatorCondition.__str__(self))
 
+//==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct TimeCondition {
     pub operator_condition: OperatorCondition,
@@ -500,6 +540,7 @@ pub struct TimeCondition {
 }
 
 impl TimeCondition {
+    //----------------------------------------------------------------------------------------------
     pub fn new(is_more: bool, time: String) -> Self {
         TimeCondition {
             operator_condition: OperatorCondition::new(ConditionType::Time, is_more),
@@ -509,41 +550,51 @@ impl TimeCondition {
 }
 
 impl Condition for TimeCondition {
+    //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.operator_condition.decode(fields_iter)
     }
 
+    //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
         let flds = self.operator_condition.make_fields();
         return flds;
     }
 
+    //----------------------------------------------------------------------------------------------
     fn value_to_string(&self) -> String {
         self.time.clone()
     }
 
+    //----------------------------------------------------------------------------------------------
     fn set_value_from_string(&mut self, text: String) {
         self.time = text.to_string()
     }
 
+    //----------------------------------------------------------------------------------------------
     fn get_type(&self) -> ConditionType {
         self.operator_condition.order_condition.cond_type
     }
 }
 
 impl Display for TimeCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{}", self.value_to_string())
     }
 }
 
+//==================================================================================================
 impl Debug for TimeCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "time_condition = {}", self.value_to_string())
     }
 }
 
+//==================================================================================================
 impl From<OrderConditionEnum> for TimeCondition {
+    //----------------------------------------------------------------------------------------------
     fn from(_: OrderConditionEnum) -> Self {
         TimeCondition::default()
     }
@@ -551,7 +602,7 @@ impl From<OrderConditionEnum> for TimeCondition {
 
 //pub fn  __str__(self):
 //return "time is %s " % (OperatorCondition.__str__(self))
-
+//==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PriceCondition {
     pub contract_condition: ContractCondition,
@@ -560,6 +611,7 @@ pub struct PriceCondition {
 }
 
 impl PriceCondition {
+    //----------------------------------------------------------------------------------------------
     pub fn new(
         trigger_method: TriggerMethod,
         con_id: i32,
@@ -581,26 +633,31 @@ impl PriceCondition {
 }
 
 impl Condition for PriceCondition {
+    //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.contract_condition.decode(fields_iter)?;
         self.trigger_method = FromPrimitive::from_i32(decode_i32(fields_iter)?).unwrap();
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
         let mut flds = self.contract_condition.make_fields();
         flds.push(make_field(&(self.trigger_method as i32)));
         flds
     }
 
+    //----------------------------------------------------------------------------------------------
     fn value_to_string(&self) -> String {
         self.price.to_string()
     }
 
+    //----------------------------------------------------------------------------------------------
     fn set_value_from_string(&mut self, text: String) {
         self.price = text.parse().unwrap();
     }
 
+    //----------------------------------------------------------------------------------------------
     fn get_type(&self) -> ConditionType {
         self.contract_condition
             .operator_condition
@@ -610,6 +667,7 @@ impl Condition for PriceCondition {
 }
 
 impl Display for PriceCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
@@ -621,6 +679,7 @@ impl Display for PriceCondition {
 }
 
 impl From<OrderConditionEnum> for PriceCondition {
+    //----------------------------------------------------------------------------------------------
     fn from(_: OrderConditionEnum) -> Self {
         PriceCondition::default()
     }
@@ -630,6 +689,7 @@ impl From<OrderConditionEnum> for PriceCondition {
 //price_condition.TriggerMethodEnum.to_str(self.triggerMethod),
 //ContractCondition.__str__(self))
 
+//==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct PercentChangeCondition {
     pub contract_condition: ContractCondition,
@@ -637,6 +697,7 @@ pub struct PercentChangeCondition {
 }
 
 impl PercentChangeCondition {
+    //----------------------------------------------------------------------------------------------
     pub fn new(con_id: i32, exchange: String, is_more: bool, change_percent: f64) -> Self {
         PercentChangeCondition {
             contract_condition: ContractCondition::new(
@@ -651,23 +712,28 @@ impl PercentChangeCondition {
 }
 
 impl Condition for PercentChangeCondition {
+    //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.contract_condition.decode(fields_iter)
     }
 
+    //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
         let flds = self.contract_condition.make_fields();
         flds
     }
 
+    //----------------------------------------------------------------------------------------------
     fn value_to_string(&self) -> String {
         self.change_percent.to_string()
     }
 
+    //----------------------------------------------------------------------------------------------
     fn set_value_from_string(&mut self, text: String) {
         self.change_percent = text.parse().unwrap();
     }
 
+    //----------------------------------------------------------------------------------------------
     fn get_type(&self) -> ConditionType {
         self.contract_condition
             .operator_condition
@@ -683,12 +749,14 @@ impl Display for PercentChangeCondition {
 }
 
 impl Debug for PercentChangeCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "percent change of {}", self.value_to_string())
     }
 }
 
 impl From<OrderConditionEnum> for PercentChangeCondition {
+    //----------------------------------------------------------------------------------------------
     fn from(_: OrderConditionEnum) -> Self {
         PercentChangeCondition::default()
     }
@@ -697,6 +765,7 @@ impl From<OrderConditionEnum> for PercentChangeCondition {
 //return "percent change of %s " % (
 //ContractCondition.__str__(self))
 
+//==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct VolumeCondition {
     pub contract_condition: ContractCondition,
@@ -704,6 +773,7 @@ pub struct VolumeCondition {
 }
 
 impl VolumeCondition {
+    //----------------------------------------------------------------------------------------------
     pub fn new(con_id: i32, exchange: &str, is_more: bool, volume: i32) -> Self {
         VolumeCondition {
             contract_condition: ContractCondition::new(
@@ -718,23 +788,28 @@ impl VolumeCondition {
 }
 
 impl Condition for VolumeCondition {
+    //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.contract_condition.decode(fields_iter)
     }
 
+    //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
         let flds = self.contract_condition.make_fields();
         flds
     }
 
+    //----------------------------------------------------------------------------------------------
     fn value_to_string(&self) -> String {
         self.volume.to_string()
     }
 
+    //----------------------------------------------------------------------------------------------
     fn set_value_from_string(&mut self, text: String) {
         self.volume = text.parse().unwrap();
     }
 
+    //----------------------------------------------------------------------------------------------
     fn get_type(&self) -> ConditionType {
         self.contract_condition
             .operator_condition
@@ -744,18 +819,21 @@ impl Condition for VolumeCondition {
 }
 
 impl Display for VolumeCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "{}", self.value_to_string())
     }
 }
 
 impl Debug for VolumeCondition {
+    //----------------------------------------------------------------------------------------------
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(f, "volume of {}", self.value_to_string())
     }
 }
 
 impl From<OrderConditionEnum> for VolumeCondition {
+    //----------------------------------------------------------------------------------------------
     fn from(_: OrderConditionEnum) -> Self {
         VolumeCondition::default()
     }
@@ -763,7 +841,7 @@ impl From<OrderConditionEnum> for VolumeCondition {
 //pub fn  __str__(self):
 //return "volume of %s " % (
 //ContractCondition.__str__(self))
-
+//----------------------------------------------------------------------------------------------
 pub fn create_condition<'a>(cond_type: ConditionType) -> OrderConditionEnum {
     match cond_type {
         ConditionType::Execution => OrderConditionEnum::Execution(ExecutionCondition::default()),

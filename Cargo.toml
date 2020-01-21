@@ -12,7 +12,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "twsapi_client"
-path = "src/bin/bin.rs"
+path = "src/bin/manual_tests.rs"
 
 [dependencies]
 bzip2 = "0.3.3"
