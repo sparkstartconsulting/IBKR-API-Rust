@@ -704,6 +704,7 @@ impl Display for Order {
              total_quantity = {},
              lmt_price = {},
              tif = {},
+             what_if = {},
              CMB({}),
              COND({})",
             self.order_id,
@@ -714,6 +715,7 @@ impl Display for Order {
             self.total_quantity,
             self.lmt_price,
             self.tif,
+            self.what_if,
             if !self.order_combo_legs.is_empty() {
                 self.order_combo_legs
                     .iter()

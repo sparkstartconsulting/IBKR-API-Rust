@@ -20,6 +20,7 @@ use crate::core::server_versions::{
     MIN_SERVER_VER_WHAT_IF_EXT_FIELDS,
 };
 
+//==================================================================================================
 pub struct OrderDecoder<'a> {
     contract: &'a mut Contract,
     order: &'a mut Order,
@@ -45,7 +46,8 @@ impl<'a> OrderDecoder<'a> {
         }
     }
 
-    pub fn decode_completed(
+    //----------------------------------------------------------------------------------------------
+    pub(crate) fn decode_completed(
         &mut self,
         fields_iter: &mut Iter<String>,
     ) -> Result<(), IBKRApiLibError> {
@@ -117,6 +119,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn decode_open(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.decode_order_id(fields_iter);
 
@@ -190,11 +193,14 @@ impl<'a> OrderDecoder<'a> {
 
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_order_id(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.order_id = decode_i32(fields_iter)?;
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_contract_fields(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -218,11 +224,13 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_action(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.action = decode_string(fields_iter)?;
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_total_quantity(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -235,11 +243,13 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_order_type(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.order_type = decode_string(fields_iter)?;
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_lmt_price(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         if self.version < 29 {
             self.order.lmt_price = decode_f64(fields_iter)?;
@@ -249,6 +259,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_aux_price(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         if self.version < 30 {
             self.order.aux_price = decode_f64(fields_iter)?;
@@ -259,40 +270,57 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_tif(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.tif = decode_string(fields_iter)?;
 
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_oca_group(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.oca_group = decode_string(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_account(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.account = decode_string(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_open_close(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.open_close = decode_string(fields_iter)?;
 
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_origin(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.origin = FromPrimitive::from_i32(decode_i32(fields_iter)?).unwrap();
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_order_ref(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.order_ref = decode_string(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_client_id(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.client_id = decode_i32(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_perm_id(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.perm_id = decode_i32(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_outside_rth(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -300,10 +328,14 @@ impl<'a> OrderDecoder<'a> {
         self.order.outside_rth = decode_bool(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_hidden(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.hidden = decode_bool(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_discretionary_amt(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -312,6 +344,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_good_after_time(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -319,6 +352,8 @@ impl<'a> OrderDecoder<'a> {
         self.order.good_after_time = decode_string(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn skip_shares_allocation(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -327,6 +362,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_faparams(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.fa_group = decode_string(fields_iter)?;
         self.order.fa_method = decode_string(fields_iter)?;
@@ -335,6 +371,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_model_code(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         if self.server_version >= MIN_SERVER_VER_MODELS_SUPPORT {
             self.order.model_code = decode_string(fields_iter)?;
@@ -342,6 +379,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_good_till_date(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -350,11 +388,13 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_rule80a(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.rule80a = decode_string(fields_iter)?;
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_percent_offset(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -371,6 +411,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_short_sale_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -385,6 +426,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_auction_strategy(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -393,6 +435,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_box_order_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -403,6 +446,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_peg_to_stk_or_vol_order_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -412,6 +456,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_display_size(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -420,6 +465,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_block_order(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -427,6 +473,7 @@ impl<'a> OrderDecoder<'a> {
         self.order.block_order = decode_bool(fields_iter)?;
         Ok(())
     }
+    //----------------------------------------------------------------------------------------------
 
     fn decode_sweep_to_fill(
         &mut self,
@@ -436,6 +483,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_all_or_none(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -444,16 +492,19 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_min_qty(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.min_qty = decode_i32_show_unset(fields_iter)?;
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_oca_type(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.oca_type = decode_i32(fields_iter)?;
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_etrade_only(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -462,6 +513,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_firm_quote_only(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -470,6 +522,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_nbbo_price_cap(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -477,10 +530,14 @@ impl<'a> OrderDecoder<'a> {
         self.order.nbbo_price_cap = decode_f64_show_unset(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_parent_id(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order.parent_id = decode_i32(fields_iter)?;
         Ok(())
     }
+
+    //----------------------------------------------------------------------------------------------
     fn decode_trigger_method(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -522,6 +579,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_trail_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -533,6 +591,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_basis_points(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -542,6 +601,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_combo_legs(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.contract.combo_legs_descrip = decode_string(fields_iter)?;
 
@@ -577,6 +637,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_smart_combo_routing_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -596,6 +657,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_scale_order_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -624,6 +686,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_hedge_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -637,6 +700,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_opt_out_smart_routing(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -647,6 +711,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_clearing_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -656,6 +721,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_not_held(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         if self.version >= 22 {
             self.order.not_held = decode_bool(fields_iter)?;
@@ -663,6 +729,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_delta_neutral(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -686,6 +753,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_algo_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -708,6 +776,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_solicited(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         if self.version >= 33 {
             self.order.solicited = decode_bool(fields_iter)?;
@@ -715,6 +784,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_order_status(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -723,6 +793,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_what_if_info_and_commission(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -750,6 +821,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_vol_randomize_flags(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -761,6 +833,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_peg_to_bench_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -777,6 +850,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_conditions(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         if self.server_version >= MIN_SERVER_VER_PEGGED_TO_BENCHMARK {
             let conditions_size = decode_i32(fields_iter)?;
@@ -798,6 +872,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_adjusted_order_params(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -814,6 +889,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_stop_price_and_lmt_price_offset(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -823,6 +899,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_soft_dollar_tier(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -836,6 +913,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_cash_qty(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         if self.server_version >= MIN_SERVER_VER_CASH_QTY {
             self.order.cash_qty = decode_f64(fields_iter)?;
@@ -843,6 +921,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_dont_use_auto_price_for_hedge(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -853,6 +932,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_is_oms_containers(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -863,6 +943,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_discretionary_up_to_limit_price(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -873,6 +954,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_auto_cancel_date(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -881,6 +963,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_filled_quantity(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -889,6 +972,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_ref_futures_con_id(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -897,6 +981,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_auto_cancel_parent(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -905,6 +990,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_shareholder(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -913,6 +999,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_imbalance_only(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -921,6 +1008,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_route_marketable_to_bbo(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -929,6 +1017,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_parent_perm_id(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -937,6 +1026,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_completed_time(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -945,6 +1035,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_completed_status(
         &mut self,
         fields_iter: &mut Iter<String>,
@@ -953,6 +1044,7 @@ impl<'a> OrderDecoder<'a> {
         Ok(())
     }
 
+    //----------------------------------------------------------------------------------------------
     fn decode_use_price_mgmt_algo(
         &mut self,
         fields_iter: &mut Iter<String>,

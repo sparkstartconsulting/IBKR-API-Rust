@@ -394,7 +394,7 @@ impl TestWrapper {
         self.algo_samples();
         self.bracket_sample();
 
-        //self.condition_samples();
+        self.condition_samples();
 
         self.hedge_sample();
         //
@@ -937,6 +937,21 @@ impl TestWrapper {
     }
 
     //----------------------------------------------------------------------------------------------
+    fn what_if_order_operations(&mut self) {
+        //# ! [whatiflimitorder]
+        let mut what_if_order = order_samples::limit_order("SELL", 5.0, 70.0);
+        what_if_order.what_if = true;
+        let next_id = self.next_order_id();
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            what_if_order.borrow(),
+        );
+        //# ! [whatiflimitorder]
+        thread::sleep(Duration::from_secs(2));
+    }
+
+    //----------------------------------------------------------------------------------------------
     fn req_global_cancel(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
@@ -1225,7 +1240,8 @@ impl Wrapper for TestWrapper {
         self.next_order_id = order_id;
         info!("next_valid_id -- order_id: {}", order_id);
         //self.order_operations_req();
-        self.condition_samples();
+        //self.condition_samples();
+        self.what_if_order_operations();
     }
 
     //----------------------------------------------------------------------------------------------
@@ -1900,7 +1916,7 @@ fn main() -> Result<(), IBKRApiLibError> {
         wrapper.lock().unwrap().client = Option::from(app.clone());
     }
 
-    thread::sleep(Duration::from_secs(2));
+    //thread::sleep(Duration::from_secs(2));
     {
         app.lock()
             .unwrap()
