@@ -45,44 +45,56 @@ const EMPTY_LENGTH_HEADER: [u8; 4] = [0; 4];
 //==================================================================================================
 pub fn decode_i32(iter: &mut Iter<String>) -> Result<i32, IBKRApiLibError> {
     let next = iter.next();
-    let val: i32 = next.unwrap().parse()?;
+    //info!("{:?}", next);
+    let val: i32 = next.unwrap().parse().unwrap_or(0);
     Ok(val)
 }
 
 //==================================================================================================
 pub fn decode_i32_show_unset(iter: &mut Iter<String>) -> Result<i32, IBKRApiLibError> {
-    let retval: i32 = iter.next().unwrap().parse()?;
+    let next = iter.next();
+    //info!("{:?}", next);
+    let retval: i32 = next.unwrap().parse().unwrap_or(0);
     Ok(if retval == 0 { UNSET_INTEGER } else { retval })
 }
 
 //==================================================================================================
 pub fn decode_i64(iter: &mut Iter<String>) -> Result<i64, IBKRApiLibError> {
-    let val: i64 = iter.next().unwrap().parse()?;
+    let next = iter.next();
+    //info!("{:?}", next);
+    let val: i64 = next.unwrap().parse().unwrap_or(0);
     Ok(val)
 }
 
 //==================================================================================================
 pub fn decode_f64(iter: &mut Iter<String>) -> Result<f64, IBKRApiLibError> {
     let next = iter.next();
-    let val = next.unwrap().parse()?;
+    //info!("{:?}", next);
+    let val = next.unwrap().parse().unwrap_or(0.0);
     Ok(val)
 }
 
 //==================================================================================================
 pub fn decode_f64_show_unset(iter: &mut Iter<String>) -> Result<f64, IBKRApiLibError> {
-    let retval: f64 = iter.next().unwrap().parse()?;
+    let next = iter.next();
+    //info!("{:?}", next);
+    let retval: f64 = next.unwrap().parse().unwrap_or(0.0);
     Ok(if retval == 0.0 { UNSET_DOUBLE } else { retval })
 }
 
 //==================================================================================================
 pub fn decode_string(iter: &mut Iter<String>) -> Result<String, IBKRApiLibError> {
-    let val = iter.next().unwrap().to_string();
+    let next = iter.next();
+    //info!("{:?}", next);
+    let val = next.unwrap().parse().unwrap_or("".to_string());
     Ok(val)
 }
 
 //==================================================================================================
 pub fn decode_bool(iter: &mut Iter<String>) -> Result<bool, IBKRApiLibError> {
-    let retval: i32 = iter.next().unwrap().parse()?;
+    let next = iter.next();
+    //info!("{:?}", next);
+    let retval: i32 = next.unwrap_or(&"0".to_string()).parse().unwrap_or(0);
     Ok(retval != 0)
 }
 
@@ -1549,7 +1561,7 @@ where
             &mut contract,
             &mut order,
             &mut order_state,
-            UNSET_INTEGER,
+            version,
             self.server_version,
         );
 

@@ -1115,6 +1115,7 @@ pub fn execution_condition(
     exec_condition.sec_type = sec_type.to_string();
     // AND | OR next condition (will be ignored if no more conditions are added)
     exec_condition.order_condition.is_conjunction_connection = is_conjunction;
+    exec_condition.order_condition.cond_type = ConditionType::Execution;
     //execution_condition]
     exec_condition
 }
@@ -1132,6 +1133,10 @@ pub fn margin_condition(percent: f64, is_more: bool, is_conjunction: bool) -> Ma
         .operator_condition
         .order_condition
         .is_conjunction_connection = is_conjunction;
+    margin_condition
+        .operator_condition
+        .order_condition
+        .cond_type = ConditionType::Margin;
     //margin_condition]
     return margin_condition;
 }
@@ -1164,6 +1169,11 @@ pub fn percentage_change_condition(
         .operator_condition
         .order_condition
         .is_conjunction_connection = is_conjunction;
+    pct_change_condition
+        .contract_condition
+        .operator_condition
+        .order_condition
+        .cond_type = ConditionType::PercentChange;
     //percentage_condition]
     pct_change_condition
 }
@@ -1181,6 +1191,7 @@ pub fn time_condition(time: &str, is_more: bool, is_conjunction: bool) -> TimeCo
         .operator_condition
         .order_condition
         .is_conjunction_connection = is_conjunction;
+    time_condition.operator_condition.order_condition.cond_type = ConditionType::Time;
     //time_condition]
     time_condition
 }
@@ -1209,6 +1220,11 @@ pub fn volume_condition(
         .operator_condition
         .order_condition
         .is_conjunction_connection = is_conjunction;
+    vol_cond
+        .contract_condition
+        .operator_condition
+        .order_condition
+        .cond_type = ConditionType::Volume;
     //volume_condition]
     vol_cond
 }

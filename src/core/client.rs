@@ -1868,7 +1868,9 @@ where
             if order.conditions.len() > 0 {
                 for cond in &order.conditions {
                     msg.push_str(&make_field(&(cond.get_type() as i32)));
-                    msg.push_str(&make_field(&cond.make_fields()));
+                    let mut vals = cond.make_fields();
+                    let vals_string = vals.iter().map(|val| val.clone()).collect::<String>();
+                    msg.push_str(vals_string.as_ref());
                 }
 
                 msg.push_str(&make_field(&order.conditions_ignore_rth));

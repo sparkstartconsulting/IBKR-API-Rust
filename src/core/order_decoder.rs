@@ -1,5 +1,6 @@
 use std::slice::Iter;
 
+use log::*;
 use num_traits::FromPrimitive;
 
 use crate::core::common::{TagValue, UNSET_DOUBLE};
@@ -585,10 +586,10 @@ impl<'a> OrderDecoder<'a> {
             if smart_combo_routing_params_count > 0 {
                 self.order.smart_combo_routing_params = vec![];
                 for _ in 0..smart_combo_routing_params_count {
-                    let mut tagValue = TagValue::default();
-                    tagValue.tag = decode_string(fields_iter)?;
-                    tagValue.value = decode_string(fields_iter)?;
-                    self.order.smart_combo_routing_params.push(tagValue)
+                    let mut tag_value = TagValue::default();
+                    tag_value.tag = decode_string(fields_iter)?;
+                    tag_value.value = decode_string(fields_iter)?;
+                    self.order.smart_combo_routing_params.push(tag_value)
                 }
             }
         }
@@ -779,17 +780,19 @@ impl<'a> OrderDecoder<'a> {
     fn decode_conditions(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         if self.server_version >= MIN_SERVER_VER_PEGGED_TO_BENCHMARK {
             let conditions_size = decode_i32(fields_iter)?;
+
             if conditions_size > 0 {
                 self.order.conditions = vec![];
                 for _ in 0..conditions_size {
                     let condition_type = FromPrimitive::from_i32(decode_i32(fields_iter)?).unwrap();
+
                     let mut condition = create_condition(condition_type);
                     condition.decode(fields_iter);
-                    self.order.conditions.push(condition);
 
-                    self.order.conditions_ignore_rth = decode_bool(fields_iter)?;
-                    self.order.conditions_cancel_order = decode_bool(fields_iter)?;
+                    self.order.conditions.push(condition);
                 }
+                self.order.conditions_ignore_rth = decode_bool(fields_iter)?;
+                self.order.conditions_cancel_order = decode_bool(fields_iter)?;
             }
         }
         Ok(())

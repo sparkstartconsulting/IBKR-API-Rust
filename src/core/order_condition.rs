@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde::export::fmt::Error;
 use serde::export::Formatter;
 
-use crate::core::decoder::{decode_bool, decode_i32, decode_string};
+use crate::core::decoder::{decode_bool, decode_f64, decode_i32, decode_string};
 use crate::core::errors::IBKRApiLibError;
 use crate::core::messages::make_field;
 
@@ -375,8 +375,6 @@ impl OperatorCondition {
     pub fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         self.order_condition.decode(fields_iter)?;
         self.is_more = decode_bool(fields_iter)?;
-        let text = decode_string(fields_iter)?;
-        self.set_value_from_string(text.as_ref());
         Ok(())
     }
 
@@ -384,7 +382,6 @@ impl OperatorCondition {
     pub fn make_fields(&self) -> Vec<String> {
         let mut flds = self.order_condition.make_fields();
         flds.push(make_field(&self.is_more));
-        flds.push(make_field(&self.value_to_string()));
         flds
     }
 
@@ -414,12 +411,15 @@ impl MarginCondition {
 impl Condition for MarginCondition {
     //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
-        self.operator_condition.decode(fields_iter)
+        self.operator_condition.decode(fields_iter);
+        self.percent = decode_f64(fields_iter).unwrap();
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
-        let flds = self.operator_condition.make_fields();
+        let mut flds = self.operator_condition.make_fields();
+        flds.push(make_field(&self.percent));
         flds
     }
 
@@ -552,13 +552,16 @@ impl TimeCondition {
 impl Condition for TimeCondition {
     //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
-        self.operator_condition.decode(fields_iter)
+        self.operator_condition.decode(fields_iter);
+        self.time = decode_string(fields_iter).unwrap();
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
-        let flds = self.operator_condition.make_fields();
-        return flds;
+        let mut flds = self.operator_condition.make_fields();
+        flds.push(make_field(&self.time));
+        flds
     }
 
     //----------------------------------------------------------------------------------------------
@@ -635,6 +638,7 @@ impl PriceCondition {
 impl Condition for PriceCondition {
     //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
+        self.price = decode_f64(fields_iter)?;
         self.contract_condition.decode(fields_iter)?;
         self.trigger_method = FromPrimitive::from_i32(decode_i32(fields_iter)?).unwrap();
         Ok(())
@@ -642,8 +646,19 @@ impl Condition for PriceCondition {
 
     //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
-        let mut flds = self.contract_condition.make_fields();
+        let mut flds = self
+            .contract_condition
+            .operator_condition
+            .order_condition
+            .make_fields();
+        flds.push(make_field(
+            &(self.contract_condition.operator_condition.is_more as i32),
+        ));
+        flds.push(make_field(&(self.price)));
+        flds.push(make_field(&(self.contract_condition.con_id)));
+        flds.push(make_field(&(self.contract_condition.exchange)));
         flds.push(make_field(&(self.trigger_method as i32)));
+
         flds
     }
 
@@ -714,12 +729,25 @@ impl PercentChangeCondition {
 impl Condition for PercentChangeCondition {
     //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
-        self.contract_condition.decode(fields_iter)
+        self.change_percent = decode_f64(fields_iter)?;
+        self.contract_condition.decode(fields_iter)?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
-        let flds = self.contract_condition.make_fields();
+        let mut flds = self
+            .contract_condition
+            .operator_condition
+            .order_condition
+            .make_fields();
+        flds.push(make_field(
+            &(self.contract_condition.operator_condition.is_more as i32),
+        ));
+        flds.push(make_field(&(self.change_percent)));
+        flds.push(make_field(&(self.contract_condition.con_id)));
+        flds.push(make_field(&(self.contract_condition.exchange)));
+
         flds
     }
 
@@ -790,12 +818,25 @@ impl VolumeCondition {
 impl Condition for VolumeCondition {
     //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
-        self.contract_condition.decode(fields_iter)
+        self.contract_condition.decode(fields_iter)?;
+        self.volume = decode_i32(fields_iter)?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn make_fields(&self) -> Vec<String> {
-        let flds = self.contract_condition.make_fields();
+        let mut flds = self
+            .contract_condition
+            .operator_condition
+            .order_condition
+            .make_fields();
+        flds.push(make_field(
+            &(self.contract_condition.operator_condition.is_more as i32),
+        ));
+        flds.push(make_field(&(self.volume)));
+        flds.push(make_field(&(self.contract_condition.con_id)));
+        flds.push(make_field(&(self.contract_condition.exchange)));
         flds
     }
 

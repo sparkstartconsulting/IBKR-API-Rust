@@ -9,7 +9,7 @@ use serde::export::Formatter;
 use crate::core::common::{TagValue, UNSET_DOUBLE, UNSET_INTEGER};
 use crate::core::order::AuctionStrategy::AuctionUnset;
 use crate::core::order::Origin::Customer;
-use crate::core::order_condition::OrderConditionEnum;
+use crate::core::order_condition::{Condition, OrderConditionEnum};
 
 // enum Origin
 //==================================================================================================
@@ -726,9 +726,8 @@ impl Display for Order {
             if !self.conditions.is_empty() {
                 self.conditions
                     .iter()
-                    .map(|x| format!("{}", x.to_string()))
-                    .collect::<Vec<String>>()
-                    .join(",")
+                    .map(|x| format!("{}|", x.make_fields().as_slice().join(",")))
+                    .collect::<String>()
             } else {
                 "".to_string()
             },

@@ -1,5 +1,5 @@
 //"
-//The known server versions.
+//The knownn server versions.
 //"
 
 //MIN_SERVER_VER_REAL_TIME_BARS       = 34

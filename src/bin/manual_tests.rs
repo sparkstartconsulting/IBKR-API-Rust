@@ -388,9 +388,13 @@ impl TestWrapper {
             &order_samples::volatility("SELL", 1.0, 5.0, 2),
         );
 
+        //Interactive Broker's has a 50 messages per second limit, so sleep for 1 sec and continue placing orders
+        thread::sleep(Duration::from_secs(1));
+
+        self.algo_samples();
         self.bracket_sample();
 
-        self.condition_samples();
+        //self.condition_samples();
 
         self.hedge_sample();
         //
@@ -527,7 +531,7 @@ impl TestWrapper {
             ));
         mkt.conditions
             .push(twsapi::core::order_condition::OrderConditionEnum::Volume(
-                order_samples::volume_condition(208813720, "SMART", false, 100, true),
+                order_samples::volume_condition(208813720, "SMART", true, 100000, true),
             ));
         let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
@@ -535,31 +539,32 @@ impl TestWrapper {
             contract_samples::european_stock().borrow(),
             mkt.borrow(),
         );
+
         // ! [order_conditioning_activate]
 
         // Conditions can make the order active or cancel it. Only LMT orders can be conditionally canceled.
         // ! [order_conditioning_cancel]
-        let mut lmt = order_samples::limit_order("BUY", 100.0, 20.0);
-        // The active order will be cancelled if conditioning criteria is met
-        lmt.conditions_cancel_order = true;
-        lmt.conditions
-            .push(twsapi::core::order_condition::OrderConditionEnum::Price(
-                order_samples::price_condition(
-                    TriggerMethod::Last as i32,
-                    208813720,
-                    "SMART",
-                    600.0,
-                    false,
-                    false,
-                ),
-            ));
+        //        let mut lmt = order_samples::limit_order("BUY", 100.0, 20.0);
+        //        // The active order will be cancelled if conditioning criteria is met
+        //        lmt.conditions_cancel_order = true;
+        //        lmt.conditions
+        //            .push(twsapi::core::order_condition::OrderConditionEnum::Price(
+        //                order_samples::price_condition(
+        //                    TriggerMethod::Last as i32,
+        //                    208813720,
+        //                    "SMART",
+        //                    600.0,
+        //                    false,
+        //                    false,
+        //                ),
+        //            ));
 
-        let next_id = self.next_order_id();
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            next_id,
-            contract_samples::european_stock().borrow(),
-            lmt.borrow(),
-        );
+        //        let next_id = self.next_order_id();
+        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //            next_id,
+        //            contract_samples::european_stock().borrow(),
+        //            lmt.borrow(),
+        //        );
         Ok(())
     }
 
@@ -953,7 +958,6 @@ impl TestWrapper {
     pub fn historical_data_operations_req(&self) {
         // // Requesting historical data
         // // ![reqHeadTimeStamp]
-        info!("^^^^^^^^^^^^^^^^^^^  historical_data_operations_req");
         self.client
             .as_ref()
             .unwrap()
@@ -970,7 +974,6 @@ impl TestWrapper {
 
         //// ![reqhistoricaldata]
         let dt = Utc::now();
-        info!("^^^^^^^^^^^^^^^^^^^  Date: {}", dt);
         let query_time = dt.format("%Y%m%d %H:%M:%S").to_string();
         info!("Request Time:  {}", query_time);
         self.client
@@ -1222,6 +1225,7 @@ impl Wrapper for TestWrapper {
         self.next_order_id = order_id;
         info!("next_valid_id -- order_id: {}", order_id);
         //self.order_operations_req();
+        self.condition_samples();
     }
 
     //----------------------------------------------------------------------------------------------
@@ -1884,6 +1888,7 @@ unsafe impl Send for TestWrapper {}
 
 unsafe impl Sync for TestWrapper {}
 
+//==================================================================================================
 fn main() -> Result<(), IBKRApiLibError> {
     log4rs::init_file("log_config.yml", Default::default()).unwrap();
 
@@ -1894,17 +1899,21 @@ fn main() -> Result<(), IBKRApiLibError> {
     {
         wrapper.lock().unwrap().client = Option::from(app.clone());
     }
+
+    thread::sleep(Duration::from_secs(2));
     {
         app.lock()
             .unwrap()
             .connect("127.0.0.1".to_string(), 7497, 0);
     }
-
+    //    {
+    //        wrapper.try_lock().unwrap().order_operations_req();
+    //    }
     {
-        wrapper.try_lock().unwrap().real_time_bars_operations_req();
+        // wrapper.try_lock().unwrap().real_time_bars_operations_req();
     }
     {
-        wrapper.try_lock().unwrap().historical_data_operations_req();
+        // wrapper.try_lock().unwrap().historical_data_operations_req();
     }
 
     thread::sleep(Duration::new(18600, 0));
