@@ -229,7 +229,8 @@ impl Display for Contract {
             sec_id: {},
             combo_legs_descrip: {},
             combo_legs: [{}],
-            delta_neutral_contract: [{:?}],",
+            delta_neutral_contract: [{:?}]
+            ",
             self.con_id,
             self.symbol,
             self.sec_type,

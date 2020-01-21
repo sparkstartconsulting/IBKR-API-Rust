@@ -45,7 +45,7 @@ pub enum ConnStatus {
 
 pub struct EClient<T: Wrapper + Sync + Send> {
     //decoder: Decoder<'a, T>,
-    pub wrapper: Arc<Mutex<T>>,
+    wrapper: Arc<Mutex<T>>,
     done: bool,
     n_keyb_int_hard: i32,
     stream: Option<TcpStream>,
@@ -65,9 +65,9 @@ impl<T> EClient<T>
 where
     T: Wrapper + Sync + Send + 'static,
 {
-    pub fn new(the_wrapper: T) -> Self {
+    pub fn new(the_wrapper: Arc<Mutex<T>>) -> Self {
         EClient {
-            wrapper: Arc::new(Mutex::new(the_wrapper)),
+            wrapper: the_wrapper,
             //decoder: Decoder::new(the_wrapper, 0),
             done: false,
             n_keyb_int_hard: 0,
@@ -90,10 +90,7 @@ where
     }
 
     fn send_bytes(&self, bytes: &[u8]) {
-        info!("Sending bytes");
         self.stream.as_ref().unwrap().write(bytes);
-        self.stream.as_ref().unwrap().flush();
-        info!("finished Sending bytes");
     }
 
     //----------------------------------------------------------------------------------------------
@@ -1081,8 +1078,6 @@ where
         //            Note: Each core MUST connect with a unique clientId.
 
         //// self.logRequest(current_fn_name()); vars())
-
-        info!("!!!!!!!!!!   SERVER VERSION: {}", self.server_version());
 
         if !self.is_connected() {
             self.wrapper.lock().unwrap().deref_mut().error(
@@ -3238,10 +3233,10 @@ where
         &mut self,
         req_id: i32,
         contract: &Contract,
-        end_date_time: &'static str,
-        duration_str: &'static str,
-        bar_size_setting: &'static str,
-        what_to_show: &'static str,
+        end_date_time: String,
+        duration_str: String,
+        bar_size_setting: String,
+        what_to_show: String,
         use_rth: i32,
         format_date: i32,
         keep_up_to_date: bool,

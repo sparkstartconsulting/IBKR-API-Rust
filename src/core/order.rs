@@ -696,7 +696,16 @@ impl Display for Order {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "order_id = {},client_id = {},perm_id = {},order_type = {},action = {},total_quantity = {},lmt_price = {},tif = {},CMB({}),COND({})",
+            "order_id = {},
+             client_id = {},
+             perm_id = {},
+             order_type = {},
+             action = {},
+             total_quantity = {},
+             lmt_price = {},
+             tif = {},
+             CMB({}),
+             COND({})",
             self.order_id,
             self.client_id,
             self.perm_id,

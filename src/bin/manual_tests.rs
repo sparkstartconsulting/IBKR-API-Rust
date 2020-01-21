@@ -7,10 +7,18 @@ use std::thread;
 use std::time::{Duration, UNIX_EPOCH};
 
 use bigdecimal::BigDecimal;
-use chrono::prelude::DateTime;
-use chrono::Utc;
+use chrono;
+use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use log::*;
 
+use twsapi::core::algo_params::{
+    fill_accumulate_distribute_params, fill_adaptive_params, fill_arrival_price_params,
+    fill_balance_impact_risk_params, fill_close_price_params, fill_csfbinline_params,
+    fill_dark_ice_params, fill_jefferies_vwapparams, fill_min_impact_params, fill_pct_vol_params,
+    fill_price_variant_pct_vol_params, fill_qbalgo_in_line_params, fill_scale_params,
+    fill_size_variant_pct_vol_params, fill_time_variant_pct_vol_params, fill_twap_params,
+    fill_vwap_params,
+};
 use twsapi::core::client::EClient;
 use twsapi::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
@@ -23,6 +31,7 @@ use twsapi::core::contract::{
 use twsapi::core::errors::IBKRApiLibError;
 use twsapi::core::execution::{Execution, ExecutionFilter};
 use twsapi::core::order::{Order, OrderState, SoftDollarTier};
+use twsapi::core::order_condition::{PriceCondition, TriggerMethod};
 use twsapi::core::wrapper::Wrapper;
 use twsapi::examples::contract_samples;
 use twsapi::examples::order_samples;
@@ -44,6 +53,25 @@ impl TestWrapper {
 
     pub fn start_requests(&self) -> Result<(), IBKRApiLibError> {
         Ok(())
+    }
+
+    pub fn real_time_bars_operations_req(&self) {
+        // # Requesting real time bars
+        // # ![reqrealtimebars]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_real_time_bars(
+                3001,
+                contract_samples::simple_future().borrow(),
+                1,
+                "TRADES",
+                true,
+                vec![],
+            );
+        // # ![reqrealtimebars]
     }
 
     fn order_operations_req(&mut self) {
@@ -101,13 +129,14 @@ impl TestWrapper {
 
         // ! [order_submission]
         {
-            info!("Placing order... {}", self.next_order_id);
+            let next_id = self.next_order_id();
+            info!("Placing order... {}", next_id);
+
             self.client.as_ref().unwrap().lock().unwrap().place_order(
-                self.next_order_id,
+                next_id,
                 &contract_samples::usstock().borrow(),
                 order_samples::limit_order("SELL", 1.0, 50.0).borrow(),
             );
-            self.next_order_id += 1;
         }
 
         //thread::sleep(Duration::from_secs(2));
@@ -119,22 +148,24 @@ impl TestWrapper {
         // Specify the Account Number directly
         fa_order_one_account.account = "DU228250".to_string();
         {
+            let next_id = self.next_order_id();
             self.client.as_ref().unwrap().lock().unwrap().place_order(
-                self.next_order_id,
+                next_id,
                 &contract_samples::usstock().borrow(),
                 fa_order_one_account.borrow(),
             );
         }
-        self.next_order_id += 1;
+
         // ! [faorderoneaccount]
         //
         //        // ! [faordergroupequalquantity]
         let mut fa_order_group_eq = order_samples::limit_order("SELL", 200.0, 2000.0);
         fa_order_group_eq.fa_group = "Group_Equal_Quantity".to_string();
         fa_order_group_eq.fa_method = "EqualQuantity".to_string();
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::simple_future(),
             fa_order_group_eq.borrow(),
         );
@@ -146,9 +177,10 @@ impl TestWrapper {
         fa_order_group_pc.fa_group = "Pct_Change".to_string();
         fa_order_group_pc.fa_method = "PctChange".to_string();
         fa_order_group_pc.fa_percentage = "100".to_string();
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::eur_gbp_fx(),
             fa_order_group_pc.borrow(),
         );
@@ -157,9 +189,10 @@ impl TestWrapper {
         //        // ! [faorderprofile]
         let mut fa_order_profile = order_samples::limit_order("BUY", 200.0, 100.0);
         fa_order_profile.fa_profile = "Percent_60_40".to_string();
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::european_stock(),
             fa_order_profile.borrow(),
         );
@@ -169,47 +202,54 @@ impl TestWrapper {
         let mut model_order = order_samples::limit_order("BUY", 200.0, 100.0);
         model_order.account = "DF12345".to_string();
         model_order.model_code = "Technology".to_string(); // model for tech stocks first created in TWS
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             model_order.borrow(),
         );
         //        // ! [modelorder]
         //
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::option_at_box(),
             order_samples::block("BUY", 50.0, 20.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::option_at_box(),
             order_samples::box_top("SELL", 10.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::future_combo_contract(),
             order_samples::combo_limit_order("SELL", 1.0, 1.0, false).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::stock_combo_contract(),
             order_samples::combo_market_order("BUY", 1.0, true).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::option_combo_contract(),
             order_samples::combo_market_order("BUY", 1.0, false).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::stock_combo_contract(),
             &order_samples::limit_order_for_combo_with_leg_prices(
                 "BUY",
@@ -218,167 +258,186 @@ impl TestWrapper {
                 true,
             ),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::discretionary("SELL", 1.0, 45.0, 0.5).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::option_at_box(),
             order_samples::limit_if_touched("BUY", 1.0, 30.0, 34.0).borrow(),
         );
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::limit_on_close("SELL", 1.0, 34.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::limit_on_open("BUY", 1.0, 35.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::market_if_touched("BUY", 1.0, 30.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::market_on_close("SELL", 1.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::market_on_open("BUY", 1.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::market_order("SELL", 1.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::market_to_limit("BUY", 1.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::option_at_ise(),
             order_samples::midpoint_match("BUY", 1.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::market_to_limit("BUY", 1.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::stop("SELL", 1.0, 34.4).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             &order_samples::stop_limit("BUY", 1.0, 35.0, 33.0),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::simple_future(),
             order_samples::stop_with_protection("SELL", 1.0, 45.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::sweep_to_fill("BUY", 1.0, 35.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::trailing_stop("SELL", 1.0, 0.5, 30.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::usstock().borrow(),
             order_samples::trailing_stop_limit("BUY", 1.0, 2.0, 5.0, 50.0).borrow(),
         );
-        self.next_order_id += 1;
+
+        let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
-            self.next_order_id,
+            next_id,
             &contract_samples::us_option_contract(),
             &order_samples::volatility("SELL", 1.0, 5.0, 2),
         );
-        //
-        //        self.bracket_sample();
-        //
-        //        self.condition_samples();
-        //
-        //        self.hedge_sample();
+
+        self.bracket_sample();
+
+        self.condition_samples();
+
+        self.hedge_sample();
         //
         //        // NOTE: the following orders are not supported for Paper Trading
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::usstock().borrow(), order_samples::AtAuction("BUY", 100, 30.0))
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::OptionAtBOX(), order_samples::AuctionLimit("SELL", 10, 30.0, 2))
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::OptionAtBOX(), order_samples::AuctionPeggedToStock("BUY", 10, 30, 0.5))
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::OptionAtBOX(), order_samples::AuctionRelative("SELL", 10, 0.6))
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::simple_future(), order_samples::MarketWithProtection("BUY", 1))
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::usstock().borrow(), order_samples::PassiveRelative("BUY", 1, 0.5))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::usstock().borrow(), order_samples::AtAuction("BUY", 100, 30.0))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::OptionAtBOX(), order_samples::AuctionLimit("SELL", 10, 30.0, 2))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::OptionAtBOX(), order_samples::AuctionPeggedToStock("BUY", 10, 30, 0.5))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::OptionAtBOX(), order_samples::AuctionRelative("SELL", 10, 0.6))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::simple_future(), order_samples::MarketWithProtection("BUY", 1))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::usstock().borrow(), order_samples::PassiveRelative("BUY", 1, 0.5))
         //
         //        // 208813720 (GOOG)
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::usstock().borrow(),
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::usstock().borrow(),
         //        // order_samples::PeggedToBenchmark("SELL", 100, 33, True, 0.1, 1, 208813720, "ISLAND", 750, 650, 800))
         //
         //        // STOP ADJUSTABLE ORDERS
         //        // Order stpParent = order_samples::Stop("SELL", 100, 30)
-        //        // stpParent.OrderId = self.next_order_id
+        //        // stpParent.OrderId = self.next_order_id()
         //        // self.client.unwrap().lock().unwrap().place_order(stpParent.OrderId, &contract_samples::EuropeanStock(), stpParent)
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToStop(stpParent, 35, 32, 33))
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToStopLimit(stpParent, 35, 33, 32, 33))
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToTrail(stpParent, 35, 32, 32, 1, 0))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToStop(stpParent, 35, 32, 33))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToStopLimit(stpParent, 35, 33, 32, 33))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToTrail(stpParent, 35, 32, 32, 1, 0))
         //
         //        // Order lmtParent = order_samples::limit_order("BUY", 100, 30)
-        //        // lmtParent.OrderId = self.next_order_id
+        //        // lmtParent.OrderId = self.next_order_id()
         //        // self.client.unwrap().lock().unwrap().place_order(lmtParent.OrderId, &contract_samples::EuropeanStock(), lmtParent)
         //        // Attached TRAIL adjusted can only be attached to LMT parent orders.
-        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id, &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToTrailAmount(lmtParent, 34, 32, 33, 0.008))
+        //        // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToTrailAmount(lmtParent, 34, 32, 33, 0.008))
         //        self.algo_samples();
         //
-        //        self.oca_sample();
-        //
-        //        // Request the day's executions
-        //        // ! [reqexecutions]
-        //        self.client
-        //            .as_ref()
-        //            .unwrap()
-        //            .lock()
-        //            .unwrap()
-        //            .req_executions(10001, ExecutionFilter::default().borrow());
-        //        // ! [reqexecutions]
+        self.oca_sample();
+
+        // Request the day's executions
+        // ! [reqexecutions]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_executions(10001, ExecutionFilter::default().borrow());
+        // ! [reqexecutions]
         //
         //        // Requesting completed orders
         //        // ! [reqcompletedorders]
-        //        self.client
-        //            .as_ref()
-        //            .unwrap()
-        //            .lock()
-        //            .unwrap()
-        //            .req_completed_orders(false);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_completed_orders(false);
         // ! [reqcompletedorders]
     }
 
@@ -399,26 +458,557 @@ impl TestWrapper {
             // ! [reqglobalcancel]
         }
     }
-    fn bracket_sample(&self) -> Result<(), IBKRApiLibError> {
+    fn bracket_sample(&mut self) -> Result<(), IBKRApiLibError> {
+        // BRACKET ORDER
+        // ! [bracketsubmit]
+        let bracket =
+            order_samples::bracket_order(self.next_order_id(), "BUY", 100.0, 30.0, 40.0, 20.0);
+
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            bracket.0.order_id,
+            contract_samples::european_stock().borrow(),
+            bracket.0.borrow(),
+        );
+        self.next_order_id();
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            bracket.1.order_id,
+            contract_samples::european_stock().borrow(),
+            bracket.1.borrow(),
+        );
+        self.next_order_id();
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            bracket.2.order_id,
+            contract_samples::european_stock().borrow(),
+            bracket.2.borrow(),
+        );
+        self.next_order_id();
+        // ! [bracketsubmit]
         Ok(())
     }
-    fn condition_samples(&self) -> Result<(), IBKRApiLibError> {
+    fn condition_samples(&mut self) -> Result<(), IBKRApiLibError> {
+        let mut mkt = order_samples::market_order("BUY", 100.0);
+        // Order will become active if conditioning criteria is met
+        mkt.conditions
+            .push(twsapi::core::order_condition::OrderConditionEnum::Price(
+                order_samples::price_condition(
+                    twsapi::core::order_condition::TriggerMethod::Default as i32,
+                    208813720,
+                    "SMART",
+                    600.0,
+                    false,
+                    false,
+                ),
+            ));
+        mkt.conditions.push(
+            twsapi::core::order_condition::OrderConditionEnum::Execution(
+                order_samples::execution_condition("EUR.USD", "CASH", "IDEALPRO", true),
+            ),
+        );
+        mkt.conditions
+            .push(twsapi::core::order_condition::OrderConditionEnum::Margin(
+                order_samples::margin_condition(30.0, true, false),
+            ));
+        mkt.conditions.push(
+            twsapi::core::order_condition::OrderConditionEnum::PercentChange(
+                order_samples::percentage_change_condition(15.0, 208813720, "SMART", true, true),
+            ),
+        );
+        mkt.conditions
+            .push(twsapi::core::order_condition::OrderConditionEnum::Time(
+                order_samples::time_condition("20160118 23:59:59", true, false),
+            ));
+        mkt.conditions
+            .push(twsapi::core::order_condition::OrderConditionEnum::Volume(
+                order_samples::volume_condition(208813720, "SMART", false, 100, true),
+            ));
+        let next_id = self.next_order_id();
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::european_stock().borrow(),
+            mkt.borrow(),
+        );
+        // ! [order_conditioning_activate]
+
+        // Conditions can make the order active or cancel it. Only LMT orders can be conditionally canceled.
+        // ! [order_conditioning_cancel]
+        let mut lmt = order_samples::limit_order("BUY", 100.0, 20.0);
+        // The active order will be cancelled if conditioning criteria is met
+        lmt.conditions_cancel_order = true;
+        lmt.conditions
+            .push(twsapi::core::order_condition::OrderConditionEnum::Price(
+                order_samples::price_condition(
+                    TriggerMethod::Last as i32,
+                    208813720,
+                    "SMART",
+                    600.0,
+                    false,
+                    false,
+                ),
+            ));
+
+        let next_id = self.next_order_id();
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::european_stock().borrow(),
+            lmt.borrow(),
+        );
         Ok(())
     }
-    fn hedge_sample(&self) -> Result<(), IBKRApiLibError> {
+    fn hedge_sample(&mut self) -> Result<(), IBKRApiLibError> {
+        let mut parent = order_samples::limit_order("BUY", 100.0, 10.0);
+        parent.order_id = self.next_order_id();
+        parent.transmit = false;
+        // Hedge on the currency conversion
+        let hedge = order_samples::market_fhedge(parent.order_id, "BUY");
+        // Place the parent first...
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            parent.order_id,
+            contract_samples::european_stock().borrow(),
+            parent.borrow(),
+        );
+
+        // Then the hedge order
+        let next_id = self.next_order_id();
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::eur_gbp_fx().borrow(),
+            hedge.borrow(),
+        );
         Ok(())
     }
 
-    fn algo_samples(&self) -> Result<(), IBKRApiLibError> {
+    fn algo_samples(&mut self) -> Result<(), IBKRApiLibError> {
+        // ! [scale_order]
+        let next_id = self.next_order_id();
+        let mut scale_order = Order::default();
+        order_samples::relative_pegged_to_primary("BUY", 70000.0, 189.0, 0.01);
+        fill_scale_params(
+            scale_order.borrow_mut(),
+            2000,
+            500,
+            true,
+            0.02,
+            189.00,
+            3600,
+            2.00,
+            true,
+            10,
+            40,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            scale_order.borrow(),
+        );
+        // ! [scale_order]
+
+        thread::sleep(Duration::from_secs(1));
+
+        // ! [algo_base_order]
+        let mut base_order = order_samples::limit_order("BUY", 1000.0, 1.0);
+        // ! [algo_base_order]
+
+        // ! [arrivalpx]
+        let next_id = self.next_order_id();
+        fill_arrival_price_params(
+            &mut base_order,
+            0.1,
+            "Aggressive",
+            "09:00:00 CET",
+            "16:00:00 CET",
+            true,
+            true,
+            100000.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [arrivalpx]
+
+        // ! [darkice]
+        let next_id = self.next_order_id();
+        fill_dark_ice_params(
+            &mut base_order,
+            10,
+            "09:00:00 CET",
+            "16:00:00 CET",
+            true,
+            100000.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [darkice]
+
+        // ! [place_midprice]
+        let next_id = self.next_order_id();
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            &order_samples::midprice("BUY", 1.0, 150.0),
+        );
+        // ! [place_midprice]
+
+        // ! [ad]
+        // The Time Zone in "startTime" and "endTime" attributes is ignored and always defaulted to GMT
+        let next_id = self.next_order_id();
+        fill_accumulate_distribute_params(
+            &mut base_order,
+            10,
+            60,
+            true,
+            true,
+            1,
+            true,
+            true,
+            "20161010-12:00:00 GMT",
+            "20161010-16:00:00 GMT",
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [ad]
+
+        // ! [twap]
+        let next_id = self.next_order_id();
+        fill_twap_params(
+            &mut base_order,
+            "Marketable",
+            "09:00:00 CET",
+            "16:00:00 CET",
+            true,
+            100000.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [twap]
+
+        // ! [vwap]
+        let next_id = self.next_order_id();
+        fill_vwap_params(
+            &mut base_order,
+            0.2,
+            "09:00:00 CET",
+            "16:00:00 CET",
+            true,
+            true,
+            100000.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [vwap]
+
+        // ! [balanceimpactrisk]
+        let next_id = self.next_order_id();
+        fill_balance_impact_risk_params(&mut base_order, 0.1, "Aggressive", true);
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_option_contract().borrow(),
+            base_order.borrow(),
+        );
+        // ! [balanceimpactrisk]
+
+        // ! [minimpact]
+        let next_id = self.next_order_id();
+        fill_min_impact_params(&mut base_order, 0.3);
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_option_contract().borrow(),
+            base_order.borrow(),
+        );
+        // ! [minimpact]
+
+        // ! [adaptive]
+        let next_id = self.next_order_id();
+        fill_adaptive_params(&mut base_order, "Normal");
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [adaptive]
+
+        // ! [closepx]
+        let next_id = self.next_order_id();
+        fill_close_price_params(
+            &mut base_order,
+            0.4,
+            "Neutral",
+            "20180926-06:06:49",
+            true,
+            100000.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [closepx]
+
+        // ! [pctvol]
+        let next_id = self.next_order_id();
+        fill_pct_vol_params(
+            &mut base_order,
+            0.5,
+            "12:00:00 EST",
+            "14:00:00 EST",
+            true,
+            100000.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [pctvol]
+
+        // ! [pctvolpx]
+        let next_id = self.next_order_id();
+        fill_price_variant_pct_vol_params(
+            &mut base_order,
+            0.1,
+            0.05,
+            0.01,
+            0.2,
+            "12:00:00 EST",
+            "14:00:00 EST",
+            true,
+            100000.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [pctvolpx]
+
+        // ! [pctvolsz]
+        let next_id = self.next_order_id();
+        fill_size_variant_pct_vol_params(
+            &mut base_order,
+            0.2,
+            0.4,
+            "12:00:00 EST",
+            "14:00:00 EST",
+            true,
+            100000.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [pctvolsz]
+
+        // ! [pctvoltm]
+        let next_id = self.next_order_id();
+        fill_time_variant_pct_vol_params(
+            &mut base_order,
+            0.2,
+            0.4,
+            "12:00:00 EST",
+            "14:00:00 EST",
+            true,
+            100000.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            base_order.borrow(),
+        );
+        // ! [pctvoltm]
+
+        // ! [jeff_vwap_algo]
+        let next_id = self.next_order_id();
+        fill_jefferies_vwapparams(
+            &mut base_order,
+            "10:00:00 EST",
+            "16:00:00 EST",
+            10.0,
+            10.0,
+            "Exclude_Both",
+            130.0,
+            135.0,
+            1,
+            10.0,
+            "Patience",
+            false,
+            "Midpoint",
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::jefferies_contract().borrow(),
+            base_order.borrow(),
+        );
+        // ! [jeff_vwap_algo]
+
+        // ! [csfb_inline_algo]
+        let next_id = self.next_order_id();
+        fill_csfbinline_params(
+            &mut base_order,
+            "10:00:00 EST",
+            "16:00:00 EST",
+            "Patient",
+            10,
+            20,
+            100,
+            "Default",
+            false,
+            40.0,
+            100,
+            100,
+            35.0,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::csfbcontract().borrow(),
+            base_order.borrow(),
+        );
+        // ! [csfb_inline_algo]
+
+        // ! [qbalgo_strobe_algo]
+        let next_id = self.next_order_id();
+        fill_qbalgo_in_line_params(
+            &mut base_order,
+            "10:00:00 EST",
+            "16:00:00 EST",
+            99.0,
+            "TWAP",
+            0.25,
+            true,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::qbalgo_contract().borrow(),
+            base_order.borrow(),
+        );
         Ok(())
     }
 
-    fn oca_sample(&self) -> Result<(), IBKRApiLibError> {
+    fn oca_sample(&mut self) -> Result<(), IBKRApiLibError> {
+        let oca_orders = vec![
+            order_samples::limit_order("BUY", 1.0, 10.0),
+            order_samples::limit_order("BUY", 1.0, 11.0),
+            order_samples::limit_order("BUY", 1.0, 12.0),
+        ];
+        order_samples::one_cancels_all(
+            format!("TestOCA_{}", self.next_order_id()).as_ref(),
+            oca_orders.clone(),
+            2,
+        );
+        for o in oca_orders {
+            let next_id = self.next_order_id();
+            self.client.as_ref().unwrap().lock().unwrap().place_order(
+                next_id,
+                contract_samples::us_stock_at_smart().borrow(),
+                o.borrow(),
+            );
+        }
         Ok(())
     }
 
     fn req_global_cancel(&self) -> Result<(), IBKRApiLibError> {
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_global_cancel();
         Ok(())
+    }
+
+    fn next_order_id(&mut self) -> i32 {
+        let oid = self.next_order_id;
+        self.next_order_id += 1;
+        oid
+    }
+    pub fn historical_data_operations_req(&self) {
+        // // Requesting historical data
+        // // ![reqHeadTimeStamp]
+        info!("^^^^^^^^^^^^^^^^^^^  historical_data_operations_req");
+        self.client
+            .as_ref()
+            .unwrap()
+            .try_lock()
+            .unwrap()
+            .req_head_time_stamp(
+                4101,
+                contract_samples::us_stock_at_smart().borrow(),
+                "TRADES",
+                0,
+                1,
+            );
+        //// ![reqHeadTimeStamp]
+
+        //// ![reqhistoricaldata]
+        let dt = Utc::now();
+        info!("^^^^^^^^^^^^^^^^^^^  Date: {}", dt);
+        let query_time = dt.format("%Y%m%d %H:%M:%S").to_string();
+        info!("Request Time:  {}", query_time);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_historical_data(
+                4102,
+                contract_samples::simple_future().borrow(),
+                query_time.clone(),
+                "1 M".parse().unwrap(),
+                "1 day".parse().unwrap(),
+                "MIDPOINT".parse().unwrap(),
+                1,
+                1,
+                false,
+                vec![],
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_historical_data(
+                4103,
+                contract_samples::european_stock().borrow(),
+                query_time.clone(),
+                "10 D".parse().unwrap(),
+                "1 min".parse().unwrap(),
+                "TRADES".parse().unwrap(),
+                1,
+                1,
+                false,
+                vec![],
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_historical_data(
+                4104,
+                contract_samples::eur_gbp_fx().borrow(),
+                "".parse().unwrap(),
+                "1 M".parse().unwrap(),
+                "1 day".parse().unwrap(),
+                "MIDPOINT".parse().unwrap(),
+                1,
+                1,
+                true,
+                vec![],
+            );
+        //// ![reqhistoricaldata]
     }
 }
 
@@ -597,7 +1187,7 @@ impl Wrapper for TestWrapper {
     fn next_valid_id(&mut self, order_id: i32) {
         self.next_order_id = order_id;
         info!("next_valid_id -- order_id: {}", order_id);
-        self.order_operations_req();
+        //self.order_operations_req();
     }
 
     fn contract_details(&mut self, req_id: i32, contract_details: ContractDetails) {
@@ -1204,12 +1794,12 @@ fn main() -> Result<(), IBKRApiLibError> {
 
     info!("%%%%%%%%%%%%%%%%%%%%%%%  double: {}", double);
 
-    let wrapper = TestWrapper::new();
-    let app = Arc::new(Mutex::new(EClient::new(wrapper)));
+    let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
+    let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
 
     info!("getting connection...");
     {
-        app.lock().unwrap().wrapper.lock().unwrap().client = Option::from(app.clone());
+        wrapper.lock().unwrap().client = Option::from(app.clone());
     }
     {
         app.lock()
@@ -1217,7 +1807,23 @@ fn main() -> Result<(), IBKRApiLibError> {
             .connect("127.0.0.1".to_string(), 7497, 0);
     }
 
-    //    thread::sleep(Duration::from_secs(2));
+    //thread::sleep(Duration::from_secs(2));
+    //    {
+    //        wrapper.lock().unwrap().order_operations_req();
+    //    }
+    //    {
+    //        app.lock().unwrap().req_current_time();
+    //    }
+    //    {
+    //        app.lock().unwrap().req_account_updates(true, "");
+    //    }
+    {
+        wrapper.try_lock().unwrap().real_time_bars_operations_req();
+    }
+    {
+        wrapper.try_lock().unwrap().historical_data_operations_req();
+    }
+
     //
     //    {
     //        info!("Placing order... {}", 1);

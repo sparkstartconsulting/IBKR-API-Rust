@@ -15,10 +15,10 @@ use twsapi::examples::defaults::DefaultWrapper;
 fn main() -> Result<(), IBKRApiLibError> {
     log4rs::init_file("log_config.yml", Default::default()).unwrap();
 
-    let wrapper = DefaultWrapper::new();
-    let app = Arc::new(Mutex::new(EClient::new(wrapper)));
-    app.lock().unwrap().wrapper.lock().unwrap().client = Option::from(app.clone());
-    app.lock().unwrap().wrapper.lock().unwrap().next_valid_id(3);
+    let wrapper = Arc::new(Mutex::new(DefaultWrapper::new()));
+    let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
+    wrapper.lock().unwrap().client = Option::from(app.clone());
+    wrapper.lock().unwrap().next_valid_id(3);
     app.lock()
         .unwrap()
         .connect("127.0.0.1".to_string(), 7497, 0);
@@ -35,36 +35,24 @@ fn main() -> Result<(), IBKRApiLibError> {
 
     app.lock().unwrap().cancel_account_summary(2);
 
-    thread::sleep(Duration::new(2, 0));
-
     app.lock()
         .unwrap()
         .req_account_summary(3, "All", "NetLiquidation");
     app.lock().unwrap().req_current_time();
-
-    thread::sleep(Duration::new(2, 0));
 
     app.lock().unwrap().cancel_account_summary(2);
 
-    thread::sleep(Duration::new(2, 0));
-
     app.lock()
         .unwrap()
         .req_account_summary(3, "All", "NetLiquidation");
     app.lock().unwrap().req_current_time();
-
-    thread::sleep(Duration::new(2, 0));
 
     app.lock().unwrap().cancel_account_summary(2);
 
-    thread::sleep(Duration::new(2, 0));
-
     app.lock()
         .unwrap()
         .req_account_summary(3, "All", "NetLiquidation");
     app.lock().unwrap().req_current_time();
-
-    thread::sleep(Duration::new(2, 0));
 
     app.lock().unwrap().cancel_account_summary(2);
 

@@ -159,7 +159,9 @@ where
             Some(IncomingMessageIds::HeadTimestamp) => self.process_head_timestamp(fields),
             Some(IncomingMessageIds::HistogramData) => self.process_histogram_data(fields),
             Some(IncomingMessageIds::HistoricalData) => self.process_historical_data(fields),
-            Some(IncomingMessageIds::HistoricalDataUpdate) => self.process_historical_data(fields),
+            Some(IncomingMessageIds::HistoricalDataUpdate) => {
+                self.process_historical_data_update(fields)
+            }
             Some(IncomingMessageIds::HistoricalNews) => self.process_historical_news(fields),
             Some(IncomingMessageIds::HistoricalNewsEnd) => self.process_historical_news_end(fields),
             Some(IncomingMessageIds::HistoricalTicks) => self.process_historical_ticks(fields),
@@ -547,7 +549,6 @@ where
     //----------------------------------------------------------------------------------------------
     fn process_commission_report(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-        info!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!   Processing commision report");
         //throw away message_id
         fields_itr.next();
         //throw away version
@@ -557,26 +558,13 @@ where
         commission_report.exec_id = fields_itr.next().unwrap().to_string();
         commission_report.commission = decode_f64(&mut fields_itr)?;
         commission_report.currency = fields_itr.next().unwrap().to_string();
-        let pnl = decode_f64(&mut fields_itr);
-        match { pnl } {
-            Ok(val) => commission_report.realized_pnl = val,
-            Err(err) => {
-                error!("ERROR!! {:?}", err);
-                return Err(err);
-            }
-        }
 
-        let yield_ = decode_f64(&mut fields_itr);
-        match { yield_ } {
-            Ok(val) => commission_report.yield_ = val,
-            Err(err) => {
-                error!("ERROR!! {:?}", err);
-                return Err(err);
-            }
-        }
-        info!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!   Processing commision report");
+        commission_report.realized_pnl = decode_f64(&mut fields_itr)?;
+
+        commission_report.yield_ = decode_f64(&mut fields_itr)?;
+
         commission_report.yield_redemption_date = decode_string(&mut fields_itr)?;
-        info!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!   Processing commision report");
+
         self.wrapper
             .lock()
             .unwrap()
@@ -1050,7 +1038,7 @@ where
     //----------------------------------------------------------------------------------------------
     fn process_historical_data(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-
+        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Process historical data.....");
         //throw away message_id
         fields_itr.next();
 
@@ -1061,9 +1049,11 @@ where
         let req_id = decode_i32(&mut fields_itr)?;
         let start_date = decode_string(&mut fields_itr)?; // ver 2 field
         let end_date = decode_string(&mut fields_itr)?; // ver 2 field
-
+        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Process historical data.....2");
+        let peek = *(fields_itr.clone()).peekable().peek().unwrap();
+        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  peaking {}", peek);
         let bar_count = decode_i32(&mut fields_itr)?;
-
+        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Process historical data.....3");
         for _ in 0..bar_count {
             let mut bar = BarData::default();
             bar.date = decode_string(&mut fields_itr)?;
@@ -1090,14 +1080,14 @@ where
                 .deref_mut()
                 .historical_data(req_id, bar);
         }
-
+        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Process historical data.....4");
         // send end of dataset marker
         self.wrapper
             .lock()
             .unwrap()
             .deref_mut()
             .historical_data_end(req_id, start_date.as_ref(), end_date.as_ref());
-
+        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  FINISHED Process historical data.....");
         Ok(())
     }
 
@@ -2665,7 +2655,7 @@ where
         info!("Starting run...");
         // !self.done &&
         loop {
-            info!("Client waiting for message...");
+            debug!("Client waiting for message...");
 
             let text = self.msg_queue.recv();
 
@@ -2678,7 +2668,7 @@ where
                             format!("{}:{}:{}", TwsError::NotConnected.message(), val.len(), val)
                                 .as_str(),
                         );
-                        info!("Error receiving message.  Disconnected: Message too big");
+                        error!("Error receiving message.  Disconnected: Message too big");
                         self.wrapper.lock().unwrap().deref_mut().connection_closed();
                         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
                         error!("Error receiving message.  Invalid size.  Disconnected.");
@@ -2688,11 +2678,9 @@ where
                         )));
                     } else {
                         let fields = read_fields((&val).as_ref());
-                        info!("interpret fields...{:?}", fields);
+                        debug!("interpret fields...{:?}", fields);
                         self.interpret(fields.as_slice())?;
-                        info!("finished interpret");
                     }
-                    info!("releasing lock");
                 }
                 Result::Err(err) => {
                     if *self.conn_state.lock().unwrap().deref() as i32
