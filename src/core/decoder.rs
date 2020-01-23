@@ -258,7 +258,6 @@ where
         fields_itr.next();
 
         let req_id = decode_i32(&mut fields_itr)?;
-        let _ticker_id: i32 = decode_i32(&mut fields_itr)?;
         let tick_type: i32 = decode_i32(&mut fields_itr)?;
         let price: f64 = decode_f64(&mut fields_itr)?;
         let size = decode_i32(&mut fields_itr)?;
@@ -1304,15 +1303,12 @@ where
     //----------------------------------------------------------------------------------------------
     fn process_market_data_type(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-
         //throw away message_id
         fields_itr.next();
         //throw away version
         fields_itr.next();
-
         let req_id = decode_i32(&mut fields_itr)?;
         let market_data_type = decode_i32(&mut fields_itr)?;
-
         self.wrapper
             .lock()
             .unwrap()

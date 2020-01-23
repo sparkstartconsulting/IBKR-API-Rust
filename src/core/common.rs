@@ -1,4 +1,5 @@
 use std::fmt;
+use std::fmt::Display;
 
 use num_derive::FromPrimitive;
 // 0.2.4 (the derive)
@@ -928,6 +929,36 @@ impl fmt::Display for TagValue {
         write!(f, "{}={};", self.tag, self.value,)
     }
 }
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum MarketDataTypeEnum {
+    NA = 0,
+    Realtime = 1,
+    Frozen = 2,
+    Delayed = 3,
+    DelayedFrozen = 4,
+}
+
+impl MarketDataTypeEnum {
+    fn display(&self) -> &str {
+        match (self) {
+            MarketDataTypeEnum::NA => "N/A",
+            MarketDataTypeEnum::Realtime => "REALTIME",
+            MarketDataTypeEnum::Frozen => "FROZEN",
+            MarketDataTypeEnum::Delayed => "DELAYED",
+            MarketDataTypeEnum::DelayedFrozen => "DELAYED_FROZEN",
+        }
+    }
+}
+
+impl Display for MarketDataTypeEnum {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{}", self.display())
+    }
+}
+
 /*
 def __str__(self):
 # this is not only used for Python dump but when encoding to send

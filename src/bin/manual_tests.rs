@@ -23,14 +23,16 @@ use twsapi::core::algo_params::{
 use twsapi::core::client::EClient;
 use twsapi::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
-    HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
-    SmartComponent, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType, UNSET_DOUBLE,
+    HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, MarketDataTypeEnum, NewsProvider,
+    PriceIncrement, SmartComponent, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType,
+    UNSET_DOUBLE,
 };
 use twsapi::core::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
 };
 use twsapi::core::errors::IBKRApiLibError;
 use twsapi::core::execution::{Execution, ExecutionFilter};
+use twsapi::core::messages::IncomingMessageIds::MarketDataType;
 use twsapi::core::order::{Order, OrderState, SoftDollarTier};
 use twsapi::core::order_condition::{PriceCondition, TriggerMethod};
 use twsapi::core::wrapper::Wrapper;
@@ -56,7 +58,11 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     pub fn start_requests(&self) -> Result<(), IBKRApiLibError> {
-        self.account_operations_req();
+        //self.order_operations_req();
+        //self.what_if_order_operations();
+        //self.account_operations_req();
+        //self.market_data_type_operations();
+        self.tick_data_operations_req();
         Ok(())
     }
 
@@ -1161,6 +1167,218 @@ impl TestWrapper {
             );
         //// ![reqhistoricaldata]
     }
+
+    fn market_data_type_operations(&self) {
+        // ! [reqmarketdatatype]
+        // Switch to live (1) frozen (2) delayed (3) delayed frozen (4).
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_market_data_type(MarketDataTypeEnum::Delayed as i32)
+        // ! [reqmarketdatatype]
+    }
+
+    fn tick_data_operations_req(&self) {
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_market_data_type(MarketDataTypeEnum::DelayedFrozen as i32);
+
+        // Requesting real time market data
+
+        // ! [reqmktdata]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1000,
+            contract_samples::us_stock_at_smart().borrow(),
+            "",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1001,
+            contract_samples::stock_combo_contract().borrow(),
+            "",
+            false,
+            false,
+            vec![],
+        );
+        // ! [reqmktdata]
+
+        // ! [reqmktdata_snapshot]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1002,
+            contract_samples::future_combo_contract().borrow(),
+            "",
+            true,
+            false,
+            vec![],
+        );
+        // ! [reqmktdata_snapshot]
+
+        // ! [regulatorysnapshot]
+        // Each regulatory snapshot request incurs a 0.01 USD fee
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1003,
+            contract_samples::usstock().borrow(),
+            "",
+            false,
+            true,
+            vec![],
+        );
+        // ! [regulatorysnapshot]
+
+        // ! [reqmktdata_genticks]
+        // Requesting RTVolume (Time & Sales), shortable and Fundamental Ratios generic ticks
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1004,
+            contract_samples::us_stock_at_smart().borrow(),
+            "233,236,258",
+            false,
+            false,
+            vec![],
+        );
+        // ! [reqmktdata_genticks]
+
+        // ! [reqmktdata_contractnews]
+        // Without the API news subscription this will generate an "invalid tick type" error
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1005,
+            contract_samples::us_stock_at_smart().borrow(),
+            "mdoff,292:BRFG",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1006,
+            contract_samples::us_stock_at_smart().borrow(),
+            "mdoff,292:BRFG+DJNL",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1007,
+            contract_samples::us_stock_at_smart().borrow(),
+            "mdoff,292:BRFUPDN",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1008,
+            contract_samples::us_stock_at_smart().borrow(),
+            "mdoff,292:DJ-RT",
+            false,
+            false,
+            vec![],
+        );
+        // ! [reqmktdata_contractnews]
+
+        // ! [reqmktdata_broadtapenews]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1009,
+            contract_samples::brfgbroadtape_news_feed().borrow(),
+            "mdoff,292",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1010,
+            contract_samples::djnlbroadtape_news_feed().borrow(),
+            "mdoff,292",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1011,
+            contract_samples::djtopbroadtape_news_feed().borrow(),
+            "mdoff,292",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1012,
+            contract_samples::brfupdnbroadtape_news_feed().borrow(),
+            "mdoff,292",
+            false,
+            false,
+            vec![],
+        );
+        // ! [reqmktdata_broadtapenews]
+
+        // ! [reqoptiondatagenticks]
+        // Requesting data for an option contract will return the greek values
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1013,
+            contract_samples::option_with_local_symbol().borrow(),
+            "",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1014,
+            contract_samples::futures_on_options().borrow(),
+            "",
+            false,
+            false,
+            vec![],
+        );
+
+        // ! [reqoptiondatagenticks]
+
+        // ! [reqfuturesopeninterest]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1015,
+            contract_samples::simple_future().borrow(),
+            "mdoff,588",
+            false,
+            false,
+            vec![],
+        );
+        // ! [reqfuturesopeninterest]
+
+        // ! [reqmktdatapreopenbidask]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1016,
+            contract_samples::simple_future().borrow(),
+            "",
+            false,
+            false,
+            vec![],
+        );
+        // ! [reqmktdatapreopenbidask]
+
+        // ! [reqavgoptvolume]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            1017,
+            contract_samples::us_stock_at_smart().borrow(),
+            "mdoff,105",
+            false,
+            false,
+            vec![],
+        );
+        // ! [reqavgoptvolume]
+
+        // ! [reqsmartcomponents]
+        // Requests description of map of single letter exchange codes to full exchange names
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_smart_components(1018, "a6");
+        // ! [reqsmartcomponents]
+    }
 }
 
 impl Wrapper for TestWrapper {
@@ -1356,9 +1574,7 @@ impl Wrapper for TestWrapper {
     fn next_valid_id(&mut self, order_id: i32) {
         self.next_order_id = order_id;
         info!("next_valid_id -- order_id: {}", order_id);
-        //self.order_operations_req();
-        //self.condition_samples();
-        //self.what_if_order_operations();
+
         self.start_requests();
     }
 
