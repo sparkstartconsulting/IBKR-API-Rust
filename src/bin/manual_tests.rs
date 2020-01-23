@@ -64,12 +64,12 @@ impl TestWrapper {
     fn account_operations_req(&self) {
         // Requesting managed accounts
         // ! [reqmanagedaccts]
-        //        self.client
-        //            .as_ref()
-        //            .unwrap()
-        //            .lock()
-        //            .unwrap()
-        //            .req_managed_accts();
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_managed_accts();
         // ! [reqmanagedaccts]
 
         // Requesting family codes
@@ -153,10 +153,8 @@ impl TestWrapper {
                 "".parse().unwrap(),
                 true,
             );
-        //        // ! [reqaaccountupdatesmulti]
-        //
+
         //        // Requesting all accounts' positions.
-        //        // ! [reqpositions]
         self.client
             .as_ref()
             .unwrap()

@@ -3144,9 +3144,7 @@ where
         let message_id: i32 = OutgoingMessageIds::ReqManagedAccts as i32;
         let mut msg = "".to_string();
         msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&message_id));
         msg.push_str(&make_field(&version));
-
         self.send_request(msg.as_str())
     }
 
