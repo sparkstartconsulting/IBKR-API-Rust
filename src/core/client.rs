@@ -2133,7 +2133,7 @@ where
     //#########################################################################
     //################## Account and Portfolio
     //########################################################################
-    pub fn req_account_updates(&mut self, subscribe: bool, acct_code: &'static str) {
+    pub fn req_account_updates(&mut self, subscribe: bool, acct_code: String) {
         /*Call this function to start getting account values, portfolio,
         and last update time information via EWrapper.updateAccountValue());
         EWrapperi.updatePortfolio() and Wrapper.updateAccountTime().
@@ -2174,12 +2174,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_account_summary(
-        &mut self,
-        req_id: i32,
-        group_name: &'static str,
-        tags: &'static str,
-    ) {
+    pub fn req_account_summary(&self, req_id: i32, group_name: String, tags: String) {
         /* Call this method to request and keep up to date the data that appears
         on the TWS Account Window Summary tab. The data is returned by
         accountSummary().
@@ -2237,7 +2232,7 @@ where
         //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
+            self.wrapper.try_lock().unwrap().deref_mut().error(
                 NO_VALID_ID,
                 TwsError::NotConnected.code(),
                 TwsError::NotConnected.message(),
@@ -2251,6 +2246,7 @@ where
         let _tags = tags;
         let message_id: i32 = OutgoingMessageIds::ReqAccountSummary as i32;
         let mut msg = "".to_string();
+
         msg.push_str(&make_field(&message_id));
         msg.push_str(&make_field(&version));
         msg.push_str(&make_field(&_req_id));
@@ -2365,12 +2361,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_positions_multi(
-        &mut self,
-        req_id: i32,
-        account: &'static str,
-        model_code: &'static str,
-    ) {
+    pub fn req_positions_multi(&mut self, req_id: i32, account: &String, model_code: &String) {
         //        """Requests positions for account and/or model.
         //                Results are delivered via EWrapper.positionMulti() and
         //                EWrapper.positionMultiEnd() """
@@ -2409,8 +2400,8 @@ where
         msg.push_str(&make_field(&message_id));
         msg.push_str(&make_field(&version));
         msg.push_str(&make_field(&mut_req_id));
-        msg.push_str(&make_field(&mut_account));
-        msg.push_str(&make_field(&mut_model_code));
+        msg.push_str(&make_field(mut_account));
+        msg.push_str(&make_field(mut_model_code));
 
         self.send_request(msg.as_str())
     }
@@ -2457,8 +2448,8 @@ where
     pub fn req_account_updates_multi(
         &mut self,
         req_id: i32,
-        account: &'static str,
-        model_code: &'static str,
+        account: String,
+        model_code: String,
         ledger_and_nlv: bool,
     ) {
         //"""Requests account updates for account and/or model."""

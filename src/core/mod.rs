@@ -1,3 +1,4 @@
+pub mod account_summary_tags;
 pub mod algo_params;
 pub mod client;
 pub mod common;

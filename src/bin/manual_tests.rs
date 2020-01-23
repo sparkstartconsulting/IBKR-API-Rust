@@ -11,6 +11,7 @@ use chrono;
 use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use log::*;
 
+use twsapi::core::account_summary_tags::AccountSummaryTags;
 use twsapi::core::algo_params::{
     fill_accumulate_distribute_params, fill_adaptive_params, fill_arrival_price_params,
     fill_balance_impact_risk_params, fill_close_price_params, fill_csfbinline_params,
@@ -41,6 +42,7 @@ use twsapi::examples::order_samples;
 pub struct TestWrapper {
     pub client: Option<Arc<Mutex<EClient<TestWrapper>>>>,
     pub next_order_id: i32,
+    account: String,
 }
 
 impl TestWrapper {
@@ -48,17 +50,134 @@ impl TestWrapper {
         TestWrapper {
             client: None,
             next_order_id: -1,
+            account: "".to_string(),
         }
     }
 
     //----------------------------------------------------------------------------------------------
     pub fn start_requests(&self) -> Result<(), IBKRApiLibError> {
+        self.account_operations_req();
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
+    fn account_operations_req(&self) {
+        // Requesting managed accounts
+        // ! [reqmanagedaccts]
+        //        self.client
+        //            .as_ref()
+        //            .unwrap()
+        //            .lock()
+        //            .unwrap()
+        //            .req_managed_accts();
+        // ! [reqmanagedaccts]
+
+        // Requesting family codes
+        // ! [reqfamilycodes]
+        {
+            self.client
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .req_family_codes();
+        }
+        // ! [reqfamilycodes]
+        //
+        // Requesting accounts' summary
+        // ! [reqaaccountsummary]
+        {
+            self.client
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .req_account_summary(
+                    9001,
+                    "All".to_string(),
+                    AccountSummaryTags::AllTags.to_string(),
+                );
+        }
+        //        // ! [reqaaccountsummary]
+        //
+        //        // ! [reqaaccountsummaryledger]
+        {
+            self.client
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .req_account_summary(9002, "All".to_string(), "$LEDGER".to_string());
+        }
+        //        // ! [reqaaccountsummaryledger]
+        //
+        //        // ! [reqaaccountsummaryledgercurrency]
+        {
+            self.client
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .req_account_summary(9003, "All".to_string(), "$LEDGER:EUR".to_string());
+        }
+        //        // ! [reqaaccountsummaryledgercurrency]
+        //
+        //        // ! [reqaaccountsummaryledgerall]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_account_summary(9004, "All".to_string(), "$LEDGER:ALL".to_string());
+        //        // ! [reqaaccountsummaryledgerall]
+        //
+        //        // Subscribing to an account's information.Only one at a time!
+        //        // ! [reqaaccountupdates]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_account_updates(true, (&self.account).parse().unwrap());
+        //        // ! [reqaaccountupdates]
+        //
+        //        // ! [reqaaccountupdatesmulti]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_account_updates_multi(
+                9005,
+                (&self.account).parse().unwrap(),
+                "".parse().unwrap(),
+                true,
+            );
+        //        // ! [reqaaccountupdatesmulti]
+        //
+        //        // Requesting all accounts' positions.
+        //        // ! [reqpositions]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_positions();
+        //        // ! [reqpositions]
+        //
+        //        // ! [reqpositionsmulti]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_positions_multi(9006, &self.account, &"".to_string());
+        //        // ! [reqpositionsmulti]
+    }
+
+    //----------------------------------------------------------------------------------------------
     pub fn real_time_bars_operations_req(&self) {
-        // # Requesting real time bars
+        // Requesting real time bars
         // # ![reqrealtimebars]
         self.client
             .as_ref()
@@ -1241,7 +1360,8 @@ impl Wrapper for TestWrapper {
         info!("next_valid_id -- order_id: {}", order_id);
         //self.order_operations_req();
         //self.condition_samples();
-        self.what_if_order_operations();
+        //self.what_if_order_operations();
+        self.start_requests();
     }
 
     //----------------------------------------------------------------------------------------------
@@ -1328,6 +1448,8 @@ impl Wrapper for TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn managed_accounts(&mut self, accounts_list: &str) {
         info!("managed_accounts -- accounts_list: {}", accounts_list);
+        let split = accounts_list.split(",");
+        //self.account = split;
     }
 
     //----------------------------------------------------------------------------------------------
