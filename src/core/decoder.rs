@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::io::ErrorKind;
+use std::io::{Error, ErrorKind};
 use std::marker::Sync;
 use std::ops::{Deref, DerefMut};
 use std::slice::Iter;
@@ -129,123 +129,147 @@ where
         if fields.is_empty() {
             return Ok(());
         }
-        //        for field in fields {
-        //            debug!("inside interpret: {:?}", field);
-        //        }
+
         let msg_id = i32::from_str(fields.get(0).unwrap().as_str()).unwrap();
 
         match FromPrimitive::from_i32(msg_id) {
-            Some(IncomingMessageIds::TickPrice) => self.process_tick_price(fields),
-            Some(IncomingMessageIds::AccountSummary) => self.process_account_summary(fields),
-            Some(IncomingMessageIds::AccountSummaryEnd) => self.process_account_summary_end(fields),
+            Some(IncomingMessageIds::TickPrice) => self.process_tick_price(fields)?,
+            Some(IncomingMessageIds::AccountSummary) => self.process_account_summary(fields)?,
+            Some(IncomingMessageIds::AccountSummaryEnd) => {
+                self.process_account_summary_end(fields)?
+            }
             Some(IncomingMessageIds::AccountUpdateMulti) => {
-                self.process_account_update_multi(fields)
+                self.process_account_update_multi(fields)?
             }
             Some(IncomingMessageIds::AccountUpdateMultiEnd) => {
-                self.process_account_update_multi_end(fields)
+                self.process_account_update_multi_end(fields)?
             }
-            Some(IncomingMessageIds::AcctDownloadEnd) => self.process_account_download_end(fields),
-            Some(IncomingMessageIds::AcctUpdateTime) => self.process_account_update_time(fields),
-            Some(IncomingMessageIds::AcctValue) => self.process_account_value(fields),
-            Some(IncomingMessageIds::BondContractData) => self.process_bond_contract_data(fields),
-            Some(IncomingMessageIds::CommissionReport) => self.process_commission_report(fields),
-            Some(IncomingMessageIds::CompletedOrder) => self.process_completed_order(fields),
+            Some(IncomingMessageIds::AcctDownloadEnd) => {
+                self.process_account_download_end(fields)?
+            }
+            Some(IncomingMessageIds::AcctUpdateTime) => self.process_account_update_time(fields)?,
+            Some(IncomingMessageIds::AcctValue) => self.process_account_value(fields)?,
+            Some(IncomingMessageIds::BondContractData) => {
+                self.process_bond_contract_data(fields)?
+            }
+            Some(IncomingMessageIds::CommissionReport) => self.process_commission_report(fields)?,
+            Some(IncomingMessageIds::CompletedOrder) => self.process_completed_order(fields)?,
             Some(IncomingMessageIds::CompletedOrdersEnd) => {
-                self.process_complete_orders_end(fields)
+                self.process_complete_orders_end(fields)?
             }
-            Some(IncomingMessageIds::ContractData) => self.process_contract_details(fields),
-            Some(IncomingMessageIds::ContractDataEnd) => self.process_contract_details_end(fields),
-            Some(IncomingMessageIds::CurrentTime) => self.process_current_time(fields),
+            Some(IncomingMessageIds::ContractData) => self.process_contract_details(fields)?,
+            Some(IncomingMessageIds::ContractDataEnd) => {
+                self.process_contract_details_end(fields)?
+            }
+            Some(IncomingMessageIds::CurrentTime) => self.process_current_time(fields)?,
             Some(IncomingMessageIds::DeltaNeutralValidation) => {
-                self.process_delta_neutral_validation(fields)
+                self.process_delta_neutral_validation(fields)?
             }
-            Some(IncomingMessageIds::DisplayGroupList) => self.process_display_group_list(fields),
+            Some(IncomingMessageIds::DisplayGroupList) => {
+                self.process_display_group_list(fields)?
+            }
             Some(IncomingMessageIds::DisplayGroupUpdated) => {
-                self.process_display_group_updated(fields)
+                self.process_display_group_updated(fields)?
             }
-            Some(IncomingMessageIds::ErrMsg) => self.process_error_message(fields),
-            Some(IncomingMessageIds::ExecutionData) => self.process_execution_data(fields),
-            Some(IncomingMessageIds::ExecutionDataEnd) => self.process_execution_data_end(fields),
-            Some(IncomingMessageIds::FamilyCodes) => self.process_family_codes(fields),
-            Some(IncomingMessageIds::FundamentalData) => self.process_fundamental_data(fields),
-            Some(IncomingMessageIds::HeadTimestamp) => self.process_head_timestamp(fields),
-            Some(IncomingMessageIds::HistogramData) => self.process_histogram_data(fields),
-            Some(IncomingMessageIds::HistoricalData) => self.process_historical_data(fields),
+            Some(IncomingMessageIds::ErrMsg) => self.process_error_message(fields)?,
+            Some(IncomingMessageIds::ExecutionData) => self.process_execution_data(fields)?,
+            Some(IncomingMessageIds::ExecutionDataEnd) => {
+                self.process_execution_data_end(fields)?
+            }
+            Some(IncomingMessageIds::FamilyCodes) => self.process_family_codes(fields)?,
+            Some(IncomingMessageIds::FundamentalData) => self.process_fundamental_data(fields)?,
+            Some(IncomingMessageIds::HeadTimestamp) => self.process_head_timestamp(fields)?,
+            Some(IncomingMessageIds::HistogramData) => self.process_histogram_data(fields)?,
+            Some(IncomingMessageIds::HistoricalData) => self.process_historical_data(fields)?,
             Some(IncomingMessageIds::HistoricalDataUpdate) => {
-                self.process_historical_data_update(fields)
+                self.process_historical_data_update(fields)?
             }
-            Some(IncomingMessageIds::HistoricalNews) => self.process_historical_news(fields),
-            Some(IncomingMessageIds::HistoricalNewsEnd) => self.process_historical_news_end(fields),
-            Some(IncomingMessageIds::HistoricalTicks) => self.process_historical_ticks(fields),
+            Some(IncomingMessageIds::HistoricalNews) => self.process_historical_news(fields)?,
+            Some(IncomingMessageIds::HistoricalNewsEnd) => {
+                self.process_historical_news_end(fields)?
+            }
+            Some(IncomingMessageIds::HistoricalTicks) => self.process_historical_ticks(fields)?,
             Some(IncomingMessageIds::HistoricalTicksBidAsk) => {
-                self.process_historical_ticks_bid_ask(fields)
+                self.process_historical_ticks_bid_ask(fields)?
             }
+
             Some(IncomingMessageIds::HistoricalTicksLast) => {
-                self.process_historical_ticks_last(fields)
+                self.process_historical_ticks_last(fields)?
             }
-            Some(IncomingMessageIds::ManagedAccts) => self.process_managed_accounts(fields),
-            Some(IncomingMessageIds::MarketDataType) => self.process_market_data_type(fields),
-            Some(IncomingMessageIds::MarketDepth) => self.process_market_depth(fields),
-            Some(IncomingMessageIds::MarketDepthL2) => self.process_market_depth_l2(fields),
-            Some(IncomingMessageIds::MarketRule) => self.process_market_rule(fields),
+            Some(IncomingMessageIds::ManagedAccts) => self.process_managed_accounts(fields)?,
+            Some(IncomingMessageIds::MarketDataType) => self.process_market_data_type(fields)?,
+            Some(IncomingMessageIds::MarketDepth) => self.process_market_depth(fields)?,
+            Some(IncomingMessageIds::MarketDepthL2) => self.process_market_depth_l2(fields)?,
+            Some(IncomingMessageIds::MarketRule) => self.process_market_rule(fields)?,
             Some(IncomingMessageIds::MktDepthExchanges) => {
-                self.process_market_depth_exchanges(fields)
+                self.process_market_depth_exchanges(fields)?
             }
-            Some(IncomingMessageIds::NewsArticle) => self.process_news_article(fields),
-            Some(IncomingMessageIds::NewsBulletins) => self.process_news_bulletins(fields),
-            Some(IncomingMessageIds::NewsProviders) => self.process_news_providers(fields),
-            Some(IncomingMessageIds::NextValidId) => self.process_next_valid_id(fields),
-            Some(IncomingMessageIds::OpenOrder) => self.process_open_order(fields),
-            Some(IncomingMessageIds::OpenOrderEnd) => self.process_open_order_end(fields),
-            Some(IncomingMessageIds::OrderStatus) => self.process_order_status(fields),
-            Some(IncomingMessageIds::OrderBound) => self.process_order_bound(fields),
-            Some(IncomingMessageIds::Pnl) => self.process_pnl(fields),
-            Some(IncomingMessageIds::PnlSingle) => self.process_pnl_single(fields),
-            Some(IncomingMessageIds::PortfolioValue) => self.process_portfolio_value(fields),
-            Some(IncomingMessageIds::PositionData) => self.process_position_data(fields),
-            Some(IncomingMessageIds::PositionEnd) => self.process_position_end(fields),
-            Some(IncomingMessageIds::RealTimeBars) => self.process_real_time_bars(fields),
-            Some(IncomingMessageIds::ReceiveFa) => self.process_receive_fa(fields),
+            Some(IncomingMessageIds::NewsArticle) => self.process_news_article(fields)?,
+            Some(IncomingMessageIds::NewsBulletins) => self.process_news_bulletins(fields)?,
+            Some(IncomingMessageIds::NewsProviders) => self.process_news_providers(fields)?,
+            Some(IncomingMessageIds::NextValidId) => self.process_next_valid_id(fields)?,
+            Some(IncomingMessageIds::OpenOrder) => self.process_open_order(fields)?,
+            Some(IncomingMessageIds::OpenOrderEnd) => self.process_open_order_end(fields)?,
+            Some(IncomingMessageIds::OrderStatus) => self.process_order_status(fields)?,
+            Some(IncomingMessageIds::OrderBound) => self.process_order_bound(fields)?,
+            Some(IncomingMessageIds::Pnl) => self.process_pnl(fields)?,
+            Some(IncomingMessageIds::PnlSingle) => self.process_pnl_single(fields)?,
+            Some(IncomingMessageIds::PortfolioValue) => self.process_portfolio_value(fields)?,
+            Some(IncomingMessageIds::PositionData) => self.process_position_data(fields)?,
+            Some(IncomingMessageIds::PositionEnd) => self.process_position_end(fields)?,
+            Some(IncomingMessageIds::RealTimeBars) => self.process_real_time_bars(fields)?,
+            Some(IncomingMessageIds::ReceiveFa) => self.process_receive_fa(fields)?,
             Some(IncomingMessageIds::RerouteMktDataReq) => {
-                self.process_reroute_mkt_data_req(fields)
+                self.process_reroute_mkt_data_req(fields)?
             }
-            Some(IncomingMessageIds::PositionMulti) => self.process_position_multi(fields),
-            Some(IncomingMessageIds::PositionMultiEnd) => self.process_position_multi_end(fields),
-            Some(IncomingMessageIds::ScannerData) => self.process_scanner_data(fields),
-            Some(IncomingMessageIds::ScannerParameters) => self.process_scanner_parameters(fields),
+
+            Some(IncomingMessageIds::PositionMulti) => self.process_position_multi(fields)?,
+            Some(IncomingMessageIds::PositionMultiEnd) => {
+                self.process_position_multi_end(fields)?
+            }
+            Some(IncomingMessageIds::ScannerData) => self.process_scanner_data(fields)?,
+            Some(IncomingMessageIds::ScannerParameters) => {
+                self.process_scanner_parameters(fields)?
+            }
             Some(IncomingMessageIds::SecurityDefinitionOptionParameter) => {
-                self.process_security_definition_option_parameter(fields)
+                self.process_security_definition_option_parameter(fields)?
             }
             Some(IncomingMessageIds::SecurityDefinitionOptionParameterEnd) => {
-                self.process_security_definition_option_parameter_end(fields)
+                self.process_security_definition_option_parameter_end(fields)?
             }
-            Some(IncomingMessageIds::SmartComponents) => self.process_smart_components(fields),
-            Some(IncomingMessageIds::SoftDollarTiers) => self.process_soft_dollar_tiers(fields),
-            Some(IncomingMessageIds::SymbolSamples) => self.process_symbol_samples(fields),
-            Some(IncomingMessageIds::TickByTick) => self.process_tick_by_tick(fields),
-            Some(IncomingMessageIds::TickEfp) => self.process_tick_by_tick(fields),
-            Some(IncomingMessageIds::TickGeneric) => self.process_tick_generic(fields),
-            Some(IncomingMessageIds::TickNews) => self.process_tick_news(fields),
-            Some(IncomingMessageIds::TickOptionComputation) => {
-                self.process_tick_option_computation(fields)
-            }
-            Some(IncomingMessageIds::TickReqParams) => self.process_tick_req_params(fields),
-            Some(IncomingMessageIds::TickSize) => self.process_tick_size(fields),
-            Some(IncomingMessageIds::TickSnapshotEnd) => self.process_tick_snapshot_end(fields),
-            Some(IncomingMessageIds::TickString) => self.process_tick_string(fields),
-            Some(IncomingMessageIds::VerifyAndAuthCompleted) => {
-                self.process_verify_and_auth_completed(fields)
-            }
-            Some(IncomingMessageIds::VerifyCompleted) => self.process_verify_completed(fields),
 
-            Some(IncomingMessageIds::VerifyMessageApi) => self.process_verify_completed(fields),
+            Some(IncomingMessageIds::SmartComponents) => self.process_smart_components(fields)?,
+            Some(IncomingMessageIds::SoftDollarTiers) => self.process_soft_dollar_tiers(fields)?,
+            Some(IncomingMessageIds::SymbolSamples) => self.process_symbol_samples(fields)?,
+            Some(IncomingMessageIds::TickByTick) => self.process_tick_by_tick(fields)?,
+            Some(IncomingMessageIds::TickEfp) => self.process_tick_by_tick(fields)?,
+            Some(IncomingMessageIds::TickGeneric) => self.process_tick_generic(fields)?,
+            Some(IncomingMessageIds::TickNews) => self.process_tick_news(fields)?,
+            Some(IncomingMessageIds::TickOptionComputation) => {
+                self.process_tick_option_computation(fields)?
+            }
+            Some(IncomingMessageIds::TickReqParams) => self.process_tick_req_params(fields)?,
+            Some(IncomingMessageIds::TickSize) => self.process_tick_size(fields)?,
+            Some(IncomingMessageIds::TickSnapshotEnd) => self.process_tick_snapshot_end(fields)?,
+            Some(IncomingMessageIds::TickString) => self.process_tick_string(fields)?,
+            Some(IncomingMessageIds::VerifyAndAuthCompleted) => {
+                self.process_verify_and_auth_completed(fields)?
+            }
+
+            Some(IncomingMessageIds::VerifyCompleted) => self.process_verify_completed(fields)?,
+
+            Some(IncomingMessageIds::VerifyMessageApi) => self.process_verify_completed(fields)?,
 
             Some(IncomingMessageIds::VerifyAndAuthMessageApi) => {
-                self.process_verify_and_auth_message_api(fields)
+                self.process_verify_and_auth_message_api(fields)?
+            }
+            Some(IncomingMessageIds::RerouteMktDepthReq) => {
+                self.process_reroute_mkt_depth_req(fields)?
             }
 
-            _ => Ok(()),
+            _ => panic!("Received unkown message id!!  Exiting..."),
         }
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -299,7 +323,6 @@ where
                 .deref_mut()
                 .tick_size(req_id, size_tick_type, size);
         }
-
         Ok(())
     }
 
@@ -340,7 +363,6 @@ where
             decode_string(&mut fields_itr)?.as_ref(),
             decode_string(&mut fields_itr)?.as_ref(),
         );
-
         Ok(())
     }
 
@@ -358,7 +380,6 @@ where
             .unwrap()
             .deref_mut()
             .account_summary_end(decode_i32(&mut fields_itr)?);
-
         Ok(())
     }
 
@@ -390,7 +411,6 @@ where
                 value.as_ref(),
                 currency.as_ref(),
             );
-
         Ok(())
     }
 
@@ -413,7 +433,6 @@ where
             .unwrap()
             .deref_mut()
             .account_update_multi_end(req_id);
-
         Ok(())
     }
 
@@ -431,7 +450,6 @@ where
             .unwrap()
             .deref_mut()
             .account_download_end(decode_string(&mut fields_itr)?.as_ref());
-
         Ok(())
     }
 
@@ -449,7 +467,6 @@ where
             .unwrap()
             .deref_mut()
             .update_account_time(decode_string(&mut fields_itr)?.as_ref());
-
         Ok(())
     }
 
@@ -472,7 +489,6 @@ where
                 decode_string(&mut fields_itr)?.as_ref(),
                 decode_string(&mut fields_itr)?.as_ref(),
             );
-
         Ok(())
     }
 
@@ -553,7 +569,6 @@ where
             .unwrap()
             .deref_mut()
             .bond_contract_details(req_id, contract.clone());
-
         Ok(())
     }
 
@@ -581,7 +596,6 @@ where
             .unwrap()
             .deref_mut()
             .commission_report(commission_report);
-
         Ok(())
     }
 
@@ -611,7 +625,6 @@ where
             .unwrap()
             .deref_mut()
             .completed_order(contract, order, order_state);
-
         Ok(())
     }
 
@@ -626,7 +639,6 @@ where
             .unwrap()
             .deref_mut()
             .completed_orders_end();
-
         Ok(())
     }
 
@@ -709,7 +721,6 @@ where
             .unwrap()
             .deref_mut()
             .contract_details(req_id, contract.clone());
-
         Ok(())
     }
 
@@ -729,7 +740,6 @@ where
             .unwrap()
             .deref_mut()
             .contract_details_end(req_id);
-
         Ok(())
     }
 
@@ -747,7 +757,6 @@ where
             .unwrap()
             .deref_mut()
             .current_time(decode_i64(&mut fields_itr)?);
-
         Ok(())
     }
 
@@ -776,7 +785,6 @@ where
             .unwrap()
             .deref_mut()
             .delta_neutral_validation(req_id, delta_neutral_contract);
-
         Ok(())
     }
 
@@ -798,7 +806,6 @@ where
             .unwrap()
             .deref_mut()
             .display_group_list(req_id, groups.as_ref());
-
         Ok(())
     }
 
@@ -820,7 +827,6 @@ where
             .unwrap()
             .deref_mut()
             .display_group_updated(req_id, contract_info.as_ref());
-
         Ok(())
     }
     fn process_error_message(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
@@ -837,7 +843,6 @@ where
             decode_i32(&mut fields_itr)?,
             decode_string(&mut fields_itr)?.as_ref(),
         );
-
         Ok(())
     }
 
@@ -932,7 +937,6 @@ where
             .unwrap()
             .deref_mut()
             .exec_details(req_id, contract, execution);
-
         Ok(())
     }
 
@@ -952,7 +956,6 @@ where
             .unwrap()
             .deref_mut()
             .exec_details_end(req_id);
-
         Ok(())
     }
 
@@ -977,7 +980,6 @@ where
             .unwrap()
             .deref_mut()
             .family_codes(family_codes);
-
         Ok(())
     }
 
@@ -997,7 +999,6 @@ where
             .unwrap()
             .deref_mut()
             .fundamental_data(req_id, data.as_ref());
-
         Ok(())
     }
 
@@ -1015,7 +1016,6 @@ where
             .unwrap()
             .deref_mut()
             .fundamental_data(req_id, timestamp.as_ref());
-
         Ok(())
     }
 
@@ -1042,14 +1042,12 @@ where
             .unwrap()
             .deref_mut()
             .histogram_data(req_id, histogram);
-
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn process_historical_data(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Process historical data.....");
         //throw away message_id
         fields_itr.next();
 
@@ -1060,11 +1058,11 @@ where
         let req_id = decode_i32(&mut fields_itr)?;
         let start_date = decode_string(&mut fields_itr)?; // ver 2 field
         let end_date = decode_string(&mut fields_itr)?; // ver 2 field
-        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Process historical data.....2");
+
         let peek = *(fields_itr.clone()).peekable().peek().unwrap();
-        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  peaking {}", peek);
+
         let bar_count = decode_i32(&mut fields_itr)?;
-        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Process historical data.....3");
+
         for _ in 0..bar_count {
             let mut bar = BarData::default();
             bar.date = decode_string(&mut fields_itr)?;
@@ -1091,14 +1089,13 @@ where
                 .deref_mut()
                 .historical_data(req_id, bar);
         }
-        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  Process historical data.....4");
+
         // send end of dataset marker
         self.wrapper
             .lock()
             .unwrap()
             .deref_mut()
             .historical_data_end(req_id, start_date.as_ref(), end_date.as_ref());
-        info!("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&  FINISHED Process historical data.....");
         Ok(())
     }
 
@@ -1125,7 +1122,6 @@ where
             .unwrap()
             .deref_mut()
             .historical_data_update(req_id, bar);
-
         Ok(())
     }
 
@@ -1197,7 +1193,6 @@ where
             .unwrap()
             .deref_mut()
             .historical_ticks(req_id, ticks, done);
-
         Ok(())
     }
 
@@ -1238,7 +1233,6 @@ where
             .unwrap()
             .deref_mut()
             .historical_ticks_bid_ask(req_id, ticks, done);
-
         Ok(())
     }
 
@@ -1276,7 +1270,6 @@ where
             .unwrap()
             .deref_mut()
             .historical_ticks_last(req_id, ticks, done);
-
         Ok(())
     }
 
@@ -1314,14 +1307,12 @@ where
             .unwrap()
             .deref_mut()
             .market_data_type(req_id, market_data_type);
-
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn process_market_depth(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-
         //throw away message_id
         fields_itr.next();
         //throw away version
@@ -1340,7 +1331,6 @@ where
             .unwrap()
             .deref_mut()
             .update_mkt_depth(req_id, position, operation, side, price, size);
-
         Ok(())
     }
 
@@ -1381,7 +1371,6 @@ where
                 size,
                 is_smart_depth,
             );
-
         Ok(())
     }
 
@@ -1409,7 +1398,6 @@ where
             .unwrap()
             .deref_mut()
             .market_rule(market_rule_id, price_increments);
-
         Ok(())
     }
 
@@ -1442,7 +1430,6 @@ where
             .unwrap()
             .deref_mut()
             .mkt_depth_exchanges(depth_mkt_data_descriptions);
-
         Ok(())
     }
 
@@ -1461,7 +1448,6 @@ where
             article_type,
             article_text.as_ref(),
         );
-
         Ok(())
     }
 
@@ -1489,7 +1475,6 @@ where
                 news_message.as_ref(),
                 originating_exch.as_ref(),
             );
-
         Ok(())
     }
 
@@ -1514,7 +1499,6 @@ where
             .unwrap()
             .deref_mut()
             .news_providers(news_providers);
-
         Ok(())
     }
 
@@ -1533,7 +1517,6 @@ where
             .unwrap()
             .deref_mut()
             .next_valid_id(order_id);
-
         Ok(())
     }
 
@@ -1569,7 +1552,6 @@ where
             order,
             order_state,
         );
-
         Ok(())
     }
 
@@ -1654,7 +1636,6 @@ where
             why_held.as_ref(),
             mkt_cap_price,
         );
-
         Ok(())
     }
 
@@ -1684,7 +1665,6 @@ where
             unrealized_pnl,
             realized_pnl,
         );
-
         Ok(())
     }
 
@@ -1719,7 +1699,6 @@ where
             realized_pnl,
             value,
         );
-
         Ok(())
     }
 
@@ -1781,7 +1760,6 @@ where
             realized_pnl,
             account_name.as_ref(),
         );
-
         Ok(())
     }
 
@@ -1830,7 +1808,6 @@ where
             position,
             avg_cost,
         );
-
         Ok(())
     }
 
@@ -1898,7 +1875,6 @@ where
             .unwrap()
             .deref_mut()
             .position_multi_end(req_id);
-
         Ok(())
     }
 
@@ -1925,7 +1901,7 @@ where
 
         self.wrapper.lock().unwrap().deref_mut().realtime_bar(
             req_id,
-            bar.time.parse()?,
+            bar.time.parse().unwrap(),
             bar.open,
             bar.high,
             bar.low,
@@ -1934,7 +1910,6 @@ where
             bar.wap,
             bar.count,
         );
-
         Ok(())
     }
 
@@ -1955,7 +1930,6 @@ where
             .unwrap()
             .deref_mut()
             .receive_fa(FromPrimitive::from_i32(fa_data_type).unwrap(), xml.as_ref());
-
         Ok(())
     }
 
@@ -1975,7 +1949,6 @@ where
             .unwrap()
             .deref_mut()
             .reroute_mkt_data_req(req_id, con_id, exchange.as_ref());
-
         Ok(())
     }
 
@@ -1995,7 +1968,6 @@ where
             .unwrap()
             .deref_mut()
             .reroute_mkt_depth_req(req_id, con_id, exchange.as_ref());
-
         Ok(())
     }
 
@@ -2049,7 +2021,6 @@ where
             .unwrap()
             .deref_mut()
             .scanner_data_end(req_id);
-
         Ok(())
     }
 
@@ -2068,7 +2039,6 @@ where
             .unwrap()
             .deref_mut()
             .scanner_parameters(xml.as_ref());
-
         Ok(())
     }
 
@@ -2136,7 +2106,6 @@ where
             .unwrap()
             .deref_mut()
             .security_definition_option_parameter_end(req_id);
-
         Ok(())
     }
 
@@ -2165,7 +2134,6 @@ where
             .unwrap()
             .deref_mut()
             .smart_components(req_id, smart_components);
-
         Ok(())
     }
 
@@ -2194,7 +2162,6 @@ where
             .unwrap()
             .deref_mut()
             .soft_dollar_tiers(req_id, tiers);
-
         Ok(())
     }
 
@@ -2230,7 +2197,6 @@ where
             .unwrap()
             .deref_mut()
             .symbol_samples(req_id, contract_descriptions);
-
         Ok(())
     }
 
@@ -2247,7 +2213,7 @@ where
         let time = decode_i64(&mut fields_itr)?;
 
         match tick_type {
-            0 => Ok(()), // None
+            0 => return Ok(()), // None
             1..=2 =>
             // Last (1) or AllLast (2)
             {
@@ -2273,7 +2239,6 @@ where
                         exchange.as_ref(),
                         special_conditions.as_ref(),
                     );
-                Ok(())
             }
             3 =>
             // BidAsk
@@ -2299,7 +2264,6 @@ where
                         ask_size,
                         tick_attrib_bid_ask,
                     );
-                Ok(())
             }
             4 =>
             // MidPoint
@@ -2310,10 +2274,10 @@ where
                     .unwrap()
                     .deref_mut()
                     .tick_by_tick_mid_point(req_id, time, mid_point);
-                Ok(())
             }
-            _ => Ok(()),
+            _ => return Ok(()),
         }
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -2345,7 +2309,6 @@ where
             dividend_impact,
             dividends_to_last_trade_date,
         );
-
         Ok(())
     }
 
@@ -2367,7 +2330,6 @@ where
             FromPrimitive::from_i32(tick_type).unwrap(),
             value,
         );
-
         Ok(())
     }
 
@@ -2391,7 +2353,6 @@ where
             headline.as_ref(),
             extra_data.as_ref(),
         );
-
         Ok(())
     }
 
@@ -2480,7 +2441,6 @@ where
                 theta,
                 und_price,
             );
-
         Ok(())
     }
 
@@ -2501,7 +2461,6 @@ where
             bbo_exchange.as_ref(),
             snapshot_permissions,
         );
-
         Ok(())
     }
 
@@ -2523,7 +2482,6 @@ where
             FromPrimitive::from_i32(tick_type).unwrap(),
             size,
         );
-
         Ok(())
     }
 
@@ -2543,7 +2501,6 @@ where
             .unwrap()
             .deref_mut()
             .tick_snapshot_end(req_id);
-
         Ok(())
     }
 
@@ -2567,7 +2524,6 @@ where
             .unwrap()
             .deref_mut()
             .verify_and_auth_completed(is_successful, error_text.as_ref());
-
         Ok(())
     }
 
@@ -2591,7 +2547,6 @@ where
             .unwrap()
             .deref_mut()
             .verify_and_auth_message_api(api_data.as_ref(), xyz_challenge.as_ref());
-
         Ok(())
     }
 
@@ -2612,7 +2567,6 @@ where
             .unwrap()
             .deref_mut()
             .verify_completed(is_successful, error_text.as_ref());
-
         Ok(())
     }
 
@@ -2631,12 +2585,16 @@ where
             .unwrap()
             .deref_mut()
             .verify_message_api(api_data.as_ref());
-
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    fn read_last_trade_date(&self, contract: &mut ContractDetails, is_bond: bool, read_date: &str) {
+    fn read_last_trade_date(
+        &self,
+        contract: &mut ContractDetails,
+        is_bond: bool,
+        read_date: &str,
+    ) -> Result<(), IBKRApiLibError> {
         if read_date != "" {
             let splitted = read_date.split_whitespace().collect::<Vec<&str>>();
             if splitted.len() > 0 {
@@ -2654,10 +2612,11 @@ where
                 contract.time_zone_id = splitted.get(2).unwrap().to_string();
             }
         }
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn run(&mut self) -> Result<(), IBKRApiLibError> {
+    pub fn run(&mut self) {
         //This is the function that has the message loop.
 
         info!("Starting run...");
@@ -2666,28 +2625,28 @@ where
             debug!("Client waiting for message...");
 
             let text = self.msg_queue.recv();
-
             match text {
                 Result::Ok(val) => {
                     if val.len() > MAX_MSG_LEN as usize {
-                        self.wrapper.lock().unwrap().deref_mut().error(
+                        self.wrapper.try_lock().unwrap().deref_mut().error(
                             NO_VALID_ID,
                             TwsError::NotConnected.code(),
                             format!("{}:{}:{}", TwsError::NotConnected.message(), val.len(), val)
                                 .as_str(),
                         );
                         error!("Error receiving message.  Disconnected: Message too big");
-                        self.wrapper.lock().unwrap().deref_mut().connection_closed();
-                        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
+                        self.wrapper
+                            .try_lock()
+                            .unwrap()
+                            .deref_mut()
+                            .connection_closed();
+                        *self.conn_state.try_lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
                         error!("Error receiving message.  Invalid size.  Disconnected.");
-                        return Err(IBKRApiLibError::Io(std::io::Error::new(
-                            ErrorKind::InvalidData,
-                            "Invalid message length.",
-                        )));
+                        return;
                     } else {
                         let fields = read_fields((&val).as_ref());
-                        debug!("interpret fields...{:?}", fields);
-                        self.interpret(fields.as_slice())?;
+
+                        self.interpret(fields.as_slice());
                     }
                 }
                 Result::Err(err) => {
@@ -2695,16 +2654,20 @@ where
                         != ConnStatus::DISCONNECTED as i32
                     {
                         info!("Error receiving message.  Disconnected: {:?}", err);
-                        self.wrapper.lock().unwrap().deref_mut().connection_closed();
-                        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
+                        self.wrapper
+                            .try_lock()
+                            .unwrap()
+                            .deref_mut()
+                            .connection_closed();
+                        *self.conn_state.try_lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
 
-                        return Result::Err(IBKRApiLibError::from(err));
+                        return;
                     } else {
-                        return Ok(());
+                        error!("Disconnected...");
+                        return;
                     }
                 }
             }
         }
-        Ok(())
     }
 }

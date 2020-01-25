@@ -5,6 +5,7 @@ use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::thread;
 
+use chrono::Duration;
 use log::*;
 
 use crate::core::errors::IBKRApiLibError;
@@ -50,9 +51,13 @@ impl Reader {
         while cont {
             let mut buf: [u8; 4096] = [0; 4096];
             //debug!("Getting bytes");
-            let bytes_read = self.stream.read(&mut buf)?;
-            //debug!("got bytes: {}", bytes_read);
-
+            //info!("Starting read");
+            let bytes_read = self
+                .stream
+                .read(&mut buf)
+                .expect("Couldnt read from reader..."); //read(&mut buf)?;
+                                                        //debug!("got bytes: {}", bytes_read);
+                                                        //info!("Finished read. Read {}", bytes_read);
             allbuf.extend_from_slice(&buf[0..bytes_read]);
             //logger.debug("len %d raw:%s|", len(buf), buf)
 
@@ -76,7 +81,7 @@ impl Reader {
         let _msg = String::new();
         while message_packet.len() > 0 {
             /// Read a message from the packet then add it to the message queue below.
-            let (_size, msg, remaining_messages) = read_msg(message_packet.as_slice());
+            let (_size, msg, remaining_messages) = read_msg(message_packet.as_slice())?;
 
             /// clear the Vec that holds the bytes from the packet
             /// and reload with the bytes that haven't been read.
@@ -93,8 +98,7 @@ impl Reader {
             //            );
 
             if msg.as_str() != "" {
-                //debug!("sending message to core... ");
-                self.messages.send(msg);
+                self.messages.send(msg).expect("READER CANNOT SEND MESSAGE");
             } else {
                 ///Break to the outer loop and get another packet of messages.
 

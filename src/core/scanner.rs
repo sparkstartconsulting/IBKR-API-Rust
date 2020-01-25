@@ -47,7 +47,7 @@ impl Display for ScanData {
 }
 
 //==================================================================================================
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct ScannerSubscription {
     pub number_of_rows: i32,
     pub instrument: String,

@@ -130,7 +130,7 @@ impl Condition for OrderConditionEnum {
     }
 
     //----------------------------------------------------------------------------------------------
-    fn make_fields(&self) -> Vec<String> {
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
         match self {
             OrderConditionEnum::Execution(s) => s.make_fields(),
             OrderConditionEnum::Price(p) => p.make_fields(),
@@ -204,7 +204,7 @@ impl Debug for OrderConditionEnum {
 //==================================================================================================
 pub trait Condition: Display + Debug + Serialize {
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError>;
-    fn make_fields(&self) -> Vec<String>;
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError>;
     fn value_to_string(&self) -> String;
     fn set_value_from_string(&mut self, text: String);
     fn get_type(&self) -> ConditionType;
@@ -250,15 +250,15 @@ impl OrderCondition {
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn make_fields(&self) -> Vec<String> {
+    pub fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
         let mut flds = vec![];
         let val = if self.is_conjunction_connection {
             "a"
         } else {
             "o"
         };
-        flds.push(make_field(&val.to_string()));
-        flds
+        flds.push(make_field(&val.to_string())?);
+        Ok(flds)
     }
 }
 
@@ -295,12 +295,12 @@ impl Condition for ExecutionCondition {
     }
 
     //----------------------------------------------------------------------------------------------
-    fn make_fields(&self) -> Vec<String> {
-        let mut flds = self.order_condition.make_fields();
-        flds.push(make_field(&self.sec_type));
-        flds.push(make_field(&self.exchange));
-        flds.push(make_field(&self.symbol));
-        flds
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
+        let mut flds = self.order_condition.make_fields()?;
+        flds.push(make_field(&self.sec_type)?);
+        flds.push(make_field(&self.exchange)?);
+        flds.push(make_field(&self.symbol)?);
+        Ok(flds)
     }
 
     //----------------------------------------------------------------------------------------------
@@ -379,10 +379,10 @@ impl OperatorCondition {
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn make_fields(&self) -> Vec<String> {
-        let mut flds = self.order_condition.make_fields();
-        flds.push(make_field(&self.is_more));
-        flds
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
+        let mut flds = self.order_condition.make_fields()?;
+        flds.push(make_field(&self.is_more)?);
+        Ok(flds)
     }
 
     //pub fn  __str__(self):
@@ -417,10 +417,10 @@ impl Condition for MarginCondition {
     }
 
     //----------------------------------------------------------------------------------------------
-    fn make_fields(&self) -> Vec<String> {
-        let mut flds = self.operator_condition.make_fields();
-        flds.push(make_field(&self.percent));
-        flds
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
+        let mut flds = self.operator_condition.make_fields()?;
+        flds.push(make_field(&self.percent)?);
+        Ok(flds)
     }
 
     fn value_to_string(&self) -> String {
@@ -485,11 +485,11 @@ impl Condition for ContractCondition {
     }
 
     //----------------------------------------------------------------------------------------------
-    fn make_fields(&self) -> Vec<String> {
-        let mut flds = self.operator_condition.make_fields();
-        flds.push(make_field(&self.con_id));
-        flds.push(make_field(&self.exchange));
-        flds
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
+        let mut flds = self.operator_condition.make_fields()?;
+        flds.push(make_field(&self.con_id)?);
+        flds.push(make_field(&self.exchange)?);
+        Ok(flds)
     }
 
     //----------------------------------------------------------------------------------------------
@@ -558,10 +558,10 @@ impl Condition for TimeCondition {
     }
 
     //----------------------------------------------------------------------------------------------
-    fn make_fields(&self) -> Vec<String> {
-        let mut flds = self.operator_condition.make_fields();
-        flds.push(make_field(&self.time));
-        flds
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
+        let mut flds = self.operator_condition.make_fields()?;
+        flds.push(make_field(&self.time)?);
+        Ok(flds)
     }
 
     //----------------------------------------------------------------------------------------------
@@ -645,21 +645,21 @@ impl Condition for PriceCondition {
     }
 
     //----------------------------------------------------------------------------------------------
-    fn make_fields(&self) -> Vec<String> {
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
         let mut flds = self
             .contract_condition
             .operator_condition
             .order_condition
-            .make_fields();
+            .make_fields()?;
         flds.push(make_field(
             &(self.contract_condition.operator_condition.is_more as i32),
-        ));
-        flds.push(make_field(&(self.price)));
-        flds.push(make_field(&(self.contract_condition.con_id)));
-        flds.push(make_field(&(self.contract_condition.exchange)));
-        flds.push(make_field(&(self.trigger_method as i32)));
+        )?);
+        flds.push(make_field(&(self.price))?);
+        flds.push(make_field(&(self.contract_condition.con_id))?);
+        flds.push(make_field(&(self.contract_condition.exchange))?);
+        flds.push(make_field(&(self.trigger_method as i32))?);
 
-        flds
+        Ok(flds)
     }
 
     //----------------------------------------------------------------------------------------------
@@ -735,20 +735,20 @@ impl Condition for PercentChangeCondition {
     }
 
     //----------------------------------------------------------------------------------------------
-    fn make_fields(&self) -> Vec<String> {
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
         let mut flds = self
             .contract_condition
             .operator_condition
             .order_condition
-            .make_fields();
+            .make_fields()?;
         flds.push(make_field(
             &(self.contract_condition.operator_condition.is_more as i32),
-        ));
-        flds.push(make_field(&(self.change_percent)));
-        flds.push(make_field(&(self.contract_condition.con_id)));
-        flds.push(make_field(&(self.contract_condition.exchange)));
+        )?);
+        flds.push(make_field(&(self.change_percent))?);
+        flds.push(make_field(&(self.contract_condition.con_id))?);
+        flds.push(make_field(&(self.contract_condition.exchange))?);
 
-        flds
+        Ok(flds)
     }
 
     //----------------------------------------------------------------------------------------------
@@ -825,19 +825,19 @@ impl Condition for VolumeCondition {
     }
 
     //----------------------------------------------------------------------------------------------
-    fn make_fields(&self) -> Vec<String> {
+    fn make_fields(&self) -> Result<Vec<String>, IBKRApiLibError> {
         let mut flds = self
             .contract_condition
             .operator_condition
             .order_condition
-            .make_fields();
+            .make_fields()?;
         flds.push(make_field(
             &(self.contract_condition.operator_condition.is_more as i32),
-        ));
-        flds.push(make_field(&(self.volume)));
-        flds.push(make_field(&(self.contract_condition.con_id)));
-        flds.push(make_field(&(self.contract_condition.exchange)));
-        flds
+        )?);
+        flds.push(make_field(&(self.volume))?);
+        flds.push(make_field(&(self.contract_condition.con_id))?);
+        flds.push(make_field(&(self.contract_condition.exchange))?);
+        Ok(flds)
     }
 
     //----------------------------------------------------------------------------------------------

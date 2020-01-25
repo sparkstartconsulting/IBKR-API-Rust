@@ -1,5 +1,7 @@
+use std::borrow::Borrow;
+use std::io::Error;
 use std::num::{ParseFloatError, ParseIntError};
-use std::sync::mpsc::RecvError;
+use std::sync::mpsc::{RecvError, RecvTimeoutError, SendError};
 use std::{error, fmt, io};
 
 const BITS: (i32, &str) = (501, "message");
@@ -68,6 +70,8 @@ impl TwsError {
     }
 }
 
+impl error::Error for TwsError {}
+
 impl fmt::Display for TwsError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "Code: {}, Message: {}", self.code(), self.message())
@@ -80,24 +84,28 @@ pub enum IBKRApiLibError {
     ParseFloat(ParseFloatError),
     ParseInt(ParseIntError),
     RecvError(RecvError),
+    RecvTimeoutError(RecvTimeoutError),
+    ApiError(TwsApiReportableError),
 }
 
 impl fmt::Display for IBKRApiLibError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+        match self {
             // Both underlying errors already impl `Display`, so we defer to
             // their implementations.
             IBKRApiLibError::Io(ref err) => write!(f, "IO error: {}", err),
             IBKRApiLibError::ParseFloat(ref err) => write!(f, "Parse error: {}", err),
             IBKRApiLibError::ParseInt(ref err) => write!(f, "Parse error: {}", err),
             IBKRApiLibError::RecvError(ref err) => write!(f, "Recieve error: {}", err),
+            IBKRApiLibError::RecvTimeoutError(ref err) => write!(f, "Reader Send error {}", err),
+            IBKRApiLibError::ApiError(ref err) => write!(f, "TWS Error: {}", err),
         }
     }
 }
 
 impl error::Error for IBKRApiLibError {
     fn cause(&self) -> Option<&dyn error::Error> {
-        match *self {
+        match self {
             // N.B. Both of these implicitly cast `err` from their concrete
             // types (either `&io::Error` or `&num::ParseIntError`)
             // to a trait object `&Error`. This works because both error types
@@ -106,6 +114,8 @@ impl error::Error for IBKRApiLibError {
             IBKRApiLibError::ParseFloat(ref err) => Some(err),
             IBKRApiLibError::ParseInt(ref err) => Some(err),
             IBKRApiLibError::RecvError(ref err) => Some(err),
+            IBKRApiLibError::RecvTimeoutError(ref err) => Some(err),
+            IBKRApiLibError::ApiError(ref err) => Some(err),
         }
     }
 }
@@ -133,3 +143,54 @@ impl From<RecvError> for IBKRApiLibError {
         IBKRApiLibError::RecvError(err)
     }
 }
+
+impl From<RecvTimeoutError> for IBKRApiLibError {
+    fn from(err: RecvTimeoutError) -> IBKRApiLibError {
+        IBKRApiLibError::RecvTimeoutError(err)
+    }
+}
+
+impl From<TwsApiReportableError> for IBKRApiLibError {
+    fn from(err: TwsApiReportableError) -> IBKRApiLibError {
+        IBKRApiLibError::ApiError(err)
+    }
+}
+
+#[derive(Clone)]
+pub struct TwsApiReportableError {
+    pub req_id: i32,
+    pub code: String,
+    pub description: String,
+}
+
+impl TwsApiReportableError {
+    pub fn new(req_id: i32, code: String, description: String) -> Self {
+        Self {
+            req_id: req_id,
+            code: code,
+            description: description,
+        }
+    }
+}
+
+impl fmt::Display for TwsApiReportableError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "TWS Error: req_id = {}. code = {}. description = {}",
+            self.req_id, self.code, self.description
+        )
+    }
+}
+
+impl fmt::Debug for TwsApiReportableError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "TWS Error: req_id = {}. code = {}. description = {}",
+            self.req_id, self.code, self.description
+        )
+    }
+}
+
+impl error::Error for TwsApiReportableError {}

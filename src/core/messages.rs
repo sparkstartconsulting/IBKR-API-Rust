@@ -3,6 +3,7 @@ use std::any::Any;
 use std::convert::TryInto;
 use std::io::Write;
 use std::string::String;
+use std::sync::mpsc::RecvError;
 use std::sync::{Arc, RwLock};
 use std::vec::Vec;
 
@@ -15,6 +16,7 @@ use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
 use crate::core::common::{UNSET_DOUBLE, UNSET_INTEGER};
+use crate::core::errors::IBKRApiLibError;
 use crate::core::wrapper::Wrapper;
 
 trait EClientMsgSink {
@@ -31,11 +33,6 @@ pub enum FAMessageDataTypes {
 
 trait IncomingMessageProcessor {
     fn process(wrapper: &mut dyn Wrapper, params: &Vec<String>);
-}
-
-pub struct MessageProcessor<'a, T: Wrapper> {
-    wrapper: Arc<RwLock<&'a T>>,
-    //decoder: Arc<RwLock<Decoder<'a, T>>>,
 }
 
 // incoming msg id's
@@ -240,28 +237,28 @@ impl EMessage {
     }
 }
 
-pub fn make_message(msg: &str) -> Vec<u8> {
+pub fn make_message(msg: &str) -> Result<Vec<u8>, IBKRApiLibError> {
     //let mut buffer = ByteBuffer::new();
     let mut buffer: Vec<u8> = Vec::new();
 
     buffer.extend_from_slice(&i32::to_be_bytes(msg.len() as i32));
 
-    buffer.write(msg.as_ascii_str().unwrap().as_bytes());
+    buffer.write(msg.as_ascii_str().unwrap().as_bytes())?;
     let tmp = buffer.clone();
     //debug!("Message after create: {:?}", buffer);
 
-    let (_size, _msg, _buf) = read_msg(tmp.as_slice());
+    let (_size, _msg, _buf) = read_msg(tmp.as_slice())?;
     //debug!("Message read: size:{}, msg:{}, bytes: {:?}", size, msg, buf);
 
-    tmp
+    Ok(tmp)
 }
 
-pub fn read_msg<'a>(buf: &[u8]) -> (usize, String, Vec<u8>) {
+pub fn read_msg<'a>(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibError> {
     // first the size prefix and then the corresponding msg payload ""
     let mut text = String::new();
     if buf.len() < 4 {
-        error!("read_msg:  buffer too small!! {:?}", buf.len());
-        return (0, String::new(), buf.to_vec());
+        debug!("read_msg:  buffer too small!! {:?}", buf.len());
+        return Ok((0, String::new(), buf.to_vec()));
     }
 
     let size = i32::from_be_bytes(buf[0..4].try_into().unwrap()) as usize;
@@ -270,9 +267,9 @@ pub fn read_msg<'a>(buf: &[u8]) -> (usize, String, Vec<u8>) {
     if buf.len() - 4 >= size {
         text = String::from_utf8(buf[4..4 + size].to_vec()).unwrap();
         //debug!("read_msg: text in read message: {:?}", text);
-        (size, text, buf[4 + size..].to_vec())
+        Ok((size, text, buf[4 + size..].to_vec()))
     } else {
-        (size, String::new(), buf.to_vec())
+        Ok((size, String::new(), buf.to_vec()))
     }
 }
 
@@ -290,36 +287,36 @@ pub fn read_fields(buf: &str) -> Vec<String> {
         .collect::<Vec<String>>()
 }
 
-pub fn make_field(val: &dyn Any) -> String {
+pub fn make_field(val: &dyn Any) -> Result<String, IBKRApiLibError> {
     // adds the NULL string terminator
-
+    let mut field = String::new();
     // bool type is encoded as int
     if let Some(boolval) = val.downcast_ref::<bool>() {
-        format!("{}\0", *boolval as i32)
+        field = format!("{}\0", *boolval as i32);
     } else if let Some(stringval) = val.downcast_ref::<String>() {
-        format!("{}\0", stringval)
+        field = format!("{}\0", stringval);
     } else if let Some(stringval) = val.downcast_ref::<&str>() {
-        format!("{}\0", stringval)
+        field = format!("{}\0", stringval);
     } else if let Some(stringval) = val.downcast_ref::<f64>() {
         if UNSET_DOUBLE == *stringval {
-            format!("{}\0", "")
+            field = format!("{}\0", "");
         } else {
-            format!("{}\0", *stringval as f64)
+            field = format!("{}\0", *stringval as f64);
         }
     } else if let Some(stringval) = val.downcast_ref::<i32>() {
         if UNSET_INTEGER == *stringval {
-            format!("{}\0", "")
+            field = format!("{}\0", "");
         } else {
-            format!("{}\0", *stringval as i32)
+            field = format!("{}\0", *stringval as i32);
         }
     } else if let Some(stringval) = val.downcast_ref::<usize>() {
-        format!("{}\0", *stringval as i32)
-    } else {
-        "".to_string()
+        field = format!("{}\0", *stringval as i32);
     }
+
+    Ok(field)
 }
 
-pub fn make_field_handle_empty(val: &dyn Any) -> String {
+pub fn make_field_handle_empty(val: &dyn Any) -> Result<String, IBKRApiLibError> {
     if let Some(stringval) = val.downcast_ref::<f64>() {
         if UNSET_DOUBLE == *stringval {
             return make_field(&"");

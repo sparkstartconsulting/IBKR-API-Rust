@@ -112,7 +112,7 @@ pub fn commodity() -> Contract {
 pub fn usstock() -> Contract {
     //stkcontract]
     let mut contract = Contract::default();
-    contract.symbol = "IBKR".to_string();
+    contract.symbol = "AMZN".to_string();
     contract.sec_type = "STK".to_string();
     contract.currency = "USD".to_string();
     //In the API side, NASDAQ is always pub fnined as ISLAND in the exchange field
@@ -137,7 +137,7 @@ pub fn usstock_with_primary_exch() -> Contract {
 
 pub fn us_stock_at_smart() -> Contract {
     let mut contract = Contract::default();
-    contract.symbol = "IBM".to_string();
+    contract.symbol = "GOOG".to_string();
     contract.sec_type = "STK".to_string();
     contract.currency = "USD".to_string();
     contract.exchange = "SMART".to_string();
@@ -233,7 +233,7 @@ pub fn simple_future() -> Contract {
     contract.sec_type = "FUT".to_string();
     contract.exchange = "GLOBEX".to_string();
     contract.currency = "USD".to_string();
-    contract.last_trade_date_or_contract_month = "201903".to_string();
+    contract.last_trade_date_or_contract_month = "202003".to_string();
     //futcontract]
     contract
 }

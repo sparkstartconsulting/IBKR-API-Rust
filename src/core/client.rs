@@ -20,7 +20,7 @@ use num_traits::FromPrimitive;
 use crate::core::common::*;
 use crate::core::contract::Contract;
 use crate::core::decoder::Decoder;
-use crate::core::errors::{IBKRApiLibError, TwsError};
+use crate::core::errors::{IBKRApiLibError, TwsApiReportableError, TwsError};
 use crate::core::execution::ExecutionFilter;
 use crate::core::messages::make_field;
 use crate::core::messages::{make_field_handle_empty, read_msg};
@@ -84,13 +84,15 @@ where
             disconnect_requested: Arc::new(AtomicBool::new(false)),
         }
     }
-    fn send_request(&self, request: &str) {
-        let bytes = make_message(request);
-        self.send_bytes(bytes.as_slice());
+    fn send_request(&self, request: &str) -> Result<(), IBKRApiLibError> {
+        let bytes = make_message(request)?;
+        self.send_bytes(bytes.as_slice())?;
+        Ok(())
     }
 
-    fn send_bytes(&self, bytes: &[u8]) {
-        self.stream.as_ref().unwrap().write(bytes);
+    fn send_bytes(&self, bytes: &[u8]) -> Result<usize, IBKRApiLibError> {
+        let return_val = self.stream.as_ref().unwrap().write(bytes)?;
+        Ok(return_val)
     }
 
     //----------------------------------------------------------------------------------------------
@@ -107,13 +109,13 @@ where
         self.disconnect_requested.store(false, Ordering::Release);
         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTING;
         let thestream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port)).unwrap();
+
         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTED;
         debug!("Connected");
 
         self.stream = Option::from(thestream.try_clone().unwrap());
 
         let _reader_stream = thestream.try_clone().unwrap();
-
         let (tx, rx) = channel::<String>();
         let mut reader = Reader::new(thestream, tx.clone(), self.disconnect_requested.clone());
 
@@ -122,7 +124,7 @@ where
         let v_100_prefix = "API\0";
         let v_100_version = format!("v{}..{}", MIN_CLIENT_VER, MAX_CLIENT_VER);
 
-        let msg = make_message(v_100_version.as_str());
+        let msg = make_message(v_100_version.as_str())?;
 
         let mut bytearray: Vec<u8> = Vec::new();
         bytearray.extend_from_slice(v_100_prefix.as_bytes());
@@ -141,13 +143,13 @@ where
         //sometimes I get news before the server version, thus the loop
         while fields.len() != 2 {
             if fields.len() > 0 {
-                decoder.interpret(fields.as_slice())?;
+                decoder.interpret(fields.as_slice());
             }
 
             let buf = reader.recv_packet()?;
 
             if buf.len() > 0 {
-                let (_size, msg, _remaining_messages) = read_msg(buf.as_slice());
+                let (_size, msg, _remaining_messages) = read_msg(buf.as_slice())?;
 
                 fields.clear();
                 fields.extend_from_slice(read_fields(msg.as_ref()).as_slice());
@@ -197,19 +199,19 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn set_server_log_level(&self, log_evel: i32) {
-        //The pub fnault detail level is ERROR. For more details, see API
+    pub fn set_server_log_level(&self, log_evel: i32) -> Result<(), IBKRApiLibError> {
+        //The pub default detail level is ERROR. For more details, see API
         //        Logging.
         //TODO Make log_level an enum
         debug!("set_server_log_level -- log_evel: {}", log_evel);
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
@@ -219,11 +221,12 @@ where
 
         let message_id = OutgoingMessageIds::SetServerLoglevel as i32;
         let _x = message_id.to_be_bytes();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&_log_level));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&_log_level)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -234,59 +237,61 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_current_time(&self) {
+    pub fn req_current_time(&self) -> Result<(), IBKRApiLibError> {
         let version = 2;
 
         let message_id: i32 = OutgoingMessageIds::ReqCurrentTime as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
 
         debug!("Requesting current time: {}", msg.as_str());
         self.send_request(msg.as_str())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn disconnect(&mut self) {
+    pub fn disconnect(&mut self) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
             info!("Already disconnected...");
-            return;
+            return Ok(());
         }
         info!("Disconnect requested.  Shutting down stream...");
         self.disconnect_requested.store(true, Ordering::Release);
-        self.stream.as_mut().unwrap().shutdown(Shutdown::Both);
+        self.stream.as_mut().unwrap().shutdown(Shutdown::Both)?;
         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    fn start_api(&mut self) {
+    fn start_api(&mut self) -> Result<(), IBKRApiLibError> {
         //Initiates the message exchange between the core application and
         //the TWS/IB Gateway. """
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 2;
         let mut opt_capab = "".to_string();
         if self.server_version >= MIN_SERVER_VER_OPTIONAL_CAPABILITIES as i32 {
-            opt_capab = make_field(&self.opt_capab);
+            opt_capab = make_field(&self.opt_capab)?;
         }
 
         let msg = format!(
             "{}{}{}{}",
-            make_field(&mut (Some(OutgoingMessageIds::StartApi).unwrap() as i32)),
-            make_field(&mut version.to_string()),
-            make_field(&mut self.client_id.to_string()),
+            make_field(&mut (Some(OutgoingMessageIds::StartApi).unwrap() as i32))?,
+            make_field(&mut version.to_string())?,
+            make_field(&mut self.client_id.to_string())?,
             opt_capab
         );
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //##############################################################################################
@@ -301,7 +306,7 @@ where
         snapshot: bool,
         regulatory_snapshot: bool,
         mkt_data_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         //        """Call this function to request market data. The market data
         //                will be returned by the tickPrice and tickSize events.
         //
@@ -323,59 +328,52 @@ where
         //                mktDataOptions:Vec<TagValue> - For internal use only.
         //                    Use pub fnault value XYZ. """
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
             if let Some(_value) = &contract.delta_neutral_contract {
-                self.wrapper.lock().unwrap().error(
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
-                    TwsError::UpdateTws.code(),
+                    TwsError::UpdateTws.code().to_string(),
                     format!(
                         "{}{}",
                         TwsError::UpdateTws.message(),
-                        "  It does not support delta-neutral orders."
-                    )
-                    .as_ref(),
-                );
-                return;
+                        " It does not support delta-neutral orders."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_MKT_DATA_CONID && contract.con_id > 0 {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
-                format!(
-                    "{}{}",
-                    TwsError::UpdateTws.message(),
-                    "  It does not support con_id parameter."
-                )
-                .as_ref(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && "" != contract.trading_class {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support trading_class parameter in req_mkt_data."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support trading_class parameter in req_mkt_data."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 11;
@@ -385,120 +383,120 @@ where
         let mut msg = "".to_string();
 
         // send req mkt data msg
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
         // send contract fields
         if self.server_version() >= MIN_SERVER_VER_REQ_MKT_DATA_CONID {
-            msg.push_str(&make_field(&contract.con_id));
-            msg.push_str(&make_field(&contract.symbol));
+            msg.push_str(&make_field(&contract.con_id)?);
+            msg.push_str(&make_field(&contract.symbol)?);
 
-            msg.push_str(&make_field(&contract.sec_type));
-            msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-            msg.push_str(&make_field(&contract.strike));
-            msg.push_str(&make_field(&contract.right));
-            msg.push_str(&make_field(&contract.multiplier)); // srv v15 and above
-            msg.push_str(&make_field(&contract.exchange));
-            msg.push_str(&make_field(&contract.primary_exchange)); // srv v14 and above
-            msg.push_str(&make_field(&contract.currency));
-            msg.push_str(&make_field(&contract.local_symbol)); //  srv v2 and above
+            msg.push_str(&make_field(&contract.sec_type)?);
+            msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+            msg.push_str(&make_field(&contract.strike)?);
+            msg.push_str(&make_field(&contract.right)?);
+            msg.push_str(&make_field(&contract.multiplier)?); // srv v15 and above
+            msg.push_str(&make_field(&contract.exchange)?);
+            msg.push_str(&make_field(&contract.primary_exchange)?); // srv v14 and above
+            msg.push_str(&make_field(&contract.currency)?);
+            msg.push_str(&make_field(&contract.local_symbol)?); //  srv v2 and above
         }
 
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.trading_class));
+            msg.push_str(&make_field(&contract.trading_class)?);
         }
         // Send combo legs for BAG requests(srv v8 and above)
         if contract.sec_type == "BAG" {
             let combo_legs_count = contract.combo_legs.len();
-            msg.push_str(&make_field(&combo_legs_count));
+            msg.push_str(&make_field(&combo_legs_count)?);
             for combo_leg in &contract.combo_legs {
-                msg.push_str(&make_field(&combo_leg.con_id));
-                msg.push_str(&make_field(&combo_leg.ratio));
-                msg.push_str(&make_field(&combo_leg.action));
-                msg.push_str(&make_field(&combo_leg.exchange));
+                msg.push_str(&make_field(&combo_leg.con_id)?);
+                msg.push_str(&make_field(&combo_leg.ratio)?);
+                msg.push_str(&make_field(&combo_leg.action)?);
+                msg.push_str(&make_field(&combo_leg.exchange)?);
             }
         }
 
         if self.server_version() >= MIN_SERVER_VER_DELTA_NEUTRAL {
             if contract.delta_neutral_contract.is_some() {
-                msg.push_str(&make_field(&true));
+                msg.push_str(&make_field(&true)?);
                 msg.push_str(&make_field(
                     &contract.delta_neutral_contract.as_ref().unwrap().con_id,
-                ));
+                )?);
                 msg.push_str(&make_field(
                     &contract.delta_neutral_contract.as_ref().unwrap().delta,
-                ));
+                )?);
                 msg.push_str(&make_field(
                     &contract.delta_neutral_contract.as_ref().unwrap().price,
-                ));
+                )?);
             } else {
-                msg.push_str(&make_field(&false));
+                msg.push_str(&make_field(&false)?);
             }
 
-            msg.push_str(&make_field(&generic_tick_list)); // srv v31 and above
-            msg.push_str(&make_field(&snapshot)); // srv v35 and above
+            msg.push_str(&make_field(&generic_tick_list)?); // srv v31 and above
+            msg.push_str(&make_field(&snapshot)?); // srv v35 and above
         }
 
         if self.server_version() >= MIN_SERVER_VER_REQ_SMART_COMPONENTS {
-            msg.push_str(&make_field(&regulatory_snapshot));
+            msg.push_str(&make_field(&regulatory_snapshot)?);
         }
 
         // send mktDataOptions parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             // current doc says this part is for "internal use only" -> won't support it
             if mkt_data_options.len() > 0 {
-                self.wrapper.lock().unwrap().error(
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
-                    TwsError::Unsupported.code(),
+                    TwsError::UpdateTws.code().to_string(),
                     format!(
                         "{}{}",
-                        TwsError::Unsupported.message(),
-                        "  Internal use only.  mkt_data_options not supported."
-                    )
-                    .as_ref(),
-                );
-                return;
+                        TwsError::UpdateTws.message(),
+                        " Internal use only.  mkt_data_options not supported."
+                    ),
+                ));
+
+                return Err(err);
             }
             let mkt_data_options_str = "";
-            msg.push_str(&make_field(&mkt_data_options_str));
+            msg.push_str(&make_field(&mkt_data_options_str)?);
         }
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_mkt_data(&mut self, req_id: i32) {
+    pub fn cancel_mkt_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         //        """After calling this function, market data for the specified id
         //        will stop flowing.
         //
         //        reqId: TickerId - The ID that was specified in the call to
         //            reqMktData(). """
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 2;
 
         let message_id: i32 = OutgoingMessageIds::CancelMktData as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_market_data_type(&mut self, market_data_type: i32) {
+    pub fn req_market_data_type(&mut self, market_data_type: i32) -> Result<(), IBKRApiLibError> {
         // The API can receive frozen market data from Trader \
         // Workstation. Frozen market data is the last data recorded in our system. \
         // During normal trading hours, the API receives real-time market data. If \
@@ -513,112 +511,115 @@ where
         // // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_MARKET_DATA_TYPE {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support market data type requests."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support market data type requests."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let mut msg = "".to_string();
         let version = 1;
         let message_id = OutgoingMessageIds::ReqMarketDataType as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&market_data_type));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&market_data_type)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_smart_components(&mut self, req_id: i32, bbo_exchange: &'static str) {
-        //// self.logRequest(current_fn_name()); vars())
-
+    pub fn req_smart_components(
+        &mut self,
+        req_id: i32,
+        bbo_exchange: &'static str,
+    ) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_SMART_COMPONENTS {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support smart components request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support smart components request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let mut msg = "".to_string();
 
         let message_id = OutgoingMessageIds::ReqSmartComponents as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&bbo_exchange));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&bbo_exchange)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_market_rule(&mut self, market_rule_id: i32) {
-        //// self.logRequest(current_fn_name()); vars())
-
+    pub fn req_market_rule(&mut self, market_rule_id: i32) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_MARKET_RULES {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
                     " It does not support market rule requests."
-                )
-                .as_ref(),
-            );
-            return;
+                ),
+            ));
+
+            return Err(err);
         }
 
         let mut msg = "".to_string();
 
         let message_id = OutgoingMessageIds::ReqMarketRule as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&market_rule_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&market_rule_id)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -629,105 +630,109 @@ where
         tick_type: TickType,
         number_of_ticks: i32,
         ignore_size: bool,
-    ) {
-        //// self.logRequest(current_fn_name()); vars())
-
+    ) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
                     " It does not support tick-by-tick data requests."
-                )
-                .as_ref(),
-            );
-            return;
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK_IGNORE_SIZE {
-            self.wrapper.lock().unwrap().error(NO_VALID_ID,
-                                               TwsError::UpdateTws.code(),
-                                               format!("{}{}", TwsError::UpdateTws.message(),
-                                                               " It does not support ignore_size && number_of_ticks parameters in tick-by-tick data requests.").as_ref());
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support ignore_size and number_of_ticks parameters in tick-by-tick data requests."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let mut msg = "".to_string();
 
         let message_id = OutgoingMessageIds::ReqTickByTickData as i32;
 
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
         //    msg.push_str(&make_field(&OUT.REQ_TICK_BY_TICK_DATA)\
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&contract.con_id));
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier));
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.primary_exchange));
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
-        msg.push_str(&make_field(&contract.trading_class));
-        msg.push_str(&make_field(&tick_type.value().to_string()));
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&contract.con_id)?);
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?);
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.primary_exchange)?);
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
+        msg.push_str(&make_field(&contract.trading_class)?);
+        msg.push_str(&make_field(&tick_type.value().to_string())?);
 
         if self.server_version() >= MIN_SERVER_VER_TICK_BY_TICK_IGNORE_SIZE {
-            msg.push_str(&make_field(&number_of_ticks));
-            msg.push_str(&make_field(&ignore_size));
+            msg.push_str(&make_field(&number_of_ticks)?);
+            msg.push_str(&make_field(&ignore_size)?);
         }
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_tick_by_tick_data(&mut self, req_id: i32) {
-        //// self.logRequest(current_fn_name()); vars())
-
+    pub fn cancel_tick_by_tick_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
                     " It does not support tick-by-tick data requests."
-                )
-                .as_ref(),
-            );
-            return;
+                ),
+            ));
+
+            return Err(err);
         }
 
         let mut msg = "".to_string();
 
         let message_id = OutgoingMessageIds::CancelTickByTickData as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //##########################################################################
@@ -741,7 +746,7 @@ where
         option_price: f64,
         under_price: f64,
         impl_vol_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         //        Call this function to calculate volatility for a supplied
         //        option price and underlying price. Result will be delivered
         //        via EWrapper.tickOptionComputation()
@@ -754,88 +759,89 @@ where
         // // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support calculate_implied_volatility req."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support calculate_implied_volatility req."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && "" != contract.trading_class {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support trading_class parameter in calculate_implied_volatility."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support trading_class parameter in calculate_implied_volatility."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 3;
 
         let mut msg = "".to_string();
 
-        let message_id = OutgoingMessageIds::CancelCalcImpliedVolat as i32;
+        let message_id = OutgoingMessageIds::ReqCalcImpliedVolat as i32;
 
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
         // send contract fields
-        msg.push_str(&make_field(&contract.con_id));
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier));
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.primary_exchange));
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
+        msg.push_str(&make_field(&contract.con_id)?);
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?);
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.primary_exchange)?);
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
 
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.trading_class));
+            msg.push_str(&make_field(&contract.trading_class)?);
         }
 
-        msg.push_str(&make_field(&option_price));
-        msg.push_str(&make_field(&under_price));
+        msg.push_str(&make_field(&option_price)?);
+        msg.push_str(&make_field(&under_price)?);
 
         if self.server_version() >= MIN_SERVER_VER_LINKING {
-            let _impl_vol_opt_str = "".to_string();
+            let mut impl_vol_opt_str = "".to_string();
             let tag_values_count = impl_vol_options.len();
             if tag_values_count > 0 {
-                let impl_vol_opt_str = impl_vol_options
+                impl_vol_opt_str = impl_vol_options
                     .iter()
                     .map(|x| format!("{}={};", x.tag, x.value))
                     .collect::<String>();
-
-                msg.push_str(&make_field(&tag_values_count));
-                msg.push_str(&make_field(&impl_vol_opt_str));
             }
+            msg.push_str(&make_field(&tag_values_count)?);
+            msg.push_str(&make_field(&impl_vol_opt_str)?);
         }
-
-        self.send_request(msg.as_str());
+        error!("sending calculate_implied_volatility");
+        error!("{}", msg);
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -846,7 +852,7 @@ where
         volatility: f64,
         under_price: f64,
         opt_prc_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         //        Call this function to calculate option price and greek values
         //        for a supplied volatility and underlying price.
         //
@@ -854,37 +860,43 @@ where
         //        contract:&Contract - Describes the contract.
         //        volatility:double - The volatility.
         //        under_price:double - Price of the underlying.
-        //// self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support calculateImpliedVolatility req."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support calculateImpliedVolatility req."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if "" != contract.trading_class {
-                self.wrapper.lock().unwrap().error(req_id, TwsError::UpdateTws.code(),
-                                                   format!("{}{}", TwsError::UpdateTws.message(),
-                                                                   "  It does not support trading_class parameter in calculateImpliedVolatility.").as_ref());
-                return;
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                    req_id,
+                    TwsError::UpdateTws.code().to_string(),
+                    format!(
+                        "{}{}",
+                        TwsError::UpdateTws.message(),
+                        " It does not support trading_class parameter in calculateImpliedVolatility."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
@@ -895,28 +907,28 @@ where
 
         let message_id = OutgoingMessageIds::ReqCalcOptionPrice as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
         // send contract fields
-        msg.push_str(&make_field(&contract.con_id));
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier));
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.primary_exchange));
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
+        msg.push_str(&make_field(&contract.con_id)?);
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?);
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.primary_exchange)?);
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
 
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.trading_class));
+            msg.push_str(&make_field(&contract.trading_class)?);
         }
 
-        msg.push_str(&make_field(&volatility));
-        msg.push_str(&make_field(&under_price));
+        msg.push_str(&make_field(&volatility)?);
+        msg.push_str(&make_field(&under_price)?);
 
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             let _opt_prc_opt_str = "".to_string();
@@ -927,43 +939,42 @@ where
                     .map(|x| format!("{}={};", x.tag, x.value))
                     .collect::<String>();
 
-                msg.push_str(&make_field(&tag_values_count));
-                msg.push_str(&make_field(&opt_prc_opt_str));
+                msg.push_str(&make_field(&tag_values_count)?);
+                msg.push_str(&make_field(&opt_prc_opt_str)?);
             }
         }
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_calculate_option_price(&mut self, req_id: i32) {
+    pub fn cancel_calculate_option_price(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         //        Call this function to cancel a request to calculate the option
         //        price and greek values for a supplied volatility and underlying price.
         //
         //        req_id:i32 - The request ID.
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support calculateImpliedVolatility req."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support calculateImpliedVolatility req."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
@@ -972,11 +983,12 @@ where
 
         let message_id = OutgoingMessageIds::CancelCalcOptionPrice as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -986,9 +998,9 @@ where
         contract: &Contract,
         exercise_action: i32,
         exercise_quantity: i32,
-        account: &'static str,
+        account: &String,
         over_ride: i32,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         //        req_id:i32 - The ticker id. multipleust be a unique value.
         //        contract:&Contract - This structure contains a description of the
         //            contract to be exercised
@@ -1004,24 +1016,28 @@ where
         //             be overridden and the out-of-the money option would be exercised.
         //            Values are: 0 = no, 1 = yes.
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if !contract.trading_class.is_empty() {
-                self.wrapper.lock().unwrap().error(
-                    req_id, TwsError::UpdateTws.code(),
-                    format!("{}{}", TwsError::UpdateTws.message(),
-                            "  It does not support con_id, multiplier, trading_class parameter in exercise_options.").as_ref());
-                return;
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                    req_id,
+                    TwsError::UpdateTws.code().to_string(),
+                    format!(
+                        "{}{}",
+                        TwsError::UpdateTws.message(),
+                        " It does not support con_id, multiplier, trading_class parameter in exercise_options."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
@@ -1032,40 +1048,46 @@ where
 
         let message_id = OutgoingMessageIds::ExerciseOptions as i32;
 
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
         // send contract fields
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.con_id));
+            msg.push_str(&make_field(&contract.con_id)?);
         }
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier));
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?);
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.trading_class));
+            msg.push_str(&make_field(&contract.trading_class)?);
         }
-        msg.push_str(&make_field(&exercise_action));
-        msg.push_str(&make_field(&exercise_quantity));
-        msg.push_str(&make_field(&account));
-        msg.push_str(&make_field(&over_ride));
+        msg.push_str(&make_field(&exercise_action)?);
+        msg.push_str(&make_field(&exercise_quantity)?);
+        msg.push_str(&make_field(account)?);
+        msg.push_str(&make_field(&over_ride)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //#########################################################################
     //################## Orders
     //########################################################################
 
-    pub fn place_order(&mut self, order_id: i32, contract: &Contract, order: &Order) {
+    pub fn place_order(
+        &mut self,
+        order_id: i32,
+        contract: &Contract,
+        order: &Order,
+    ) -> Result<(), IBKRApiLibError> {
         //        Call this function to place an order. The order status will
         //        be returned by the orderStatus event.
         //
@@ -1077,165 +1099,163 @@ where
         //        order:Order - This structure contains the details of tradedhe order.
         //            Note: Each core MUST connect with a unique clientId.
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
             if contract.delta_neutral_contract.is_some() {
-                self.wrapper.lock().unwrap().error(
-                    order_id,
-                    TwsError::UpdateTws.code(),
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                    NO_VALID_ID,
+                    TwsError::UpdateTws.code().to_string(),
                     format!(
                         "{}{}",
                         TwsError::UpdateTws.message(),
-                        "  It does not support delta-neutral orders."
-                    )
-                    .as_ref(),
-                );
-                return;
+                        " It does not support delta-neutral orders."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
         if self.server_version() < MIN_SERVER_VER_SCALE_ORDERS2
             && order.scale_subs_level_size != UNSET_INTEGER
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support Subsequent Level Size for Scale orders."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support Subsequent Level Size for Scale orders."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_ALGO_ORDERS && !order.algo_strategy.is_empty() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support algo orders."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support algo orders."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_NOT_HELD && order.not_held {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support notHeld parameter."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support notHeld parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE
             && (!contract.sec_id_type.is_empty() || !contract.sec_id.is_empty())
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support sec_id_type && secId parameters."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support sec_id_type && secId parameters."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_PLACE_ORDER_CONID && contract.con_id > 0 {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support con_id parameter."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support con_id parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SSHORTX {
             if order.exempt_code != -1 {
-                self.wrapper.lock().unwrap().error(
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     order_id,
-                    TwsError::UpdateTws.code(),
+                    TwsError::UpdateTws.code().to_string(),
                     format!(
                         "{}{}",
                         TwsError::UpdateTws.message(),
-                        "  It does not support exempt_code parameter."
-                    )
-                    .as_ref(),
-                );
-                return;
+                        " It does not support exempt_code parameter."
+                    ),
+                ));
+
+                return Err(err);
             }
             if contract.combo_legs.len() > 0
                 && contract.combo_legs.iter().any(|x| x.exempt_code != -1)
             {
-                self.wrapper.lock().unwrap().error(
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     order_id,
-                    TwsError::UpdateTws.code(),
+                    TwsError::UpdateTws.code().to_string(),
                     format!(
                         "{}{}",
                         TwsError::UpdateTws.message(),
-                        "  It does not support exempt_code parameter."
-                    )
-                    .as_ref(),
-                );
-                return;
+                        " It does not support exempt_code parameter."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
         if self.server_version() < MIN_SERVER_VER_HEDGE_ORDERS && !order.hedge_type.is_empty() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support hedge orders."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support hedge orders."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_OPT_OUT_SMART_ROUTING
             && order.opt_out_smart_routing
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support optOutSmartRouting parameter."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support optOutSmartRouting parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL_CONID
@@ -1244,11 +1264,17 @@ where
                 || !order.delta_neutral_clearing_account.is_empty()
                 || !order.delta_neutral_clearing_intent.is_empty())
         {
-            self.wrapper.lock().unwrap().error(
-                order_id, TwsError::UpdateTws.code(),
-                format!("{}{}", TwsError::UpdateTws.message(),
-                        "  It does not support deltaNeutral parameters: con_id, SettlingFirm, ClearingAccount, ClearingIntent.").as_ref());
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                order_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support deltaNeutral parameters: con_id, SettlingFirm, ClearingAccount, ClearingIntent."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL_OPEN_CLOSE
@@ -1257,12 +1283,17 @@ where
                 || order.delta_neutral_short_sale_slot > 0
                 || !order.delta_neutral_designated_location.is_empty())
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
-                format!("{}{}", TwsError::UpdateTws.message(),
-                        "  It does not support deltaNeutral parameters: open_close, ShortSale, short_sale_slot, designated_location.").as_ref());
-            return;
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support deltaNeutral parameters: open_close, ShortSale, short_sale_slot, designated_location."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SCALE_ORDERS3
@@ -1276,13 +1307,18 @@ where
                 || order.scale_init_fill_qty != UNSET_INTEGER
                 || order.scale_random_percent)
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
-                format!("{}{}", TwsError::UpdateTws.message(),
-                        "  It does not support Scale order parameters: PriceAdjustValue, \
-                PriceAdjustInterval, ProfitOffset, AutoReset, InitPosition, InitFillQty && RandomPercent").as_ref());
-            return;
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support Scale order parameters: PriceAdjustValue, \
+                PriceAdjustInterval, ProfitOffset, AutoReset, InitPosition, InitFillQty && RandomPercent"
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE
@@ -1293,49 +1329,49 @@ where
                 .iter()
                 .any(|x| x.price != UNSET_DOUBLE)
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support per-leg prices for order combo legs."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support per-leg prices for order combo legs."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRAILING_PERCENT
             && order.trailing_percent != UNSET_DOUBLE
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support trailing percent parameter"
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support trailing percent parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
             && !contract.trading_class.is_empty()
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support trading_class parameter in placeOrder."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support trading_class parameter in placeOrder."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SCALE_TABLE
@@ -1343,174 +1379,179 @@ where
                 || !order.active_start_time.is_empty()
                 || !order.active_stop_time.is_empty())
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
-                format!("{}{}", TwsError::UpdateTws.message(),
-                        "  It does not support scaleTable, activeStartTime && activeStopTime parameters").as_ref());
-            return;
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support scaleTable, activeStartTime && activeStopTime parameters."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_ALGO_ID && order.algo_id != "" {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support algoId parameter"
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support algoId parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_ORDER_SOLICITED && order.solicited {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support order solicited parameter."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support order solicited parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT && !order.model_code.is_empty() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support model code parameter."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support model code parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_EXT_OPERATOR && !order.ext_operator.is_empty() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support ext operator parameter"
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support ext operator parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SOFT_DOLLAR_TIER
             && (!order.soft_dollar_tier.name.is_empty() || !order.soft_dollar_tier.val.is_empty())
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    " It does not support soft dollar tier"
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support soft dollar tier."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_CASH_QTY && order.cash_qty != 0.0 {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    " It does not support cash quantity parameter"
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support cash quantity parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_DECISION_MAKER
             && (!order.mifid2decision_maker.is_empty() || !order.mifid2decision_algo.is_empty())
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    " It does not support MIFID II decision maker parameters"
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support MIFID II decision maker parameters."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_MIFID_EXECUTION
             && (!order.mifid2execution_trader.is_empty() || !order.mifid2execution_algo.is_empty())
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    " It does not support MIFID II execution parameters"
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support MIFID II execution parameters."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_AUTO_PRICE_FOR_HEDGE
             && order.dont_use_auto_price_for_hedge
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    " It does not support dontUseAutoPriceForHedge parameter"
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support dontUseAutoPriceForHedge parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_ORDER_CONTAINER && order.is_oms_container {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    " It does not support oms container parameter"
-                )
-                .as_str(),
-            );
-            return;
+                    " It does not support oms container parameter."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_PRICE_MGMT_ALGO && order.use_price_mgmt_algo {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    " It does not support Use price management algo requests"
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support Use price management algo requests."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version: i32 = if self.server_version() < MIN_SERVER_VER_NOT_HELD {
@@ -1524,57 +1565,57 @@ where
 
         let message_id = OutgoingMessageIds::PlaceOrder as i32;
 
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
         if self.server_version() < MIN_SERVER_VER_ORDER_CONTAINER {
-            msg.push_str(&make_field(&version));
+            msg.push_str(&make_field(&version)?);
         }
 
-        msg.push_str(&make_field(&order_id));
+        msg.push_str(&make_field(&order_id)?);
 
         // send contract fields
         if self.server_version() >= MIN_SERVER_VER_PLACE_ORDER_CONID {
-            msg.push_str(&make_field(&contract.con_id));
+            msg.push_str(&make_field(&contract.con_id)?);
         }
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier)); // srv v15 && above
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.primary_exchange)); // srv v14 && above
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol)); // srv v2 && above
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?); // srv v15 && above
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.primary_exchange)?); // srv v14 && above
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?); // srv v2 && above
 
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.trading_class));
+            msg.push_str(&make_field(&contract.trading_class)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_SEC_ID_TYPE {
-            msg.push_str(&make_field(&contract.sec_id_type));
-            msg.push_str(&make_field(&contract.sec_id));
+            msg.push_str(&make_field(&contract.sec_id_type)?);
+            msg.push_str(&make_field(&contract.sec_id)?);
         }
 
         // send main order fields
-        msg.push_str(&make_field(&order.action));
+        msg.push_str(&make_field(&order.action)?);
 
         if self.server_version() >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
-            msg.push_str(&make_field(&order.total_quantity));
+            msg.push_str(&make_field(&order.total_quantity)?);
         } else {
-            msg.push_str(&make_field(&(order.total_quantity as i32)));
+            msg.push_str(&make_field(&(order.total_quantity as i32))?);
         }
 
-        msg.push_str(&make_field(&order.order_type));
+        msg.push_str(&make_field(&order.order_type)?);
 
         if self.server_version() < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE {
             msg.push_str(&make_field(if order.lmt_price != UNSET_DOUBLE {
                 &order.lmt_price
             } else {
                 &0
-            }));
+            })?);
         } else {
-            msg.push_str(&make_field_handle_empty(&order.lmt_price));
+            msg.push_str(&make_field_handle_empty(&order.lmt_price)?);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRAILING_PERCENT {
@@ -1582,42 +1623,42 @@ where
                 &order.aux_price
             } else {
                 &0
-            }));
+            })?);
         } else {
-            msg.push_str(&make_field_handle_empty(&order.aux_price));
+            msg.push_str(&make_field_handle_empty(&order.aux_price)?);
         }
 
         // send extended order fields
-        msg.push_str(&make_field(&order.tif));
-        msg.push_str(&make_field(&order.oca_group));
-        msg.push_str(&make_field(&order.account));
-        msg.push_str(&make_field(&order.open_close));
-        msg.push_str(&make_field(&(order.origin as i32)));
-        msg.push_str(&make_field(&order.order_ref));
-        msg.push_str(&make_field(&order.transmit));
-        msg.push_str(&make_field(&order.parent_id)); // srv v4 && above
-        msg.push_str(&make_field(&order.block_order)); // srv v5 && above
-        msg.push_str(&make_field(&order.sweep_to_fill)); // srv v5 && above
-        msg.push_str(&make_field(&order.display_size)); // srv v5 && above
-        msg.push_str(&make_field(&order.trigger_method)); // srv v5 && above
-        msg.push_str(&make_field(&order.outside_rth)); // srv v5 && above
-        msg.push_str(&make_field(&order.hidden)); // srv v7 && above
+        msg.push_str(&make_field(&order.tif)?);
+        msg.push_str(&make_field(&order.oca_group)?);
+        msg.push_str(&make_field(&order.account)?);
+        msg.push_str(&make_field(&order.open_close)?);
+        msg.push_str(&make_field(&(order.origin as i32))?);
+        msg.push_str(&make_field(&order.order_ref)?);
+        msg.push_str(&make_field(&order.transmit)?);
+        msg.push_str(&make_field(&order.parent_id)?); // srv v4 && above
+        msg.push_str(&make_field(&order.block_order)?); // srv v5 && above
+        msg.push_str(&make_field(&order.sweep_to_fill)?); // srv v5 && above
+        msg.push_str(&make_field(&order.display_size)?); // srv v5 && above
+        msg.push_str(&make_field(&order.trigger_method)?); // srv v5 && above
+        msg.push_str(&make_field(&order.outside_rth)?); // srv v5 && above
+        msg.push_str(&make_field(&order.hidden)?); // srv v7 && above
 
         // Send combo legs for BAG requests (srv v8 && above)
         if contract.sec_type == "BAG" {
             let combo_legs_count = contract.combo_legs.len();
-            msg.push_str(&make_field(&combo_legs_count));
+            msg.push_str(&make_field(&combo_legs_count)?);
             if combo_legs_count > 0 {
                 for combo_leg in &contract.combo_legs {
-                    msg.push_str(&make_field(&combo_leg.con_id));
-                    msg.push_str(&make_field(&combo_leg.ratio));
-                    msg.push_str(&make_field(&combo_leg.action));
-                    msg.push_str(&make_field(&combo_leg.exchange));
-                    msg.push_str(&make_field(&combo_leg.open_close));
-                    msg.push_str(&make_field(&combo_leg.short_sale_slot)); //srv v35 && above
-                    msg.push_str(&make_field(&combo_leg.designated_location)); // srv v35 && above
+                    msg.push_str(&make_field(&combo_leg.con_id)?);
+                    msg.push_str(&make_field(&combo_leg.ratio)?);
+                    msg.push_str(&make_field(&combo_leg.action)?);
+                    msg.push_str(&make_field(&combo_leg.exchange)?);
+                    msg.push_str(&make_field(&combo_leg.open_close)?);
+                    msg.push_str(&make_field(&combo_leg.short_sale_slot)?); //srv v35 && above
+                    msg.push_str(&make_field(&combo_leg.designated_location)?); // srv v35 && above
                     if self.server_version() >= MIN_SERVER_VER_SSHORTX_OLD {
-                        msg.push_str(&make_field(&combo_leg.exempt_code));
+                        msg.push_str(&make_field(&combo_leg.exempt_code)?);
                     }
                 }
             }
@@ -1628,10 +1669,10 @@ where
             && contract.sec_type == "BAG"
         {
             let order_combo_legs_count = order.order_combo_legs.len();
-            msg.push_str(&make_field(&order_combo_legs_count));
+            msg.push_str(&make_field(&order_combo_legs_count)?);
             if order_combo_legs_count > 0 {
                 for order_combo_leg in &order.order_combo_legs {
-                    msg.push_str(&make_field_handle_empty(&order_combo_leg.price));
+                    msg.push_str(&make_field_handle_empty(&order_combo_leg.price)?);
                 }
             }
         }
@@ -1640,11 +1681,11 @@ where
             && contract.sec_type == "BAG"
         {
             let smart_combo_routing_params_count = order.smart_combo_routing_params.len();
-            msg.push_str(&make_field(&smart_combo_routing_params_count));
+            msg.push_str(&make_field(&smart_combo_routing_params_count)?);
             if smart_combo_routing_params_count > 0 {
                 for tagValue in &order.smart_combo_routing_params {
-                    msg.push_str(&make_field(&tagValue.tag));
-                    msg.push_str(&make_field(&tagValue.value));
+                    msg.push_str(&make_field(&tagValue.tag)?);
+                    msg.push_str(&make_field(&tagValue.value)?);
                 }
             }
         }
@@ -1663,177 +1704,179 @@ where
         //    #####################################################################
 
         // send deprecated sharesAllocation field
-        msg.push_str(&make_field(&"")); // srv v9 && above
+        msg.push_str(&make_field(&"")?); // srv v9 && above
 
-        msg.push_str(&make_field(&order.discretionary_amt)); // srv v10 && above
-        msg.push_str(&make_field(&order.good_after_time)); // srv v11 && above
-        msg.push_str(&make_field(&order.good_till_date)); // srv v12 && above
+        msg.push_str(&make_field(&order.discretionary_amt)?); // srv v10 && above
+        msg.push_str(&make_field(&order.good_after_time)?); // srv v11 && above
+        msg.push_str(&make_field(&order.good_till_date)?); // srv v12 && above
 
-        msg.push_str(&make_field(&order.fa_group)); // srv v13 && above
-        msg.push_str(&make_field(&order.fa_method)); // srv v13 && above
-        msg.push_str(&make_field(&order.fa_percentage)); // srv v13 && above
-        msg.push_str(&make_field(&order.fa_profile)); // srv v13 && above
+        msg.push_str(&make_field(&order.fa_group)?); // srv v13 && above
+        msg.push_str(&make_field(&order.fa_method)?); // srv v13 && above
+        msg.push_str(&make_field(&order.fa_percentage)?); // srv v13 && above
+        msg.push_str(&make_field(&order.fa_profile)?); // srv v13 && above
 
         if self.server_version() >= MIN_SERVER_VER_MODELS_SUPPORT {
-            msg.push_str(&make_field(&order.model_code));
+            msg.push_str(&make_field(&order.model_code)?);
         }
 
         // institutional short saleslot data (srv v18 && above)
-        msg.push_str(&make_field(&order.short_sale_slot)); // 0 for retail, 1 || 2 for institutions
-        msg.push_str(&make_field(&order.designated_location)); // populate only when shortSaleSlot = 2.
+        msg.push_str(&make_field(&order.short_sale_slot)?); // 0 for retail, 1 || 2 for institutions
+        msg.push_str(&make_field(&order.designated_location)?); // populate only when shortSaleSlot = 2.
 
         if self.server_version() >= MIN_SERVER_VER_SSHORTX_OLD {
-            msg.push_str(&make_field(&order.exempt_code));
+            msg.push_str(&make_field(&order.exempt_code)?);
         }
 
         // not needed anymore
         //bool isVolOrder = (order.orderType.CompareNoCase("VOL").as_ref() == 0)
 
         // srv v19 && above fields
-        msg.push_str(&make_field(&order.oca_type));
+        msg.push_str(&make_field(&order.oca_type)?);
         //if( self.server_version() < 38) {
         // will never happen
         //      send( /* order.rthOnly */ false);
         //}
-        msg.push_str(&make_field(&order.rule80a));
-        msg.push_str(&make_field(&order.settling_firm));
-        msg.push_str(&make_field(&order.all_or_none));
-        msg.push_str(&make_field_handle_empty(&order.min_qty));
-        msg.push_str(&make_field_handle_empty(&order.percent_offset));
-        msg.push_str(&make_field(&order.e_trade_only));
-        msg.push_str(&make_field(&order.firm_quote_only));
-        msg.push_str(&make_field_handle_empty(&order.nbbo_price_cap));
-        msg.push_str(&make_field(&(order.auction_strategy as i32))); // AUCTION_MATCH, AUCTION_IMPROVEMENT, AUCTION_TRANSPARENT
-        msg.push_str(&make_field_handle_empty(&order.starting_price));
-        msg.push_str(&make_field_handle_empty(&order.stock_ref_price));
-        msg.push_str(&make_field_handle_empty(&order.delta));
-        msg.push_str(&make_field_handle_empty(&order.stock_range_lower));
-        msg.push_str(&make_field_handle_empty(&order.stock_range_upper));
+        msg.push_str(&make_field(&order.rule80a)?);
+        msg.push_str(&make_field(&order.settling_firm)?);
+        msg.push_str(&make_field(&order.all_or_none)?);
+        msg.push_str(&make_field_handle_empty(&order.min_qty)?);
+        msg.push_str(&make_field_handle_empty(&order.percent_offset)?);
+        msg.push_str(&make_field(&order.e_trade_only)?);
+        msg.push_str(&make_field(&order.firm_quote_only)?);
+        msg.push_str(&make_field_handle_empty(&order.nbbo_price_cap)?);
+        msg.push_str(&make_field(&(order.auction_strategy as i32))?); // AUCTION_MATCH, AUCTION_IMPROVEMENT, AUCTION_TRANSPARENT
+        msg.push_str(&make_field_handle_empty(&order.starting_price)?);
+        msg.push_str(&make_field_handle_empty(&order.stock_ref_price)?);
+        msg.push_str(&make_field_handle_empty(&order.delta)?);
+        msg.push_str(&make_field_handle_empty(&order.stock_range_lower)?);
+        msg.push_str(&make_field_handle_empty(&order.stock_range_upper)?);
 
-        msg.push_str(&make_field(&order.override_percentage_constraints)); //srv v22 && above
+        msg.push_str(&make_field(&order.override_percentage_constraints)?); //srv v22 && above
 
         // volatility orders (srv v26 && above)
-        msg.push_str(&make_field_handle_empty(&order.volatility));
-        msg.push_str(&make_field_handle_empty(&order.volatility_type));
-        msg.push_str(&make_field(&order.delta_neutral_order_type)); // srv v28 && above
-        msg.push_str(&make_field_handle_empty(&order.delta_neutral_aux_price)); // srv v28 && above
+        msg.push_str(&make_field_handle_empty(&order.volatility)?);
+        msg.push_str(&make_field_handle_empty(&order.volatility_type)?);
+        msg.push_str(&make_field(&order.delta_neutral_order_type)?); // srv v28 && above
+        msg.push_str(&make_field_handle_empty(&order.delta_neutral_aux_price)?); // srv v28 && above
 
         if self.server_version() >= MIN_SERVER_VER_DELTA_NEUTRAL_CONID
             && !order.delta_neutral_order_type.is_empty()
         {
-            msg.push_str(&make_field(&order.delta_neutral_con_id));
-            msg.push_str(&make_field(&order.delta_neutral_settling_firm));
-            msg.push_str(&make_field(&order.delta_neutral_clearing_account));
-            msg.push_str(&make_field(&order.delta_neutral_clearing_intent));
+            msg.push_str(&make_field(&order.delta_neutral_con_id)?);
+            msg.push_str(&make_field(&order.delta_neutral_settling_firm)?);
+            msg.push_str(&make_field(&order.delta_neutral_clearing_account)?);
+            msg.push_str(&make_field(&order.delta_neutral_clearing_intent)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_DELTA_NEUTRAL_OPEN_CLOSE
             && order.delta_neutral_order_type != ""
         {
-            msg.push_str(&make_field(&order.delta_neutral_open_close));
-            msg.push_str(&make_field(&order.delta_neutral_short_sale));
-            msg.push_str(&make_field(&order.delta_neutral_short_sale_slot));
-            msg.push_str(&make_field(&order.delta_neutral_designated_location));
+            msg.push_str(&make_field(&order.delta_neutral_open_close)?);
+            msg.push_str(&make_field(&order.delta_neutral_short_sale)?);
+            msg.push_str(&make_field(&order.delta_neutral_short_sale_slot)?);
+            msg.push_str(&make_field(&order.delta_neutral_designated_location)?);
         }
 
-        msg.push_str(&make_field(&order.continuous_update));
-        msg.push_str(&make_field_handle_empty(&order.reference_price_type));
-        msg.push_str(&make_field_handle_empty(&order.trail_stop_price)); // srv v30 && above
+        msg.push_str(&make_field(&order.continuous_update)?);
+        msg.push_str(&make_field_handle_empty(&order.reference_price_type)?);
+        msg.push_str(&make_field_handle_empty(&order.trail_stop_price)?); // srv v30 && above
 
         if self.server_version() >= MIN_SERVER_VER_TRAILING_PERCENT {
-            msg.push_str(&make_field_handle_empty(&order.trailing_percent));
+            msg.push_str(&make_field_handle_empty(&order.trailing_percent)?);
         }
 
         // SCALE orders
         if self.server_version() >= MIN_SERVER_VER_SCALE_ORDERS2 {
-            msg.push_str(&make_field_handle_empty(&order.scale_init_level_size));
-            msg.push_str(&make_field_handle_empty(&order.scale_subs_level_size));
+            msg.push_str(&make_field_handle_empty(&order.scale_init_level_size)?);
+            msg.push_str(&make_field_handle_empty(&order.scale_subs_level_size)?);
         } else {
             // srv v35 && above)
-            msg.push_str(&make_field(&"")); // for not supported scaleNumComponents
-            msg.push_str(&make_field_handle_empty(&order.scale_init_level_size));
+            msg.push_str(&make_field(&"")?); // for not supported scaleNumComponents
+            msg.push_str(&make_field_handle_empty(&order.scale_init_level_size)?);
             // for scaleComponentSize
         }
 
-        msg.push_str(&make_field_handle_empty(&order.scale_price_increment));
+        msg.push_str(&make_field_handle_empty(&order.scale_price_increment)?);
 
         if self.server_version() >= MIN_SERVER_VER_SCALE_ORDERS3
             && order.scale_price_increment != UNSET_DOUBLE
             && order.scale_price_increment > 0.0
         {
-            msg.push_str(&make_field_handle_empty(&order.scale_price_adjust_value));
-            msg.push_str(&make_field_handle_empty(&order.scale_price_adjust_interval));
-            msg.push_str(&make_field_handle_empty(&order.scale_profit_offset));
-            msg.push_str(&make_field(&order.scale_auto_reset));
-            msg.push_str(&make_field_handle_empty(&order.scale_init_position));
-            msg.push_str(&make_field_handle_empty(&order.scale_init_fill_qty));
-            msg.push_str(&make_field(&order.scale_random_percent));
+            msg.push_str(&make_field_handle_empty(&order.scale_price_adjust_value)?);
+            msg.push_str(&make_field_handle_empty(
+                &order.scale_price_adjust_interval,
+            )?);
+            msg.push_str(&make_field_handle_empty(&order.scale_profit_offset)?);
+            msg.push_str(&make_field(&order.scale_auto_reset)?);
+            msg.push_str(&make_field_handle_empty(&order.scale_init_position)?);
+            msg.push_str(&make_field_handle_empty(&order.scale_init_fill_qty)?);
+            msg.push_str(&make_field(&order.scale_random_percent)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_SCALE_TABLE {
-            msg.push_str(&make_field(&order.scale_table));
-            msg.push_str(&make_field(&order.active_start_time));
-            msg.push_str(&make_field(&order.active_stop_time));
+            msg.push_str(&make_field(&order.scale_table)?);
+            msg.push_str(&make_field(&order.active_start_time)?);
+            msg.push_str(&make_field(&order.active_stop_time)?);
         }
 
         // HEDGE orders
         if self.server_version() >= MIN_SERVER_VER_HEDGE_ORDERS {
-            msg.push_str(&make_field(&order.hedge_type));
+            msg.push_str(&make_field(&order.hedge_type)?);
 
             if !order.hedge_type.is_empty() {
-                msg.push_str(&make_field(&order.hedge_param));
+                msg.push_str(&make_field(&order.hedge_param)?);
             }
         }
 
         if self.server_version() >= MIN_SERVER_VER_OPT_OUT_SMART_ROUTING {
-            msg.push_str(&make_field(&order.opt_out_smart_routing));
+            msg.push_str(&make_field(&order.opt_out_smart_routing)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_PTA_ORDERS {
-            msg.push_str(&make_field(&order.clearing_account));
-            msg.push_str(&make_field(&order.clearing_intent));
+            msg.push_str(&make_field(&order.clearing_account)?);
+            msg.push_str(&make_field(&order.clearing_intent)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_NOT_HELD {
-            msg.push_str(&make_field(&order.not_held));
+            msg.push_str(&make_field(&order.not_held)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_DELTA_NEUTRAL {
             if contract.delta_neutral_contract.is_some() {
-                msg.push_str(&make_field(&true));
+                msg.push_str(&make_field(&true)?);
                 msg.push_str(&make_field(
                     &contract.delta_neutral_contract.as_ref().unwrap().con_id,
-                ));
+                )?);
                 msg.push_str(&make_field(
                     &contract.delta_neutral_contract.as_ref().unwrap().delta,
-                ));
+                )?);
                 msg.push_str(&make_field(
                     &contract.delta_neutral_contract.as_ref().unwrap().price,
-                ));
+                )?);
             } else {
-                msg.push_str(&make_field(&false))
+                msg.push_str(&make_field(&false)?);
             }
         }
 
         if self.server_version() >= MIN_SERVER_VER_ALGO_ORDERS {
-            msg.push_str(&make_field(&order.algo_strategy));
+            msg.push_str(&make_field(&order.algo_strategy)?);
             if !order.algo_strategy.is_empty() {
                 let algo_params_count = order.algo_params.len();
-                msg.push_str(&make_field(&algo_params_count));
+                msg.push_str(&make_field(&algo_params_count)?);
                 if algo_params_count > 0 {
                     for algo_param in &order.algo_params {
-                        msg.push_str(&make_field(&algo_param.tag));
-                        msg.push_str(&make_field(&algo_param.value));
+                        msg.push_str(&make_field(&algo_param.tag)?);
+                        msg.push_str(&make_field(&algo_param.value)?);
                     }
                 }
             }
         }
 
         if self.server_version() >= MIN_SERVER_VER_ALGO_ID {
-            msg.push_str(&make_field(&order.algo_id));
+            msg.push_str(&make_field(&order.algo_id)?);
         }
 
-        msg.push_str(&make_field(&order.what_if)); // srv v36 && above
+        msg.push_str(&make_field(&order.what_if)?); // srv v36 && above
 
         // send miscOptions parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
@@ -1842,109 +1885,108 @@ where
                 .iter()
                 .map(|x| format!("{}={};", x.tag, x.value))
                 .collect::<String>();
-            msg.push_str(&make_field(&misc_options_str));
+            msg.push_str(&make_field(&misc_options_str)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_ORDER_SOLICITED {
-            msg.push_str(&make_field(&order.solicited));
+            msg.push_str(&make_field(&order.solicited)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_RANDOMIZE_SIZE_AND_PRICE {
-            msg.push_str(&make_field(&order.randomize_size));
-            msg.push_str(&make_field(&order.randomize_price));
+            msg.push_str(&make_field(&order.randomize_size)?);
+            msg.push_str(&make_field(&order.randomize_price)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_PEGGED_TO_BENCHMARK {
             if order.order_type == "PEG BENCH" {
-                msg.push_str(&make_field(&order.reference_contract_id));
-                msg.push_str(&make_field(&order.is_pegged_change_amount_decrease));
-                msg.push_str(&make_field(&order.pegged_change_amount));
-                msg.push_str(&make_field(&order.reference_change_amount));
-                msg.push_str(&make_field(&order.reference_exchange_id));
+                msg.push_str(&make_field(&order.reference_contract_id)?);
+                msg.push_str(&make_field(&order.is_pegged_change_amount_decrease)?);
+                msg.push_str(&make_field(&order.pegged_change_amount)?);
+                msg.push_str(&make_field(&order.reference_change_amount)?);
+                msg.push_str(&make_field(&order.reference_exchange_id)?);
             }
 
-            msg.push_str(&make_field(&order.conditions.len()));
+            msg.push_str(&make_field(&order.conditions.len())?);
 
             if order.conditions.len() > 0 {
                 for cond in &order.conditions {
-                    msg.push_str(&make_field(&(cond.get_type() as i32)));
-                    let mut vals = cond.make_fields();
+                    msg.push_str(&make_field(&(cond.get_type() as i32))?);
+                    let mut vals = cond.make_fields()?;
                     let vals_string = vals.iter().map(|val| val.clone()).collect::<String>();
                     msg.push_str(vals_string.as_ref());
                 }
 
-                msg.push_str(&make_field(&order.conditions_ignore_rth));
-                msg.push_str(&make_field(&order.conditions_cancel_order));
+                msg.push_str(&make_field(&order.conditions_ignore_rth)?);
+                msg.push_str(&make_field(&order.conditions_cancel_order)?);
             }
 
-            msg.push_str(&make_field(&order.adjusted_order_type));
-            msg.push_str(&make_field(&order.trigger_price));
-            msg.push_str(&make_field(&order.lmt_price_offset));
-            msg.push_str(&make_field(&order.adjusted_stop_price));
-            msg.push_str(&make_field(&order.adjusted_stop_limit_price));
-            msg.push_str(&make_field(&order.adjusted_trailing_amount));
-            msg.push_str(&make_field(&order.adjustable_trailing_unit));
+            msg.push_str(&make_field(&order.adjusted_order_type)?);
+            msg.push_str(&make_field(&order.trigger_price)?);
+            msg.push_str(&make_field(&order.lmt_price_offset)?);
+            msg.push_str(&make_field(&order.adjusted_stop_price)?);
+            msg.push_str(&make_field(&order.adjusted_stop_limit_price)?);
+            msg.push_str(&make_field(&order.adjusted_trailing_amount)?);
+            msg.push_str(&make_field(&order.adjustable_trailing_unit)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_EXT_OPERATOR {
-            msg.push_str(&make_field(&order.ext_operator));
+            msg.push_str(&make_field(&order.ext_operator)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_SOFT_DOLLAR_TIER {
-            msg.push_str(&make_field(&order.soft_dollar_tier.name));
-            msg.push_str(&make_field(&order.soft_dollar_tier.val));
+            msg.push_str(&make_field(&order.soft_dollar_tier.name)?);
+            msg.push_str(&make_field(&order.soft_dollar_tier.val)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_CASH_QTY {
-            msg.push_str(&make_field(&order.cash_qty));
+            msg.push_str(&make_field(&order.cash_qty)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_DECISION_MAKER {
-            msg.push_str(&make_field(&order.mifid2decision_maker));
-            msg.push_str(&make_field(&order.mifid2decision_algo));
+            msg.push_str(&make_field(&order.mifid2decision_maker)?);
+            msg.push_str(&make_field(&order.mifid2decision_algo)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_MIFID_EXECUTION {
-            msg.push_str(&make_field(&order.mifid2execution_trader));
-            msg.push_str(&make_field(&order.mifid2execution_algo));
+            msg.push_str(&make_field(&order.mifid2execution_trader)?);
+            msg.push_str(&make_field(&order.mifid2execution_algo)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_AUTO_PRICE_FOR_HEDGE {
-            msg.push_str(&make_field(&order.dont_use_auto_price_for_hedge));
+            msg.push_str(&make_field(&order.dont_use_auto_price_for_hedge)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_ORDER_CONTAINER {
-            msg.push_str(&make_field(&order.is_oms_container));
+            msg.push_str(&make_field(&order.is_oms_container)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_D_PEG_ORDERS {
-            msg.push_str(&make_field(&order.discretionary_up_to_limit_price));
+            msg.push_str(&make_field(&order.discretionary_up_to_limit_price)?);
         }
 
         if self.server_version() >= MIN_SERVER_VER_PRICE_MGMT_ALGO {
-            msg.push_str(&make_field_handle_empty(&order.use_price_mgmt_algo))
+            msg.push_str(&make_field_handle_empty(&order.use_price_mgmt_algo)?);
         }
 
         info!("Placing order {:?}", msg);
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_order(&mut self, order_id: i32) {
+    pub fn cancel_order(&mut self, order_id: i32) -> Result<(), IBKRApiLibError> {
         //"""Call this function to cancel an order.
 
         //orderId:OrderId - The order ID that was specified previously in the call
         //to placeOrder()"""
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 2;
@@ -1953,15 +1995,16 @@ where
 
         let message_id = OutgoingMessageIds::CancelOrder as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&order_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&order_id)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_open_orders(&mut self) {
+    pub fn req_open_orders(&mut self) -> Result<(), IBKRApiLibError> {
         //        Call this function to request the open orders that were
         //        placed from this core. Each open order will be fed back through the
         //        openOrder() and orderStatus() functions on the EWrapper.
@@ -1971,15 +2014,13 @@ where
         //        orderId will be generated. This association will persist over multiple
         //        API and TWS sessions
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
@@ -1988,14 +2029,15 @@ where
 
         let message_id = OutgoingMessageIds::ReqOpenOrders as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_auto_open_orders(&mut self, b_auto_bind: bool) {
+    pub fn req_auto_open_orders(&mut self, b_auto_bind: bool) -> Result<(), IBKRApiLibError> {
         //        Call this function to request that newly created TWS orders
         //        be implicitly associated with the core.When a new TWS order is
         //        created, the order will be associated with the core, and fed back
@@ -2007,15 +2049,13 @@ where
         //        associated with the core.If set to FALSE, no association will be
         //        made.
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
@@ -2024,15 +2064,17 @@ where
 
         let message_id = OutgoingMessageIds::ReqAutoOpenOrders as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&b_auto_bind)); // TRUE = subscribe, FALSE = unsubscribe
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&b_auto_bind)?); // TRUE = subscribe, FALSE = unsubscribe
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_all_open_orders(&mut self) {
+    pub fn req_all_open_orders(&mut self) -> Result<(), IBKRApiLibError> {
         //        Call this function to request the open orders placed from all
         //        clients and also from TWS. Each open order will be fed back through the
         //        openOrder() and orderStatus() functions on the EWrapper.
@@ -2040,15 +2082,13 @@ where
         //        Note:  No association is made between the returned orders and the
         //        requesting core.
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
@@ -2057,29 +2097,29 @@ where
 
         let message_id = OutgoingMessageIds::ReqAllOpenOrders as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_global_cancel(&mut self) {
+    pub fn req_global_cancel(&mut self) -> Result<(), IBKRApiLibError> {
         //        Use this function to cancel all open orders globally. It
         //        cancels both API and TWS open orders.
         //
         //        If the order was created in TWS, it also gets canceled. If the order
         //        was initiated in the API, it also gets canceled.
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
@@ -2088,14 +2128,16 @@ where
 
         let message_id = OutgoingMessageIds::ReqGlobalCancel as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_ids(&self, num_ids: i32) {
+    pub fn req_ids(&self, num_ids: i32) -> Result<(), IBKRApiLibError> {
         //        Call this function to request from TWS the next valid ID that
         //        can be used when placing an order.  After calling this function, the
         //        nextValidId() event will be triggered, and the id returned is that next
@@ -2104,17 +2146,13 @@ where
         //
         //        numIds:i32 - deprecated
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            info!("Not connected, sending error...");
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            info!("Not connected, returning...");
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
         info!("req_ids is connected...");
         let version = 1;
@@ -2123,17 +2161,22 @@ where
 
         let message_id = OutgoingMessageIds::ReqIds as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&num_ids));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&num_ids)?);
         info!("req_ids... sending request...");
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //#########################################################################
     //################## Account and Portfolio
     //########################################################################
-    pub fn req_account_updates(&mut self, subscribe: bool, acct_code: String) {
+    pub fn req_account_updates(
+        &mut self,
+        subscribe: bool,
+        acct_code: String,
+    ) -> Result<(), IBKRApiLibError> {
         /*Call this function to start getting account values, portfolio,
         and last update time information via EWrapper.updateAccountValue());
         EWrapperi.updatePortfolio() and Wrapper.updateAccountTime().
@@ -2151,12 +2194,12 @@ where
         );
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 2;
@@ -2165,16 +2208,23 @@ where
 
         let message_id = OutgoingMessageIds::ReqAcctData as i32;
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&subscribe)); // TRUE = subscribe, FALSE = unsubscribe
-        msg.push_str(&make_field(&acct_code)); // srv v9 and above, the account code.This will only be used for FA clients
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&subscribe)?); // TRUE = subscribe, FALSE = unsubscribe
+        msg.push_str(&make_field(&acct_code)?); // srv v9 and above, the account code.This will only be used for FA clients
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_account_summary(&self, req_id: i32, group_name: String, tags: String) {
+    pub fn req_account_summary(
+        &self,
+        req_id: i32,
+        group_name: String,
+        tags: String,
+    ) -> Result<(), IBKRApiLibError> {
         /* Call this method to request and keep up to date the data that appears
         on the TWS Account Window Summary tab. The data is returned by
         accountSummary().
@@ -2229,15 +2279,13 @@ where
             $LEDGER:ALL - Single flag to relay all cash balance tags* in all
             currencies.*/
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.try_lock().unwrap().deref_mut().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 2;
@@ -2247,148 +2295,152 @@ where
         let message_id: i32 = OutgoingMessageIds::ReqAccountSummary as i32;
         let mut msg = "".to_string();
 
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&_req_id));
-        msg.push_str(&make_field(&_group_name));
-        msg.push_str(&make_field(&_tags));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&_req_id)?);
+        msg.push_str(&make_field(&_group_name)?);
+        msg.push_str(&make_field(&_tags)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_account_summary(&mut self, req_id: i32) {
+    pub fn cancel_account_summary(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         //        """Cancels the request for Account Window Summary tab data.
         //
         //        reqId:i32 - The ID of the data request being canceled."""
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::CancelAccountSummary as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_positions(&mut self) {
+    pub fn req_positions(&mut self) -> Result<(), IBKRApiLibError> {
         //"""Requests real-time position data for all accounts."""
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support positions request.",
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support positions request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::ReqPositions as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_positions(&mut self) {
+    pub fn cancel_positions(&mut self) -> Result<(), IBKRApiLibError> {
         //"""Cancels real-time position updates."""
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support positions request.",
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support positions request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::CancelPositions as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        self.send_request(msg.as_str())
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_positions_multi(&mut self, req_id: i32, account: &String, model_code: &String) {
+    pub fn req_positions_multi(
+        &mut self,
+        req_id: i32,
+        account: &String,
+        model_code: &String,
+    ) -> Result<(), IBKRApiLibError> {
         //        """Requests positions for account and/or model.
         //                Results are delivered via EWrapper.positionMulti() and
         //                EWrapper.positionMultiEnd() """
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support positions multi request.",
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support positions multi request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
@@ -2397,51 +2449,54 @@ where
         let mut_model_code = model_code;
         let message_id: i32 = OutgoingMessageIds::ReqPositionsMulti as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&mut_req_id));
-        msg.push_str(&make_field(mut_account));
-        msg.push_str(&make_field(mut_model_code));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&mut_req_id)?);
+        msg.push_str(&make_field(mut_account)?);
+        msg.push_str(&make_field(mut_model_code)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_positions_multi(&mut self, req_id: i32) {
-        //// self.logRequest(current_fn_name()); vars())
+    pub fn cancel_positions_multi(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
+        //// self.logRequest(current_fn_name()?); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support positions multi request.",
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support positions multi request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
         let mut_req_id = req_id;
         let message_id: i32 = OutgoingMessageIds::CancelPositionsMulti as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&mut_req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&mut_req_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -2451,32 +2506,30 @@ where
         account: String,
         model_code: String,
         ledger_and_nlv: bool,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         //"""Requests account updates for account and/or model."""
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support account updates multi request.",
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support account updates multi request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
@@ -2487,50 +2540,52 @@ where
 
         let message_id: i32 = OutgoingMessageIds::ReqAccountUpdatesMulti as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&mut_req_id));
-        msg.push_str(&make_field(&mut_account));
-        msg.push_str(&make_field(&mut_model_code));
-        msg.push_str(&make_field(&mut_ledger_and_nlv));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&mut_req_id)?);
+        msg.push_str(&make_field(&mut_account)?);
+        msg.push_str(&make_field(&mut_model_code)?);
+        msg.push_str(&make_field(&mut_ledger_and_nlv)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_account_updates_multi(&mut self, req_id: i32) {
-        //// self.logRequest(current_fn_name()); vars())
+    pub fn cancel_account_updates_multi(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
+        //// self.logRequest(current_fn_name()?); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support account updates multi request.",
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support account updates multi request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
         let mut_req_id = req_id;
         let message_id: i32 = OutgoingMessageIds::CancelAccountUpdatesMulti as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&mut_req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&mut_req_id)?);
 
         self.send_request(msg.as_str())
     }
@@ -2539,73 +2594,74 @@ where
     //################## Daily PnL
     //#########################################################################
 
-    pub fn req_pn_l(&mut self, req_id: i32, account: &'static str, model_code: &'static str) {
-        //// self.logRequest(current_fn_name()); vars())
-
+    pub fn req_pn_l(
+        &mut self,
+        req_id: i32,
+        account: &'static str,
+        model_code: &'static str,
+    ) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_PNL {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support PnL request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support PnL request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqPnl as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&account));
-        msg.push_str(&make_field(&model_code));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&account)?);
+        msg.push_str(&make_field(&model_code)?);
 
         self.send_request(msg.as_str())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_pnl(&mut self, req_id: i32) {
-        //// self.logRequest(current_fn_name()); vars())
-
+    pub fn cancel_pnl(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_PNL {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support PnL request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support PnL request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::CancelPnl as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
 
         self.send_request(msg.as_str())
     }
@@ -2617,74 +2673,70 @@ where
         account: &'static str,
         model_code: &'static str,
         con_id: i32,
-    ) {
-        //// self.logRequest(current_fn_name()); vars())
-
+    ) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_PNL {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support PnL request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support PnL request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqPnlSingle as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&account));
-        msg.push_str(&make_field(&model_code));
-        msg.push_str(&make_field(&con_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&account)?);
+        msg.push_str(&make_field(&model_code)?);
+        msg.push_str(&make_field(&con_id)?);
 
         self.send_request(msg.as_str())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_pnl_single(&mut self, req_id: i32) {
-        //// self.logRequest(current_fn_name()); vars())
-
+    pub fn cancel_pnl_single(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_PNL {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support PnL request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support PnL request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::CancelPnlSingle as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
 
         self.send_request(msg.as_str())
     }
@@ -2693,7 +2745,11 @@ where
     //################## Executions
     //#########################################################################
 
-    pub fn req_executions(&mut self, req_id: i32, exec_filter: &ExecutionFilter) {
+    pub fn req_executions(
+        &mut self,
+        req_id: i32,
+        exec_filter: &ExecutionFilter,
+    ) -> Result<(), IBKRApiLibError> {
         //    When this function is called, the execution reports that meet the
         //    filter criteria are downloaded to the core via the execDetails()
         //    function. To view executions beyond the past 24 hours, open the
@@ -2711,29 +2767,29 @@ where
         // // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 3;
         let message_id: i32 = OutgoingMessageIds::ReqExecutions as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
         if self.server_version() >= MIN_SERVER_VER_EXECUTION_DATA_CHAIN {
-            msg.push_str(&make_field(&req_id));
+            msg.push_str(&make_field(&req_id)?);
         }
-        msg.push_str(&make_field(&exec_filter.client_id));
-        msg.push_str(&make_field(&exec_filter.acct_code));
-        msg.push_str(&make_field(&exec_filter.time));
-        msg.push_str(&make_field(&exec_filter.symbol));
-        msg.push_str(&make_field(&exec_filter.sec_type));
-        msg.push_str(&make_field(&exec_filter.exchange));
-        msg.push_str(&make_field(&exec_filter.side));
+        msg.push_str(&make_field(&exec_filter.client_id)?);
+        msg.push_str(&make_field(&exec_filter.acct_code)?);
+        msg.push_str(&make_field(&exec_filter.time)?);
+        msg.push_str(&make_field(&exec_filter.symbol)?);
+        msg.push_str(&make_field(&exec_filter.sec_type)?);
+        msg.push_str(&make_field(&exec_filter.exchange)?);
+        msg.push_str(&make_field(&exec_filter.side)?);
 
         self.send_request(msg.as_str())
     }
@@ -2742,7 +2798,11 @@ where
     //################## Contract Details
     //#########################################################################
 
-    pub fn req_contract_details(&mut self, req_id: i32, contract: &Contract) {
+    pub fn req_contract_details(
+        &mut self,
+        req_id: i32,
+        contract: &Contract,
+    ) -> Result<(), IBKRApiLibError> {
         //    Call this function to download all details for a particular
         //    underlying. The contract details will be received via the contractDetails()
         //    function on the EWrapper.
@@ -2751,62 +2811,60 @@ where
         //    make_fieldatched to requests if several requests are in process.
         //    contract:&Contract - The summary description of the contract being looked up.
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE {
             if contract.sec_id_type != "" || contract.sec_id != "" {
-                self.wrapper.lock().unwrap().error(
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
-                    TwsError::UpdateTws.code(),
+                    TwsError::UpdateTws.code().to_string(),
                     format!(
                         "{}{}",
                         TwsError::UpdateTws.message(),
-                        "  It does not support sec_id_type and secId parameters."
-                    )
-                    .as_ref(),
-                );
-                return;
+                        " It does not support sec_id_type and secId parameters."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if contract.trading_class != "" {
-                self.wrapper.lock().unwrap().error(
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
-                    TwsError::UpdateTws.code(),
+                    TwsError::UpdateTws.code().to_string(),
                     format!(
                         "{}{}",
                         TwsError::UpdateTws.message(),
-                        "  It does not support trading_class parameter in req_contract_details."
-                    )
-                    .as_ref(),
-                );
-                return;
+                        " It does not support trading_class parameter in req_contract_details."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             if contract.primary_exchange != "" {
-                self.wrapper.lock().unwrap().error(
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
-                    TwsError::UpdateTws.code(),
+                    TwsError::UpdateTws.code().to_string(),
                     format!(
                         "{}{}",
                         TwsError::UpdateTws.message(),
-                        "  It does not support primary_exchange parameter in req_contract_details."
-                    )
-                    .as_ref(),
-                );
-                return;
+                        " It does not support primary_exchange parameter in req_contract_details."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
@@ -2814,27 +2872,26 @@ where
 
         let message_id: i32 = OutgoingMessageIds::ReqContractData as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
 
         if self.server_version() >= MIN_SERVER_VER_CONTRACT_DATA_CHAIN {
-            msg.push_str(&make_field(&req_id));
+            msg.push_str(&make_field(&req_id)?);
         }
 
         // send contract fields
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&contract.con_id)); // srv v37 and above
-        msg.push_str(&make_field(&contract.symbol));
+        msg.push_str(&make_field(&contract.con_id)?); // srv v37 and above
+        msg.push_str(&make_field(&contract.symbol)?);
 
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier)); // srv v15 and above
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?); // srv v15 and above
 
         if self.server_version() >= MIN_SERVER_VER_PRIMARYEXCH {
-            msg.push_str(&make_field(&contract.exchange));
-            msg.push_str(&make_field(&contract.primary_exchange));
+            msg.push_str(&make_field(&contract.exchange)?);
+            msg.push_str(&make_field(&contract.primary_exchange)?);
         } else if self.server_version() >= MIN_SERVER_VER_LINKING {
             if contract.primary_exchange != ""
                 && (contract.exchange == "BEST" || contract.exchange == "SMART")
@@ -2842,23 +2899,23 @@ where
                 msg.push_str(&make_field(&format!(
                     "{}:{}",
                     &contract.exchange, &contract.primary_exchange
-                )));
+                ))?);
             }
         } else {
-            msg.push_str(&make_field(&contract.exchange));
+            msg.push_str(&make_field(&contract.exchange)?);
         }
 
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
 
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.trading_class));
-            msg.push_str(&make_field(&contract.include_expired)); // srv v31 and above
+            msg.push_str(&make_field(&contract.trading_class)?);
+            msg.push_str(&make_field(&contract.include_expired)?); // srv v31 and above
         }
 
         if self.server_version() >= MIN_SERVER_VER_SEC_ID_TYPE {
-            msg.push_str(&make_field(&contract.sec_id_type));
-            msg.push_str(&make_field(&contract.sec_id));
+            msg.push_str(&make_field(&contract.sec_id_type)?);
+            msg.push_str(&make_field(&contract.sec_id)?);
         }
 
         self.send_request(msg.as_str())
@@ -2868,35 +2925,33 @@ where
     //################## Market Depth
     //#########################################################################
 
-    pub fn req_mkt_depth_exchanges(&mut self) {
-        //// self.logRequest(current_fn_name()); vars())
-
+    pub fn req_mkt_depth_exchanges(&mut self) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().deref_mut().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_MKT_DEPTH_EXCHANGES {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support market depth exchanges request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support market depth exchanges request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqMktDepthExchanges as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
         self.send_request(msg.as_str())
     }
@@ -2909,7 +2964,7 @@ where
         num_rows: i32,
         is_smart_depth: bool,
         mkt_depth_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         //    Call this function to request market depth for a specific
         //    contract. The market depth will be returned by the updateMktDepth() and
         //    updateMktDepthL2() events.
@@ -2925,64 +2980,65 @@ where
         //    contract:Contact - This structure contains a description of the contract
         //        for which market depth data is being requested.
         //    num_rows:i32 - Specifies the numRowsumber of market depth rows to display.
-        //    is_smart_depth:bool - specifies SMART depth request
+        //    is_smart_depth:bool - specifies SMART depth request  NOTE: ALWAYS SET TO FALSE!!!!!
+        //                          THERE SEEMS TO BE A BUG ON IB's SIDE AND THEY WILL STOP STREAMING
+        //                          DATA IF THIS IS SET TO true
         //    mkt_depth_options:Vec<TagValue> - For internal use only. Use pub fnault value
         //        XYZ.
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if &contract.trading_class != "" || *&contract.con_id > 0 {
-                self.wrapper.lock().unwrap().error(
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
-                    TwsError::UpdateTws.code(),
+                    TwsError::UpdateTws.code().to_string(),
                     format!(
                         "{}{}",
                         TwsError::UpdateTws.message(),
-                        "  It does not support con_id and trading_class parameters in req_mkt_depth.")
-                        .as_ref(),
-                );
-                return;
+                        " It does not support con_id and trading_class parameters in req_mkt_depth."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
         if self.server_version() < MIN_SERVER_VER_SMART_DEPTH && is_smart_depth {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
                     " It does not support SMART depth request."
-                )
-                .as_ref(),
-            );
-            return;
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_MKT_DEPTH_PRIM_EXCHANGE
             && contract.primary_exchange != ""
         {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
                     " It does not support primary_exchange parameter in req_mkt_depth."
-                )
-                .as_ref(),
-            );
-            return;
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 5;
@@ -2991,54 +3047,64 @@ where
 
         let message_id: i32 = OutgoingMessageIds::ReqMktDepth as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
         // send contract fields
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.con_id));
-            msg.push_str(&make_field(&contract.symbol));
-            msg.push_str(&make_field(&contract.sec_type));
-            msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-            msg.push_str(&make_field(&contract.strike));
-            msg.push_str(&make_field(&contract.right));
-            msg.push_str(&make_field(&contract.multiplier)); // srv v15 and above
-            msg.push_str(&make_field(&contract.exchange));
+            msg.push_str(&make_field(&contract.con_id)?);
         }
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?); // srv v15 and above
+        msg.push_str(&make_field(&contract.exchange)?);
+
         if self.server_version() >= MIN_SERVER_VER_MKT_DEPTH_PRIM_EXCHANGE {
-            msg.push_str(&make_field(&contract.primary_exchange));
-            msg.push_str(&make_field(&contract.currency));
-            msg.push_str(&make_field(&contract.local_symbol));
+            msg.push_str(&make_field(&contract.primary_exchange)?);
         }
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
+
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.trading_class));
+            msg.push_str(&make_field(&contract.trading_class)?);
         }
-        msg.push_str(&make_field(&num_rows)); // srv v19 and above
+        msg.push_str(&make_field(&num_rows)?); // srv v19 and above
 
         if self.server_version() >= MIN_SERVER_VER_SMART_DEPTH {
-            msg.push_str(&make_field(&is_smart_depth));
+            msg.push_str(&make_field(&is_smart_depth)?);
         }
         // send mkt_depth_options parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             // current doc says this part if for "internal use only" -> won't support it
             if mkt_depth_options.len() > 0 {
-                self.wrapper.lock().unwrap().error(
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
-                    TwsError::Unsupported.code(),
-                    TwsError::Unsupported.message(),
-                );
-                return;
+                    TwsError::Unsupported.code().to_string(),
+                    format!(
+                        "{}{}",
+                        TwsError::Unsupported.message(),
+                        " mkt_depth_options."
+                    ),
+                ));
+
+                return Err(err);
             }
             let mkt_data_options_str = "";
-            msg.push_str(&make_field(&mkt_data_options_str));
+            msg.push_str(&make_field(&mkt_data_options_str)?);
         }
-
         self.send_request(msg.as_str())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_mkt_depth(&mut self, req_id: i32, is_smart_depth: bool) {
+    pub fn cancel_mkt_depth(
+        &mut self,
+        req_id: i32,
+        is_smart_depth: bool,
+    ) -> Result<(), IBKRApiLibError> {
         //    After calling this function, market depth data for the specified id
         //    will stop flowing.
         //
@@ -3048,38 +3114,38 @@ where
         // // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SMART_DEPTH && is_smart_depth {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support SMART depth cancel."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support SMART depth cancel."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::CancelMktDepth as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
         if self.server_version() >= MIN_SERVER_VER_SMART_DEPTH {
-            msg.push_str(&make_field(&is_smart_depth));
+            msg.push_str(&make_field(&is_smart_depth)?);
         }
 
         self.send_request(msg.as_str())
@@ -3089,7 +3155,7 @@ where
     //################## News Bulletins
     //#########################################################################
 
-    pub fn req_news_bulletins(&mut self, all_msgs: bool) {
+    pub fn req_news_bulletins(&mut self, all_msgs: bool) -> Result<(), IBKRApiLibError> {
         //    Call this function to start receiving news bulletins. Each bulletin
         //    will be returned by the updateNewsBulletin() event.
         //
@@ -3097,24 +3163,22 @@ where
         //    the currencyent day and any new ones. If set to FALSE, will only
         //    return new bulletins.
 
-        //// self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::ReqNewsBulletins as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&all_msgs));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&all_msgs)?);
 
         self.send_request(msg.as_str())
     }
@@ -3123,7 +3187,7 @@ where
     //################## Financial Advisors
     //#########################################################################
 
-    pub fn req_managed_accts(&mut self) {
+    pub fn req_managed_accts(&mut self) -> Result<(), IBKRApiLibError> {
         //    Call this function to request the list of managed accounts. The list
         //    will be returned by the managedAccounts() function on the EWrapper.
         //
@@ -3132,24 +3196,24 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReqManagedAccts as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
         self.send_request(msg.as_str())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn request_fa(&mut self, fa_data: FaDataType) {
+    pub fn request_fa(&mut self, fa_data: FaDataType) -> Result<(), IBKRApiLibError> {
         //    Call this function to request FA configuration information from TWS.
         //    The data returns in an XML string via a "receiveFA" ActiveX event.
         //
@@ -3162,26 +3226,31 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReqFa as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&fa_data));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&fa_data)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn replace_fa(&mut self, fa_data: FaDataType, cxml: &'static str) {
+    pub fn replace_fa(
+        &mut self,
+        fa_data: FaDataType,
+        cxml: &'static str,
+    ) -> Result<(), IBKRApiLibError> {
         //    Call this function to modify FA configuration information from the
         //    API. Note that this can also be done manually in TWS itself.
         //
@@ -3196,22 +3265,22 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReplaceFa as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&fa_data));
-        msg.push_str(&make_field(&cxml));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&fa_data)?);
+        msg.push_str(&make_field(&cxml)?);
 
         self.send_request(msg.as_str())
     }
@@ -3232,7 +3301,7 @@ where
         format_date: i32,
         keep_up_to_date: bool,
         chart_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         //    Requests contracts' historical data. When requesting historical data, a
         //    finishing time and date is required along with a duration string. The
         //    resulting bars will be returned in EWrapper.historicalData()
@@ -3290,19 +3359,27 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if &contract.trading_class != "" || contract.con_id > 0 {
-                self.wrapper.lock().unwrap().error(req_id, TwsError::UpdateTws.code(),
-                                                   format!("{}{}", TwsError::UpdateTws.message(), "  It does not support con_id and trading_class parameters in req_historical_data.").as_ref());
-                return;
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                    req_id,
+                    TwsError::UpdateTws.code().to_string(),
+                    format!(
+                        "{}{}",
+                        TwsError::UpdateTws.message(),
+                        " It does not support con_id and trading_class parameters in req_historical_data."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
@@ -3311,52 +3388,52 @@ where
         // send req mkt data msg
         let message_id: i32 = OutgoingMessageIds::ReqHistoricalData as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
         if self.server_version() < MIN_SERVER_VER_SYNT_REALTIME_BARS {
-            msg.push_str(&make_field(&version));
+            msg.push_str(&make_field(&version)?);
         }
 
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&req_id)?);
 
         // Send contract fields
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.con_id));
-            msg.push_str(&make_field(&contract.symbol));
-            msg.push_str(&make_field(&contract.sec_type));
-            msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-            msg.push_str(&make_field(&contract.strike));
-            msg.push_str(&make_field(&contract.right));
-            msg.push_str(&make_field(&contract.multiplier));
-            msg.push_str(&make_field(&contract.exchange));
-            msg.push_str(&make_field(&contract.primary_exchange));
-            msg.push_str(&make_field(&contract.currency));
-            msg.push_str(&make_field(&contract.local_symbol));
+            msg.push_str(&make_field(&contract.con_id)?);
+            msg.push_str(&make_field(&contract.symbol)?);
+            msg.push_str(&make_field(&contract.sec_type)?);
+            msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+            msg.push_str(&make_field(&contract.strike)?);
+            msg.push_str(&make_field(&contract.right)?);
+            msg.push_str(&make_field(&contract.multiplier)?);
+            msg.push_str(&make_field(&contract.exchange)?);
+            msg.push_str(&make_field(&contract.primary_exchange)?);
+            msg.push_str(&make_field(&contract.currency)?);
+            msg.push_str(&make_field(&contract.local_symbol)?);
         }
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.trading_class));
+            msg.push_str(&make_field(&contract.trading_class)?);
         }
-        msg.push_str(&make_field(&contract.include_expired)); // srv v31 and above
+        msg.push_str(&make_field(&contract.include_expired)?); // srv v31 and above
 
-        msg.push_str(&make_field(&end_date_time)); // srv v20 and above
-        msg.push_str(&make_field(&bar_size_setting)); // srv v20 and above
-        msg.push_str(&make_field(&duration_str));
-        msg.push_str(&make_field(&use_rth));
-        msg.push_str(&make_field(&what_to_show));
-        msg.push_str(&make_field(&format_date)); // srv v16 and above
+        msg.push_str(&make_field(&end_date_time)?); // srv v20 and above
+        msg.push_str(&make_field(&bar_size_setting)?); // srv v20 and above
+        msg.push_str(&make_field(&duration_str)?);
+        msg.push_str(&make_field(&use_rth)?);
+        msg.push_str(&make_field(&what_to_show)?);
+        msg.push_str(&make_field(&format_date)?); // srv v16 and above
 
         // Send combo legs for BAG requests
         if contract.sec_type == "BAG" {
-            msg.push_str(&make_field(&contract.combo_legs.len()));
+            msg.push_str(&make_field(&contract.combo_legs.len())?);
             for combo_leg in &contract.combo_legs {
-                msg.push_str(&make_field(&combo_leg.con_id));
-                msg.push_str(&make_field(&combo_leg.ratio));
-                msg.push_str(&make_field(&combo_leg.action));
-                msg.push_str(&make_field(&combo_leg.exchange));
+                msg.push_str(&make_field(&combo_leg.con_id)?);
+                msg.push_str(&make_field(&combo_leg.ratio)?);
+                msg.push_str(&make_field(&combo_leg.action)?);
+                msg.push_str(&make_field(&combo_leg.exchange)?);
             }
         }
         if self.server_version() >= MIN_SERVER_VER_SYNT_REALTIME_BARS {
-            msg.push_str(&make_field(&keep_up_to_date));
+            msg.push_str(&make_field(&keep_up_to_date)?);
         }
         // Send chart_options parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
@@ -3364,14 +3441,15 @@ where
                 .iter()
                 .map(|x| format!("{}={};", x.tag, x.value))
                 .collect::<String>();
-            msg.push_str(&make_field(&chart_options_str));
+            msg.push_str(&make_field(&chart_options_str)?);
         }
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_historical_data(&mut self, req_id: i32) {
+    pub fn cancel_historical_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*Used if an internet disconnect has occurred or the results of a query
         are otherwise delayed and the application is no longer interested in receiving
         the data.
@@ -3381,24 +3459,26 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::CancelHistoricalData as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+
+        Ok(())
     }
 
     // Note that formatData parameter affects intraday bars only
@@ -3411,90 +3491,92 @@ where
         what_to_show: &'static str,
         use_rth: i32,
         format_date: i32,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_HEAD_TIMESTAMP {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support head time stamp requests."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support head time stamp requests."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqHeadTimestamp as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&contract.con_id));
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier));
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.primary_exchange));
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
-        msg.push_str(&make_field(&contract.trading_class));
-        msg.push_str(&make_field(&contract.include_expired));
-        msg.push_str(&make_field(&use_rth));
-        msg.push_str(&make_field(&what_to_show));
-        msg.push_str(&make_field(&format_date));
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&contract.con_id)?);
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?);
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.primary_exchange)?);
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
+        msg.push_str(&make_field(&contract.trading_class)?);
+        msg.push_str(&make_field(&contract.include_expired)?);
+        msg.push_str(&make_field(&use_rth)?);
+        msg.push_str(&make_field(&what_to_show)?);
+        msg.push_str(&make_field(&format_date)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_head_time_stamp(&mut self, req_id: i32) {
+    pub fn cancel_head_time_stamp(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_CANCEL_HEADTIMESTAMP {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support head time stamp requests."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support head time stamp requests."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::CancelHeadTimestamp as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -3504,89 +3586,91 @@ where
         contract: Contract,
         use_rth: bool,
         time_period: &'static str,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTOGRAM {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support histogram requests.."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support histogram requests."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqHistogramData as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&ticker_id));
-        msg.push_str(&make_field(&contract.con_id));
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier));
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.primary_exchange));
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
-        msg.push_str(&make_field(&contract.trading_class));
-        msg.push_str(&make_field(&contract.include_expired));
-        msg.push_str(&make_field(&use_rth));
-        msg.push_str(&make_field(&time_period));
+        msg.push_str(&make_field(&ticker_id)?);
+        msg.push_str(&make_field(&contract.con_id)?);
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?);
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.primary_exchange)?);
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
+        msg.push_str(&make_field(&contract.trading_class)?);
+        msg.push_str(&make_field(&contract.include_expired)?);
+        msg.push_str(&make_field(&use_rth)?);
+        msg.push_str(&make_field(&time_period)?);
 
-        self.send_request(msg.as_str());
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_histogram_data(&mut self, ticker_id: i32) {
+    pub fn cancel_histogram_data(&mut self, ticker_id: i32) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTOGRAM {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support histogram requests.."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support histogram requests."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::CancelHistogramData as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&ticker_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&ticker_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -3601,92 +3685,94 @@ where
         use_rth: i32,
         ignore_size: bool,
         misc_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_HISTORICAL_TICKS {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support historical ticks requests.."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support historical ticks requests."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqHistoricalTicks as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&contract.con_id));
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier));
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.primary_exchange));
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
-        msg.push_str(&make_field(&contract.trading_class));
-        msg.push_str(&make_field(&contract.include_expired));
-        msg.push_str(&make_field(&start_date_time));
-        msg.push_str(&make_field(&end_date_time));
-        msg.push_str(&make_field(&number_of_ticks));
-        msg.push_str(&make_field(&what_to_show));
-        msg.push_str(&make_field(&use_rth));
-        msg.push_str(&make_field(&ignore_size));
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&contract.con_id)?);
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?);
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.primary_exchange)?);
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
+        msg.push_str(&make_field(&contract.trading_class)?);
+        msg.push_str(&make_field(&contract.include_expired)?);
+        msg.push_str(&make_field(&start_date_time)?);
+        msg.push_str(&make_field(&end_date_time)?);
+        msg.push_str(&make_field(&number_of_ticks)?);
+        msg.push_str(&make_field(&what_to_show)?);
+        msg.push_str(&make_field(&use_rth)?);
+        msg.push_str(&make_field(&ignore_size)?);
 
         let misc_options_string = misc_options
             .iter()
             .map(|x| format!("{}={};", x.tag, x.value))
             .collect::<String>();
 
-        msg.push_str(&make_field(&misc_options_string));
+        msg.push_str(&make_field(&misc_options_string)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //#########################################################################
     //################## Market Scanners
     //#########################################################################
 
-    pub fn req_scanner_parameters(&mut self) {
+    pub fn req_scanner_parameters(&mut self) -> Result<(), IBKRApiLibError> {
         /*Requests an XML string that describes all possible scanner queries*/
 
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReqScannerParameters as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -3696,7 +3782,7 @@ where
         subscription: ScannerSubscription,
         scanner_subscription_options: Vec<TagValue>,
         scanner_subscription_filter_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The ticker ID. Must be a unique value.
         scannerSubscription:ScannerSubscription - This structure contains
             possible parameters used to filter results.
@@ -3706,72 +3792,74 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
+        error!("Server version: {}", self.server_version());
         if self.server_version() < MIN_SERVER_VER_SCANNER_GENERIC_OPTS
-            && scanner_subscription_filter_options.len() > 0
+        //&& scanner_subscription_filter_options.len() > 0
         {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
                     " It does not support API scanner subscription generic filter options"
-                )
-                .as_ref(),
-            );
-            return;
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 4;
 
         let message_id: i32 = OutgoingMessageIds::ReqScannerSubscription as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
         if self.server_version() < MIN_SERVER_VER_SCANNER_GENERIC_OPTS {
-            msg.push_str(&make_field(&version));
+            msg.push_str(&make_field(&version)?);
         }
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field_handle_empty(&subscription.number_of_rows));
-        msg.push_str(&make_field(&subscription.instrument));
-        msg.push_str(&make_field(&subscription.location_code));
-        msg.push_str(&make_field(&subscription.scan_code));
-        msg.push_str(&make_field_handle_empty(&subscription.above_price));
-        msg.push_str(&make_field_handle_empty(&subscription.below_price));
-        msg.push_str(&make_field_handle_empty(&subscription.above_volume));
-        msg.push_str(&make_field_handle_empty(&subscription.market_cap_above));
-        msg.push_str(&make_field_handle_empty(&subscription.market_cap_below));
-        msg.push_str(&make_field(&subscription.moody_rating_above));
-        msg.push_str(&make_field(&subscription.moody_rating_below));
-        msg.push_str(&make_field(&subscription.sp_rating_above));
-        msg.push_str(&make_field(&subscription.sp_rating_below));
-        msg.push_str(&make_field(&subscription.maturity_date_above));
-        msg.push_str(&make_field(&subscription.maturity_date_below));
-        msg.push_str(&make_field_handle_empty(&subscription.coupon_rate_above));
-        msg.push_str(&make_field_handle_empty(&subscription.coupon_rate_below));
-        msg.push_str(&make_field(&subscription.exclude_convertible));
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field_handle_empty(&subscription.number_of_rows)?);
+        msg.push_str(&make_field(&subscription.instrument)?);
+        msg.push_str(&make_field(&subscription.location_code)?);
+        msg.push_str(&make_field(&subscription.scan_code)?);
+        msg.push_str(&make_field_handle_empty(&subscription.above_price)?);
+        msg.push_str(&make_field_handle_empty(&subscription.below_price)?);
+        msg.push_str(&make_field_handle_empty(&subscription.above_volume)?);
+        msg.push_str(&make_field_handle_empty(&subscription.market_cap_above)?);
+        msg.push_str(&make_field_handle_empty(&subscription.market_cap_below)?);
+        msg.push_str(&make_field(&subscription.moody_rating_above)?);
+        msg.push_str(&make_field(&subscription.moody_rating_below)?);
+        msg.push_str(&make_field(&subscription.sp_rating_above)?);
+        msg.push_str(&make_field(&subscription.sp_rating_below)?);
+        msg.push_str(&make_field(&subscription.maturity_date_above)?);
+        msg.push_str(&make_field(&subscription.maturity_date_below)?);
+        msg.push_str(&make_field_handle_empty(&subscription.coupon_rate_above)?);
+        msg.push_str(&make_field_handle_empty(&subscription.coupon_rate_below)?);
+        msg.push_str(&make_field(&subscription.exclude_convertible)?);
         msg.push_str(&make_field_handle_empty(
             &subscription.average_option_volume_above,
-        )); // srv v25 and above
-        msg.push_str(&make_field(&subscription.scanner_setting_pairs)); // srv v25 and above
-        msg.push_str(&make_field(&subscription.stock_type_filter)); // srv v27 and above
+        )?); // srv v25 and above
+        msg.push_str(&make_field(&subscription.scanner_setting_pairs)?); // srv v25 and above
+        msg.push_str(&make_field(&subscription.stock_type_filter)?); // srv v27 and above
 
         // Send scanner_subscription_filter_options parameter
         if self.server_version() >= MIN_SERVER_VER_SCANNER_GENERIC_OPTS {
+            error!("!!!!!!!! making scanner options");
             let scanner_subscription_filter = scanner_subscription_filter_options
                 .iter()
                 .map(|x| format!("{}={};", x.tag, x.value))
                 .collect::<String>();
 
-            msg.push_str(&make_field(&scanner_subscription_filter));
+            msg.push_str(&make_field(&scanner_subscription_filter)?);
         }
         // Send scanner_subscription_options parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
@@ -3779,37 +3867,40 @@ where
                 .iter()
                 .map(|x| format!("{}={};", x.tag, x.value))
                 .collect::<String>();
-            msg.push_str(&make_field(&scanner_subscription_options));
+            msg.push_str(&make_field(&scanner_subscription_options)?);
         }
-
-        self.send_request(msg.as_str())
+        error!("req_scanner_subscription");
+        error!("{}", msg);
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_scanner_subscription(&mut self, req_id: i32) {
+    pub fn cancel_scanner_subscription(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The ticker ID. Must be a unique value*/
 
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::CancelScannerSubscription as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //#########################################################################
@@ -3824,7 +3915,7 @@ where
         what_to_show: &'static str,
         use_rth: bool,
         real_time_bars_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         /*Call the req_real_time_bars() function to start receiving real time bar
         results through the realtimeBar() EWrapper function.
 
@@ -3853,19 +3944,27 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if !contract.trading_class.is_empty() {
-                self.wrapper.lock().unwrap().error(req_id, TwsError::UpdateTws.code(),
-                                                   format!("{}{}", TwsError::UpdateTws.message(), "  It does not support con_id and trading_class parameter in req_real_time_bars.").as_ref());
-                return;
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                    NO_VALID_ID,
+                    TwsError::UpdateTws.code().to_string(),
+                    format!(
+                        "{}{}",
+                        TwsError::UpdateTws.message(),
+                        " It does not support con_id and trading_class parameter in req_real_time_bars."
+                    ),
+                ));
+
+                return Err(err);
             }
         }
 
@@ -3873,31 +3972,31 @@ where
 
         let message_id: i32 = OutgoingMessageIds::ReqRealTimeBars as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
         // Send contract fields
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.con_id));
+            msg.push_str(&make_field(&contract.con_id)?);
         }
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month));
-        msg.push_str(&make_field(&contract.strike));
-        msg.push_str(&make_field(&contract.right));
-        msg.push_str(&make_field(&contract.multiplier));
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.primary_exchange));
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.last_trade_date_or_contract_month)?);
+        msg.push_str(&make_field(&contract.strike)?);
+        msg.push_str(&make_field(&contract.right)?);
+        msg.push_str(&make_field(&contract.multiplier)?);
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.primary_exchange)?);
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.trading_class));
+            msg.push_str(&make_field(&contract.trading_class)?);
         }
-        msg.push_str(&make_field(&bar_size));
-        msg.push_str(&make_field(&what_to_show));
-        msg.push_str(&make_field(&use_rth));
+        msg.push_str(&make_field(&bar_size)?);
+        msg.push_str(&make_field(&what_to_show)?);
+        msg.push_str(&make_field(&use_rth)?);
 
         // Send real_time_bars_options parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
@@ -3906,14 +4005,15 @@ where
                 .map(|x| format!("{}={};", x.tag, x.value))
                 .collect::<String>();
 
-            msg.push_str(&make_field(&real_time_bars_options_str));
+            msg.push_str(&make_field(&real_time_bars_options_str)?);
         }
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_real_time_bars(&mut self, req_id: i32) {
+    pub fn cancel_real_time_bars(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*Call the cancel_real_time_bars() function to stop receiving real time bar results.
 
         reqId:i32 - The Id that was specified in the call to req_real_time_bars(). */
@@ -3921,12 +4021,12 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 1;
@@ -3934,12 +4034,13 @@ where
         // Send req mkt data msg
         let message_id: i32 = OutgoingMessageIds::CancelRealTimeBars as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //#########################################################################
@@ -3952,7 +4053,7 @@ where
         contract: &Contract,
         report_type: &'static str,
         fundamental_data_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         /*Call this function to receive fundamental data for
         stocks. The appropriate market data subscription must be set up in
         Account Management before you can receive this data.
@@ -3978,62 +4079,62 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let version = 2;
 
         if self.server_version() < MIN_SERVER_VER_FUNDAMENTAL_DATA {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support fundamental data request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support fundamental data request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support con_id parameter in req_fundamental_data."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support con_id parameter in fundamental data request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqFundamentalData as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
         // Send contract fields
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
-            msg.push_str(&make_field(&contract.con_id));
+            msg.push_str(&make_field(&contract.con_id)?);
         }
-        msg.push_str(&make_field(&contract.symbol));
-        msg.push_str(&make_field(&contract.sec_type));
-        msg.push_str(&make_field(&contract.exchange));
-        msg.push_str(&make_field(&contract.primary_exchange));
-        msg.push_str(&make_field(&contract.currency));
-        msg.push_str(&make_field(&contract.local_symbol));
-        msg.push_str(&make_field(&report_type));
+        msg.push_str(&make_field(&contract.symbol)?);
+        msg.push_str(&make_field(&contract.sec_type)?);
+        msg.push_str(&make_field(&contract.exchange)?);
+        msg.push_str(&make_field(&contract.primary_exchange)?);
+        msg.push_str(&make_field(&contract.currency)?);
+        msg.push_str(&make_field(&contract.local_symbol)?);
+        msg.push_str(&make_field(&report_type)?);
 
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             let tags_value_count = fundamental_data_options.len();
@@ -4042,15 +4143,16 @@ where
                 .map(|x| format!("{}={};", x.tag, x.value))
                 .collect::<String>();
 
-            msg.push_str(&make_field(&tags_value_count));
-            msg.push_str(&make_field(&fund_data_opt_str));
+            msg.push_str(&make_field(&tags_value_count)?);
+            msg.push_str(&make_field(&fund_data_opt_str)?);
         }
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_fundamental_data(&mut self, req_id: i32) {
+    pub fn cancel_fundamental_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*Call this function to stop receiving fundamental data.
 
         reqId:i32 - The ID of the data request*/
@@ -4058,75 +4160,77 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_FUNDAMENTAL_DATA {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support fundamental data request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support fundamental data request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::CancelFundamentalData as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //########################################################################
     //################## News
     //#########################################################################
 
-    pub fn req_news_providers(&mut self) {
+    pub fn req_news_providers(&mut self) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_NEWS_PROVIDERS {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support news providers request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support news providers request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqNewsProviders as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -4136,39 +4240,39 @@ where
         provider_code: &'static str,
         article_id: &'static str,
         news_article_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_NEWS_ARTICLE {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support news article request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support news article request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqNewsArticle as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&provider_code));
-        msg.push_str(&make_field(&article_id));
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&provider_code)?);
+        msg.push_str(&make_field(&article_id)?);
 
         // Send news_article_options parameter
         if self.server_version() >= MIN_SERVER_VER_NEWS_QUERY_ORIGINS {
@@ -4176,10 +4280,11 @@ where
                 .iter()
                 .map(|x| format!("{}={};", x.tag, x.value))
                 .collect::<String>();
-            msg.push_str(&make_field(&news_article_options_str));
+            msg.push_str(&make_field(&news_article_options_str)?);
         }
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -4192,42 +4297,42 @@ where
         end_date_time: &'static str,
         total_results: i32,
         historical_news_options: Vec<TagValue>,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTORICAL_NEWS {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support historical news request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support historical news request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqHistoricalNews as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&con_id));
-        msg.push_str(&make_field(&provider_codes));
-        msg.push_str(&make_field(&start_date_time));
-        msg.push_str(&make_field(&end_date_time));
-        msg.push_str(&make_field(&total_results));
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&con_id)?);
+        msg.push_str(&make_field(&provider_codes)?);
+        msg.push_str(&make_field(&start_date_time)?);
+        msg.push_str(&make_field(&end_date_time)?);
+        msg.push_str(&make_field(&total_results)?);
 
         // Send historical_news_options parameter
         if self.server_version() >= MIN_SERVER_VER_NEWS_QUERY_ORIGINS {
@@ -4235,17 +4340,18 @@ where
                 .iter()
                 .map(|x| format!("{}={};", x.tag, x.value))
                 .collect::<String>();
-            msg.push_str(&make_field(&historical_news_options_str));
+            msg.push_str(&make_field(&historical_news_options_str)?);
         }
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //#########################################################################
     //################## Display Groups
     //#########################################################################
 
-    pub fn query_display_groups(&mut self, req_id: i32) {
+    pub fn query_display_groups(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*API requests used to integrate with TWS color-grouped windows (display groups).
         TWS color-grouped windows are identified by an integer number. Currently that number ranges from 1 to 7 and are mapped to specific colors, as indicated in TWS.
 
@@ -4255,41 +4361,46 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support query_display_groups request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support query_display_groups request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::QueryDisplayGroups as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn subscribe_to_group_events(&mut self, req_id: i32, group_id: i32) {
+    pub fn subscribe_to_group_events(
+        &mut self,
+        req_id: i32,
+        group_id: i32,
+    ) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The unique number associated with the notification.
         group_id:i32 - The ID of the group, currently it is a number from 1 to 7.
             This is the display group subscription request sent by the API to TWS*/
@@ -4297,43 +4408,48 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support subscribe_to_group_events request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support subscribe_to_group_events request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::SubscribeToGroupEvents as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&group_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&group_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn update_display_group(&mut self, req_id: i32, contract_info: &'static str) {
+    pub fn update_display_group(
+        &mut self,
+        req_id: i32,
+        contract_info: &'static str,
+    ) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The requestId specified in subscribe_to_group_events().
         contract_info:&'static str - The encoded value that uniquely represents the
             contract in IB. Possible values include:
@@ -4346,176 +4462,187 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support update_display_group request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support update_display_group request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::UpdateDisplayGroup as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&contract_info));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&contract_info)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn unsubscribe_from_group_events(&mut self, req_id: i32) {
+    pub fn unsubscribe_from_group_events(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The requestId specified in subscribe_to_group_events()*/
 
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.wrapper.lock().unwrap().error(
-                NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support unsubscribe_from_group_events request."
-                )
-                .as_str(),
-            );
-            return;
+                    " It does not support unsubscribe_from_group_events request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::UnsubscribeFromGroupEvents as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn verify_request(&mut self, api_name: &'static str, api_version: &'static str) {
+    pub fn verify_request(
+        &mut self,
+        api_name: &'static str,
+        api_version: &'static str,
+    ) -> Result<(), IBKRApiLibError> {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
 
-        // self.logRequest(current_fn_name()); vars())
+        // self.logRequest(current_fn_name()?); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support verification request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support verification request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if !self.extra_auth {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::BadMessage.code(),
-                format!("{}{}", TwsError::BadMessage.message(),
-                        "  Intent to authenticate needs to be expressed during initial connect request.")
-                    .as_ref(),
-            );
-            return;
+                TwsError::BadMessage.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::BadMessage.message(),
+                    " Intent to authenticate needs to be expressed during initial connect request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::VerifyRequest as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&api_name));
-        msg.push_str(&make_field(&api_version));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&api_name)?);
+        msg.push_str(&make_field(&api_version)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn verify_message(&mut self, api_data: &'static str) {
+    pub fn verify_message(&mut self, api_data: &'static str) -> Result<(), IBKRApiLibError> {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
 
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support verification request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support verification request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::VerifyMessage as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&api_data));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&api_data)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -4524,101 +4651,110 @@ where
         api_name: &'static str,
         api_version: &'static str,
         opaque_isv_key: &'static str,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
 
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support verification request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support verification request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         if !self.extra_auth {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::BadMessage.code(),
-                format!("{}{}", TwsError::BadMessage.message(),
-                        "  Intent to authenticate needs to be expressed during initial connect request.")
-                    .as_ref(),
-            );
-            return;
+                TwsError::BadMessage.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::BadMessage.message(),
+                    " Intent to authenticate needs to be expressed during initial connect request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::VerifyAndAuthRequest as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&api_name));
-        msg.push_str(&make_field(&api_version));
-        msg.push_str(&make_field(&opaque_isv_key));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&api_name)?);
+        msg.push_str(&make_field(&api_version)?);
+        msg.push_str(&make_field(&opaque_isv_key)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn verify_and_auth_message(&mut self, api_data: &'static str, xyz_response: &'static str) {
+    pub fn verify_and_auth_message(
+        &mut self,
+        api_data: &'static str,
+        xyz_response: &'static str,
+    ) -> Result<(), IBKRApiLibError> {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
 
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support verification request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support verification request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::VerifyAndAuthMessage as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&version));
-        msg.push_str(&make_field(&api_data));
-        msg.push_str(&make_field(&xyz_response));
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&api_data)?);
+        msg.push_str(&make_field(&xyz_response)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
@@ -4629,7 +4765,7 @@ where
         fut_fop_exchange: &'static str,
         underlying_sec_type: &'static str,
         underlying_con_id: i32,
-    ) {
+    ) -> Result<(), IBKRApiLibError> {
         /*Requests security pub fninition option parameters for viewing a
         contract's option chain reqId the ID chosen for the request
         underlying_symbol fut_fop_exchange The exchange on which the returned
@@ -4641,43 +4777,44 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SEC_DEF_OPT_PARAMS_REQ {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support security pub fninition option request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support security pub fninition option request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqSecDefOptParams as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&underlying_symbol));
-        msg.push_str(&make_field(&fut_fop_exchange));
-        msg.push_str(&make_field(&underlying_sec_type));
-        msg.push_str(&make_field(&underlying_con_id));
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&underlying_symbol)?);
+        msg.push_str(&make_field(&fut_fop_exchange)?);
+        msg.push_str(&make_field(&underlying_sec_type)?);
+        msg.push_str(&make_field(&underlying_con_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_soft_dollar_tiers(&mut self, req_id: i32) {
+    pub fn req_soft_dollar_tiers(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*Requests pre-pub fnined Soft Dollar Tiers. This is only supported for
         registered professional advisors and hedge and mutual funds who have
         configured Soft Dollar Tiers in Account Management*/
@@ -4685,96 +4822,103 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqSoftDollarTiers as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&req_id));
+        msg.push_str(&make_field(&req_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_family_codes(&mut self) {
+    pub fn req_family_codes(&mut self) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_FAMILY_CODES {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support family codes request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " It does not support family codes request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqFamilyCodes as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_matching_symbols(&mut self, req_id: i32, pattern: &'static str) {
+    pub fn req_matching_symbols(
+        &mut self,
+        req_id: i32,
+        pattern: &'static str,
+    ) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_REQ_MATCHING_SYMBOLS {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::UpdateTws.code(),
+                TwsError::UpdateTws.code().to_string(),
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    "  It does not support matching symbols request."
-                )
-                .as_ref(),
-            );
-            return;
+                    " t does not support matching symbols request."
+                ),
+            ));
+
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqMatchingSymbols as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&req_id));
-        msg.push_str(&make_field(&pattern));
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&pattern)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn req_completed_orders(&mut self, api_only: bool) {
+    pub fn req_completed_orders(&mut self, api_only: bool) -> Result<(), IBKRApiLibError> {
         /*Call this function to request the completed orders. If api_only parameter
         is true, then only completed orders placed from API are requested.
         Each completed order will be fed back through the
@@ -4783,20 +4927,21 @@ where
         // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
-            self.wrapper.lock().unwrap().error(
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
-                TwsError::NotConnected.code(),
-                TwsError::NotConnected.message(),
-            );
-            return;
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
         }
 
         let message_id: i32 = OutgoingMessageIds::ReqCompletedOrders as i32;
         let mut msg = "".to_string();
-        msg.push_str(&make_field(&message_id));
+        msg.push_str(&make_field(&message_id)?);
 
-        msg.push_str(&make_field(&api_only));
+        msg.push_str(&make_field(&api_only)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 }

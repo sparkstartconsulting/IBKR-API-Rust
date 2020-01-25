@@ -3,6 +3,8 @@ Port of Interactive Broker's trading API written in Rust (API_Version=9.76.01)
 
 This is a derivative work of the Interactive Brokers API and falls under their non-commercial or commercial licenses.
 
+Please see the latest IB Tws Api documentation here: http://interactivebrokers.github.io/tws-api/market_depth.html#request
+
 
 DISCLAIMER:
 

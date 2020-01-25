@@ -728,7 +728,7 @@ impl Display for Order {
             if !self.conditions.is_empty() {
                 self.conditions
                     .iter()
-                    .map(|x| format!("{}|", x.make_fields().as_slice().join(",")))
+                    .map(|x| format!("{}|", x.make_fields().unwrap().as_slice().join(",")))
                     .collect::<String>()
             } else {
                 "".to_string()

@@ -24,8 +24,8 @@ use twsapi::core::client::EClient;
 use twsapi::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, MarketDataTypeEnum, NewsProvider,
-    PriceIncrement, SmartComponent, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType,
-    UNSET_DOUBLE,
+    PriceIncrement, SmartComponent, TagValue, TickAttrib, TickAttribBidAsk, TickAttribLast,
+    TickType, UNSET_DOUBLE,
 };
 use twsapi::core::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
@@ -38,6 +38,7 @@ use twsapi::core::order_condition::{PriceCondition, TriggerMethod};
 use twsapi::core::wrapper::Wrapper;
 use twsapi::examples::contract_samples;
 use twsapi::examples::order_samples;
+use twsapi::examples::scanner_subscription_samples;
 
 //==================================================================================================
 /// Example implementation of the Wrapper callback trait.  Just logs callback methods
@@ -57,12 +58,19 @@ impl TestWrapper {
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn start_requests(&self) -> Result<(), IBKRApiLibError> {
+    pub fn start_requests(&mut self) -> Result<(), IBKRApiLibError> {
         //self.order_operations_req();
         //self.what_if_order_operations();
         //self.account_operations_req();
         //self.market_data_type_operations();
-        self.tick_data_operations_req();
+        //self.tick_data_operations_req();
+        //self.market_depth_operations_req();
+        //self.real_time_bars_operations_req();
+        //self.historical_data_operations_req();
+        //self.options_operations_req();
+        //self.market_scanners_perations_req();
+        //self.fundamentals_operations_req();
+        self.contract_operations();
         Ok(())
     }
 
@@ -190,7 +198,7 @@ impl TestWrapper {
             .unwrap()
             .req_real_time_bars(
                 3001,
-                contract_samples::simple_future().borrow(),
+                contract_samples::us_stock_at_smart().borrow(),
                 1,
                 "TRADES",
                 true,
@@ -1103,7 +1111,7 @@ impl TestWrapper {
             .unwrap()
             .req_head_time_stamp(
                 4101,
-                contract_samples::us_stock_at_smart().borrow(),
+                contract_samples::simple_future().borrow(),
                 "TRADES",
                 0,
                 1,
@@ -1138,7 +1146,7 @@ impl TestWrapper {
             .unwrap()
             .req_historical_data(
                 4103,
-                contract_samples::european_stock().borrow(),
+                contract_samples::simple_future().borrow(),
                 query_time.clone(),
                 "10 D".parse().unwrap(),
                 "1 min".parse().unwrap(),
@@ -1171,12 +1179,17 @@ impl TestWrapper {
     fn market_data_type_operations(&self) {
         // ! [reqmarketdatatype]
         // Switch to live (1) frozen (2) delayed (3) delayed frozen (4).
-        self.client
+        let result = self
+            .client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
-            .req_market_data_type(MarketDataTypeEnum::Delayed as i32)
+            .req_market_data_type(MarketDataTypeEnum::Delayed as i32);
+
+        if result.is_err() {
+            error!("{}", result.unwrap_err())
+        }
         // ! [reqmarketdatatype]
     }
 
@@ -1249,7 +1262,7 @@ impl TestWrapper {
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1005,
             contract_samples::us_stock_at_smart().borrow(),
-            "mdoff,292:BRFG",
+            "100",
             false,
             false,
             vec![],
@@ -1378,6 +1391,301 @@ impl TestWrapper {
             .unwrap()
             .req_smart_components(1018, "a6");
         // ! [reqsmartcomponents]
+    }
+
+    fn market_depth_operations_req(&self) {
+        // Requesting the Deep Book
+        // ! [reqmarketdepth]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_depth(
+            2001,
+            contract_samples::eur_gbp_fx().borrow(),
+            5,
+            false,
+            vec![],
+        );
+        // ! [reqmarketdepth]
+
+        // ! [reqmarketdepth]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_depth(
+            2002,
+            contract_samples::us_stock_at_smart().borrow(),
+            5,
+            false,
+            vec![],
+        );
+        // ! [reqmarketdepth]
+
+        // Request list of exchanges sending market depth to UpdateMktDepthL2()
+        // ! [reqMktDepthExchanges]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_mkt_depth_exchanges();
+        // ! [reqMktDepthExchanges]
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn options_operations_req(&self) {
+        // ! [reqsecdefoptparams]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_sec_def_opt_params(0, "IBM", "", "STK", 8314);
+        // ! [reqsecdefoptparams]
+
+        // Calculating implied volatility
+        // ! [calculateimpliedvolatility]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .calculate_implied_volatility(
+                5001,
+                contract_samples::option_at_box(),
+                5.0,
+                85.0,
+                vec![],
+            );
+        // ! [calculateimpliedvolatility]
+
+        // Calculating option's price
+        // ! [calculateoptionprice]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .calculate_option_price(
+                5002,
+                contract_samples::option_at_box().borrow(),
+                0.22,
+                85.0,
+                vec![],
+            );
+        // ! [calculateoptionprice]
+
+        // Exercising options
+        // ! [exercise_options]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .exercise_options(
+                5003,
+                contract_samples::option_with_trading_class().borrow(),
+                1,
+                1,
+                &self.account,
+                1,
+            );
+    }
+
+    fn market_scanners_perations_req(&mut self) {
+        // Requesting list of valid scanner parameters which can be used in TWS
+        // ! [reqscannerparameters]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_scanner_parameters();
+        // ! [reqscannerparameters]
+
+        // Triggering a scanner subscription
+        // ! [reqscannersubscription]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_scanner_subscription(
+                7001,
+                scanner_subscription_samples::high_opt_volume_pcratio_usindexes(),
+                vec![],
+                vec![],
+            );
+        //
+        //        // Generic Filters
+        let mut tagvalues = vec![];
+        tagvalues.push(TagValue::new(
+            "usdMarketCapAbove".to_string(),
+            "10000".to_string(),
+        ));
+        tagvalues.push(TagValue::new(
+            "optVolumeAbove".to_string(),
+            "1000".to_string(),
+        ));
+        tagvalues.push(TagValue::new(
+            "avgVolumeAbove".to_string(),
+            "10000".to_string(),
+        ));
+
+        let result = self
+            .client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_scanner_subscription(
+                7002,
+                scanner_subscription_samples::hot_usstk_by_volume(),
+                vec![],
+                tagvalues,
+            ); // requires TWS v973 +
+        if result.is_err() {
+            match result.unwrap_err() {
+                IBKRApiLibError::ApiError(err) => self.error(
+                    err.req_id,
+                    err.code.as_str().parse().unwrap(),
+                    err.description.as_ref(),
+                ),
+                _ => {}
+            }
+        }
+        // ! [reqscannersubscription]
+
+        // ! [reqcomplexscanner]
+        let aaplcon_idtag = vec![TagValue::new(
+            "underConID".to_string(),
+            "265598".to_string(),
+        )];
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_scanner_subscription(
+                7003,
+                scanner_subscription_samples::complex_orders_and_trades(),
+                vec![],
+                aaplcon_idtag,
+            ); // requires TWS v975 +
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn fundamentals_operations_req(&self) {
+        // Requesting Fundamentals
+        // ! [reqfundamentaldata]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_fundamental_data(
+                8001,
+                contract_samples::us_stock_at_smart().borrow(),
+                "ReportsFinSummary",
+                vec![],
+            );
+        // ! [reqfundamentaldata]
+
+        // ! [fundamentalexamples]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_fundamental_data(
+                8002,
+                contract_samples::us_stock_at_smart().borrow(),
+                "ReportSnapshot",
+                vec![],
+            ); // for company overview
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_fundamental_data(
+                8003,
+                contract_samples::us_stock_at_smart().borrow(),
+                "ReportRatios",
+                vec![],
+            ); // for financial ratios
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_fundamental_data(
+                8004,
+                contract_samples::us_stock_at_smart().borrow(),
+                "ReportsFinStatements",
+                vec![],
+            ); // for financial statements
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_fundamental_data(
+                8005,
+                contract_samples::us_stock_at_smart().borrow(),
+                "RESC",
+                vec![],
+            ); // for analyst estimates
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_fundamental_data(
+                8006,
+                contract_samples::us_stock_at_smart().borrow(),
+                "CalendarReport",
+                vec![],
+            );
+        // for company calendar
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn contract_operations(&self) {
+        // ! [reqcontractdetails]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(210, contract_samples::option_for_query().borrow());
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(211, contract_samples::eur_gbp_fx().borrow());
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(212, contract_samples::bond().borrow());
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(213, contract_samples::futures_on_options().borrow());
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(214, contract_samples::simple_future().borrow());
+        // ! [reqcontractdetails]
+
+        // ! [reqmatchingsymbols]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_matching_symbols(211, "IB");
     }
 }
 
