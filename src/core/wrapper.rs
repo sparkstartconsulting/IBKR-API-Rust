@@ -13,14 +13,18 @@ use crate::core::execution::Execution;
 use crate::core::order::{Order, OrderState, SoftDollarTier};
 
 pub trait Wrapper: Send + Sync + 'static {
+    //----------------------------------------------------------------------------------------------
     /// This event is called when there is an error with the
     /// communication or when TWS wants to send a message to the core.
     fn error(&mut self, req_id: i32, error_code: i32, error_string: &str);
 
+    //----------------------------------------------------------------------------------------------
     fn win_error(&mut self, text: &str, last_error: i32);
 
+    //----------------------------------------------------------------------------------------------
     fn connect_ack(&mut self);
 
+    //----------------------------------------------------------------------------------------------
     /// TWS sends a market_data_type(type) callback to the API, where
     /// type is set to Frozen or RealTime, to announce that market data has been
     /// switched between frozen and real-time. This notification occurs only
@@ -30,20 +34,26 @@ pub trait Wrapper: Send + Sync + 'static {
     /// different schedule.
     fn market_data_type(&mut self, req_id: i32, market_data_type: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// Market data tick price callback. Handles all price related ticks.
     fn tick_price(&mut self, req_id: i32, tick_type: TickType, price: f64, attrib: TickAttrib);
 
+    //----------------------------------------------------------------------------------------------
     ///Market data tick size callback. Handles all size-related ticks.
     fn tick_size(&mut self, req_id: i32, tick_type: TickType, size: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// When requesting market data snapshots, this market will indicate the
     /// snapshot reception is finished.
     fn tick_snapshot_end(&mut self, req_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     fn tick_generic(&mut self, req_id: i32, tick_type: TickType, value: f64);
 
+    //----------------------------------------------------------------------------------------------
     fn tick_string(&mut self, req_id: i32, tick_type: TickType, value: &str);
 
+    //----------------------------------------------------------------------------------------------
     ///market data call back for Exchange for Physical
     ///        tickerId -      The request's identifier.
     ///        tick_type -      The type of tick being received.
@@ -71,6 +81,7 @@ pub trait Wrapper: Send + Sync + 'static {
         dividends_to_last_trade_date: f64,
     );
 
+    //----------------------------------------------------------------------------------------------
     ///        This event is called whenever the status of an order changes. It is
     //        also fired after reconnecting to TWS if the core has any open orders.
     //
@@ -108,6 +119,7 @@ pub trait Wrapper: Send + Sync + 'static {
         mkt_cap_price: f64,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// This function is called to feed in open orders.
     //
     //        orderID: i32 - The order ID assigned by TWS. Use to cancel or
@@ -124,17 +136,21 @@ pub trait Wrapper: Send + Sync + 'static {
         order_state: OrderState,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// This is called at the end of a given request for open orders.
     fn open_order_end(&mut self);
 
+    //----------------------------------------------------------------------------------------------
     /// This function is called when TWS closes the sockets
     /// connection with the ActiveX control, or when TWS is shut down.
     fn connection_closed(&mut self);
 
+    //----------------------------------------------------------------------------------------------
     ///  This function is called only when ReqAccountUpdates on
     //        EEClientSocket object has been called.
     fn update_account_value(&mut self, key: &str, val: &str, currency: &str, account_name: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// This function is called only when req_account_updates on
     //        EEClientSocket object has been called.
     fn update_portfolio(
@@ -149,36 +165,45 @@ pub trait Wrapper: Send + Sync + 'static {
         account_name: &str,
     );
 
+    //----------------------------------------------------------------------------------------------
     fn update_account_time(&mut self, time_stamp: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// This is called after a batch update_account_value() and
     //        update_portfolio() is sent.
     fn account_download_end(&mut self, account_name: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// Receives next valid order id.
     fn next_valid_id(&mut self, order_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// Receives the full contract's definitions. This method will return all
     //        contracts matching the requested via EEClientSocket::req_contract_details.
     //        For example, one can obtain the whole option chain with it.
     fn contract_details(&mut self, req_id: i32, contract_details: ContractDetails);
 
+    //----------------------------------------------------------------------------------------------
     /// This function is called when req_contract_details function
     /// has been called for bonds.
     fn bond_contract_details(&mut self, req_id: i32, contract_details: ContractDetails);
 
+    //----------------------------------------------------------------------------------------------
     /// This function is called once all contract details for a given
     //  request are received. This helps to define the end of an option chain.
     fn contract_details_end(&mut self, req_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// This event is fired when the req_executions() functions is
     /// invoked, or when an order is filled.
     fn exec_details(&mut self, req_id: i32, contract: Contract, execution: Execution);
 
+    //----------------------------------------------------------------------------------------------
     /// This function is called once all executions have been sent to
     /// a core in response to req_executions().
     fn exec_details_end(&mut self, req_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// Returns the order book.
     ///
     ///        tickerId -  the request's identifier
@@ -200,6 +225,7 @@ pub trait Wrapper: Send + Sync + 'static {
         size: i32,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// Returns the order book.
     ///
     ///        tickerId -  the request's identifier
@@ -225,6 +251,7 @@ pub trait Wrapper: Send + Sync + 'static {
         is_smart_depth: bool,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// provides IB's bulletins
     ///        msgId - the bulletin's identifier
     ///        msgType - one of: 1 - Regular news bulletin 2 - Exchange no longer
@@ -239,9 +266,11 @@ pub trait Wrapper: Send + Sync + 'static {
         origin_exch: &str,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// Receives a comma-separated string with the managed account ids.
     fn managed_accounts(&mut self, accounts_list: &str);
 
+    //----------------------------------------------------------------------------------------------
     ///  receives the Financial Advisor's configuration available in the TWS
     ///
     ///        faDataType - one of:
@@ -254,6 +283,7 @@ pub trait Wrapper: Send + Sync + 'static {
     ///        faXmlData -  the xml-formatted configuration
     fn receive_fa(&mut self, fa_data: FaDataType, cxml: &str);
 
+    //----------------------------------------------------------------------------------------------
     ///  returns the requested historical data bars
     ///
     ///        req_id - the request's identifier
@@ -270,15 +300,18 @@ pub trait Wrapper: Send + Sync + 'static {
     ///        hasGaps  -indicates if the data has gaps or not.
     fn historical_data(&mut self, req_id: i32, bar: BarData);
 
+    //----------------------------------------------------------------------------------------------
     /// Marks the ending of the historical bars reception.
     fn historical_data_end(&mut self, req_id: i32, start: &str, end: &str);
 
+    //----------------------------------------------------------------------------------------------
     ///  Provides the xml-formatted parameters available to create a market
     ///        scanner.
     ///
     ///        xml -   the xml-formatted string with the available parameters.
     fn scanner_parameters(&mut self, xml: &str);
 
+    //----------------------------------------------------------------------------------------------
     ///  Provides the data resulting from the market scanner request.
     ///
     ///        reqid - the request's identifier.
@@ -299,11 +332,13 @@ pub trait Wrapper: Send + Sync + 'static {
         legs_str: &str,
     );
 
+    //----------------------------------------------------------------------------------------------
     ///  Indicates the scanner data reception has terminated.
     ///
     ///        req_id - the request's identifier
     fn scanner_data_end(&mut self, req_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     ///  Updates the real time 5 seconds bars
     ///
     ///        req_id - the request's identifier
@@ -330,15 +365,18 @@ pub trait Wrapper: Send + Sync + 'static {
         count: i32,
     );
 
+    //----------------------------------------------------------------------------------------------
     ///  Server's current time. This method will receive IB server's system
     ///  time resulting after the invokation of reqCurrentTime.
     fn current_time(&mut self, time: i64);
 
+    //----------------------------------------------------------------------------------------------
     /// This function is called to receive fundamental
     /// market data. The appropriate market data subscription must be set
     /// up in Account Management before you can receive this data.
     fn fundamental_data(&mut self, req_id: i32, data: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// Upon accepting a Delta-Neutral RFQ(request for quote), the
     /// server sends a delta_neutral_validation() message with the DeltaNeutralContract
     /// structure. If the delta and price fields are empty in the original
@@ -351,19 +389,23 @@ pub trait Wrapper: Send + Sync + 'static {
         delta_neutral_contract: DeltaNeutralContract,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// The commission_report() callback is triggered as follows:
     /// immediately after a trade execution
     /// by calling req_executions().
     fn commission_report(&mut self, commission_report: CommissionReport);
 
+    //----------------------------------------------------------------------------------------------
     /// This event returns real-time positions for all accounts in
     /// response to the reqPositions() method.
     fn position(&mut self, account: &str, contract: Contract, position: f64, avg_cost: f64);
 
+    //----------------------------------------------------------------------------------------------
     /// This is called once all position data for a given request are
     //  received and functions as an end marker for the position() data.
     fn position_end(&mut self);
 
+    //----------------------------------------------------------------------------------------------
     /// Returns the data from the TWS Account Window Summary tab in
     /// response to req_account_summary().
     fn account_summary(
@@ -375,19 +417,25 @@ pub trait Wrapper: Send + Sync + 'static {
         currency: &str,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// This method is called once all account summary data for a
     //  given request are received.
     fn account_summary_end(&mut self, req_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// Deprecated Function
     fn verify_message_api(&mut self, api_data: &str);
 
+    //----------------------------------------------------------------------------------------------
     fn verify_completed(&mut self, is_successful: bool, error_text: &str);
 
+    //----------------------------------------------------------------------------------------------
     fn verify_and_auth_message_api(&mut self, api_data: &str, xyz_challange: &str);
 
+    //----------------------------------------------------------------------------------------------
     fn verify_and_auth_completed(&mut self, is_successful: bool, error_text: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// This callback is a one-time response to query_display_groups().
     ///
     ///        req_id - The requestId specified in query_display_groups().
@@ -397,6 +445,7 @@ pub trait Wrapper: Send + Sync + 'static {
     ///            new group; sorting can change though).
     fn display_group_list(&mut self, req_id: i32, groups: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// This is sent by TWS to the API core once after receiving
     ///        the subscription request subscribe_to_group_events(), and will be sent
     ///        again if the selected contract in the subscribed display group has
@@ -411,6 +460,7 @@ pub trait Wrapper: Send + Sync + 'static {
     ///            combo = if any combo is selected.
     fn display_group_updated(&mut self, req_id: i32, contract_info: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// same as position() except it can be for a certain
     /// account/model
     fn position_multi(
@@ -423,10 +473,12 @@ pub trait Wrapper: Send + Sync + 'static {
         avg_cost: f64,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// same as position_end() except it can be for a certain
     /// account/model
     fn position_multi_end(&mut self, req_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// same as update_account_value() except it can be for a certain
     /// account/model
     fn account_update_multi(
@@ -439,10 +491,12 @@ pub trait Wrapper: Send + Sync + 'static {
         currency: &str,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// same as account_download_end() except it can be for a certain
     ///  account/model
     fn account_update_multi_end(&mut self, req_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// This function is called when the market in an option or its
     ///        underlier moves. TWS's option model volatilities, prices, and
     ///        deltas, along with the present value of dividends expected on that
@@ -461,6 +515,7 @@ pub trait Wrapper: Send + Sync + 'static {
         und_price: f64,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// Returns the option chain for an underlying on an exchange
     //  specified in req_sec_def_opt_params There will be multiple callbacks to
     //  security_definition_option_parameter if multiple exchanges are specified
@@ -484,11 +539,13 @@ pub trait Wrapper: Send + Sync + 'static {
         strikes: HashSet<BigDecimal>,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// Called when all callbacks to security_definition_option_parameter are complete
     ///
     /// req_id - the ID used in the call to security_definition_option_parameter
     fn security_definition_option_parameter_end(&mut self, req_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// Called when receives Soft Dollar Tier configuration information
     ///
     ///        req_id - The request ID used in the call to EEClient::req_soft_dollar_tiers
@@ -496,15 +553,19 @@ pub trait Wrapper: Send + Sync + 'static {
     ///            Tiers information
     fn soft_dollar_tiers(&mut self, req_id: i32, tiers: Vec<SoftDollarTier>);
 
+    //----------------------------------------------------------------------------------------------
     /// returns array of family codes
     fn family_codes(&mut self, family_codes: Vec<FamilyCode>);
 
+    //----------------------------------------------------------------------------------------------
     /// returns array of sample contract descriptions
     fn symbol_samples(&mut self, req_id: i32, contract_descriptions: Vec<ContractDescription>);
 
+    //----------------------------------------------------------------------------------------------
     /// returns array of exchanges which return depth to UpdateMktDepthL2
     fn mkt_depth_exchanges(&mut self, depth_mkt_data_descriptions: Vec<DepthMktDataDescription>);
 
+    //----------------------------------------------------------------------------------------------
     /// returns news headlines
     fn tick_news(
         &mut self,
@@ -516,9 +577,11 @@ pub trait Wrapper: Send + Sync + 'static {
         extra_data: &str,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// returns exchange component mapping
     fn smart_components(&mut self, req_id: i32, smart_components: Vec<SmartComponent>);
 
+    //----------------------------------------------------------------------------------------------
     /// returns exchange map of a particular contract
     fn tick_req_params(
         &mut self,
@@ -528,12 +591,15 @@ pub trait Wrapper: Send + Sync + 'static {
         snapshot_permissions: i32,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// returns available, subscribed API news providers
     fn news_providers(&mut self, news_providers: Vec<NewsProvider>);
 
+    //----------------------------------------------------------------------------------------------
     /// returns body of news article
     fn news_article(&mut self, request_id: i32, article_type: i32, article_text: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// returns historical news headlines
     fn historical_news(
         &mut self,
@@ -544,30 +610,39 @@ pub trait Wrapper: Send + Sync + 'static {
         headline: &str,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// signals end of historical news
     fn historical_news_end(&mut self, request_id: i32, has_more: bool);
 
+    //----------------------------------------------------------------------------------------------
     /// returns earliest available data of a type of data for a particular contract
     fn head_timestamp(&mut self, req_id: i32, head_timestamp: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// returns histogram data for a contract
     fn histogram_data(&mut self, req_id: i32, items: Vec<HistogramData>);
 
+    //----------------------------------------------------------------------------------------------
     /// returns updates in real time when keepUpToDate is set to True
     fn historical_data_update(&mut self, req_id: i32, bar: BarData);
 
+    //----------------------------------------------------------------------------------------------
     /// returns reroute cfd contract information for market data request
     fn reroute_mkt_data_req(&mut self, req_id: i32, con_id: i32, exchange: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// returns reroute cfd contract information for market depth request
     fn reroute_mkt_depth_req(&mut self, req_id: i32, con_id: i32, exchange: &str);
 
+    //----------------------------------------------------------------------------------------------
     /// returns minimum price increment structure for a particular market rule ID
     fn market_rule(&mut self, market_rule_id: i32, price_increments: Vec<PriceIncrement>);
 
+    //----------------------------------------------------------------------------------------------
     /// returns the daily PnL for the account
     fn pnl(&mut self, req_id: i32, daily_pn_l: f64, unrealized_pn_l: f64, realized_pn_l: f64);
 
+    //----------------------------------------------------------------------------------------------
     /// returns the daily PnL for a single position in the account
     fn pnl_single(
         &mut self,
@@ -579,9 +654,11 @@ pub trait Wrapper: Send + Sync + 'static {
         value: f64,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// returns historical tick data when whatToShow=MIDPOINT
     fn historical_ticks(&mut self, req_id: i32, ticks: Vec<HistoricalTick>, done: bool);
 
+    //----------------------------------------------------------------------------------------------
     /// returns historical tick data when whatToShow=BID_ASK
     fn historical_ticks_bid_ask(
         &mut self,
@@ -590,8 +667,11 @@ pub trait Wrapper: Send + Sync + 'static {
         done: bool,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// returns historical tick data when whatToShow=TRADES
     fn historical_ticks_last(&mut self, req_id: i32, ticks: Vec<HistoricalTickLast>, done: bool);
+
+    //----------------------------------------------------------------------------------------------
     /// returns tick-by-tick data for tickType = "Last" or "AllLast"
     fn tick_by_tick_all_last(
         &mut self,
@@ -605,6 +685,7 @@ pub trait Wrapper: Send + Sync + 'static {
         special_conditions: &str,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// returns tick-by-tick data for tickType = "BidAsk"
     fn tick_by_tick_bid_ask(
         &mut self,
@@ -617,12 +698,15 @@ pub trait Wrapper: Send + Sync + 'static {
         tick_attrib_bid_ask: TickAttribBidAsk,
     );
 
+    //----------------------------------------------------------------------------------------------
     /// returns tick-by-tick data for tickType = "MidPoint"
     fn tick_by_tick_mid_point(&mut self, req_id: i32, time: i64, mid_point: f64);
 
+    //----------------------------------------------------------------------------------------------
     /// returns order_bound notification
     fn order_bound(&mut self, req_id: i32, api_client_id: i32, api_order_id: i32);
 
+    //----------------------------------------------------------------------------------------------
     /// This function is called to feed in completed orders.
     ///
     ///        contract: Contract - The Contract class attributes describe the contract.
@@ -631,6 +715,7 @@ pub trait Wrapper: Send + Sync + 'static {
     ///
     fn completed_order(&mut self, contract: Contract, order: Order, order_state: OrderState);
 
+    //----------------------------------------------------------------------------------------------
     /// This is called at the end of a given request for completed orders.
     fn completed_orders_end(&mut self);
 }

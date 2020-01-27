@@ -91,17 +91,15 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn account_operations_req(&self) {
         // Requesting managed accounts
-        // ! [reqmanagedaccts]
+
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_managed_accts();
-        // ! [reqmanagedaccts]
 
         // Requesting family codes
-        // ! [reqfamilycodes]
         {
             self.client
                 .as_ref()
@@ -110,10 +108,8 @@ impl TestWrapper {
                 .unwrap()
                 .req_family_codes();
         }
-        // ! [reqfamilycodes]
-        //
+
         // Requesting accounts' summary
-        // ! [reqaaccountsummary]
         {
             let all_tags = AccountSummaryTags::AllTags.to_string();
             self.client
@@ -123,9 +119,7 @@ impl TestWrapper {
                 .unwrap()
                 .req_account_summary(9001, "All", all_tags.as_str());
         }
-        //        // ! [reqaaccountsummary]
-        //
-        //        // ! [reqaaccountsummaryledger]
+
         {
             self.client
                 .as_ref()
@@ -134,9 +128,7 @@ impl TestWrapper {
                 .unwrap()
                 .req_account_summary(9002, "All", "$LEDGER");
         }
-        //        // ! [reqaaccountsummaryledger]
-        //
-        //        // ! [reqaaccountsummaryledgercurrency]
+
         {
             self.client
                 .as_ref()
@@ -145,28 +137,21 @@ impl TestWrapper {
                 .unwrap()
                 .req_account_summary(9003, "All", "$LEDGER:EUR");
         }
-        //        // ! [reqaaccountsummaryledgercurrency]
-        //
-        //        // ! [reqaaccountsummaryledgerall]
+
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_account_summary(9004, "All", "$LEDGER:ALL");
-        //        // ! [reqaaccountsummaryledgerall]
-        //
-        //        // Subscribing to an account's information.Only one at a time!
-        //        // ! [reqaaccountupdates]
+
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_account_updates(true, self.account.as_str());
-        //        // ! [reqaaccountupdates]
-        //
-        //        // ! [reqaaccountupdatesmulti]
+
         self.client
             .as_ref()
             .unwrap()
@@ -174,29 +159,25 @@ impl TestWrapper {
             .unwrap()
             .req_account_updates_multi(9005, self.account.as_str(), "", true);
 
-        //        // Requesting all accounts' positions.
+        // Requesting all accounts' positions.
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_positions();
-        //        // ! [reqpositions]
-        //
-        //        // ! [reqpositionsmulti]
+
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_positions_multi(9006, &self.account, "");
-        //        // ! [reqpositionsmulti]
     }
 
     //----------------------------------------------------------------------------------------------
     pub fn real_time_bars_operations_req(&self) {
         // Requesting real time bars
-        // // ![reqrealtimebars]
         self.client
             .as_ref()
             .unwrap()
@@ -210,24 +191,20 @@ impl TestWrapper {
                 true,
                 vec![],
             );
-        // // ![reqrealtimebars]
     }
 
     //----------------------------------------------------------------------------------------------
     fn order_operations_req(&mut self) {
         // Requesting the next valid id
-        // ! [reqids]
         // The parameter is always ignored.
         info!("order_operations_req");
-        //        {
-        //            info!("req_ids...");
-        //            self.client.as_ref().unwrap().lock().unwrap().req_ids(-1);
-        //            info!("finished req_ids...");
-        //        }
-        // ! [reqids]
+        {
+            info!("req_ids...");
+            self.client.as_ref().unwrap().lock().unwrap().req_ids(-1);
+            info!("finished req_ids...");
+        }
 
         // Requesting all open orders
-        // ! [reqallopenorders]
         {
             info!("req_all_open_orders...");
             self.client
@@ -237,10 +214,8 @@ impl TestWrapper {
                 .unwrap()
                 .req_all_open_orders();
         }
-        // ! [reqallopenorders]
 
         // Taking over orders to be submitted via TWS
-        // ! [reqautoopenorders]
         info!("req_auto_open_orders...");
         self.client
             .as_ref()
@@ -248,10 +223,8 @@ impl TestWrapper {
             .lock()
             .unwrap()
             .req_auto_open_orders(true);
-        // ! [reqautoopenorders]
 
         // Requesting this API client's orders
-        // ! [reqopenorders]
         info!("req_open_orders...");
         self.client
             .as_ref()
@@ -259,7 +232,6 @@ impl TestWrapper {
             .lock()
             .unwrap()
             .req_open_orders();
-        // ! [reqopenorders]
 
         // Placing/ modifying an order - remember to ALWAYS increment the
         // nextValidId after placing an order so it can be used for the next one!
@@ -267,7 +239,6 @@ impl TestWrapper {
         // order ID must also be greater than all order IDs returned for orders
         // to orderStatus and openOrder to this client.
 
-        // ! [order_submission]
         {
             let next_id = self.next_order_id();
             info!("Placing order... {}", next_id);
@@ -279,11 +250,6 @@ impl TestWrapper {
             );
         }
 
-        //thread::sleep(Duration::from_secs(2));
-
-        //        // ! [order_submission]
-
-        // ! [faorderoneaccount]
         let mut fa_order_one_account = order_samples::market_order("BUY", 100.0);
         // Specify the Account Number directly
         fa_order_one_account.account = "DU228250".to_string();
@@ -296,9 +262,6 @@ impl TestWrapper {
             );
         }
 
-        // ! [faorderoneaccount]
-        //
-        //        // ! [faordergroupequalquantity]
         let mut fa_order_group_eq = order_samples::limit_order("SELL", 200.0, 2000.0);
         fa_order_group_eq.fa_group = "Group_Equal_Quantity".to_string();
         fa_order_group_eq.fa_method = "EqualQuantity".to_string();
@@ -309,9 +272,7 @@ impl TestWrapper {
             &contract_samples::simple_future(),
             fa_order_group_eq.borrow(),
         );
-        //        // ! [faordergroupequalquantity]
-        //
-        //        // ! [faordergrouppctchange]
+
         let mut fa_order_group_pc = order_samples::market_order("BUY", 0.0);
         // You should not specify any order quantity for PctChange allocation method
         fa_order_group_pc.fa_group = "Pct_Change".to_string();
@@ -324,9 +285,7 @@ impl TestWrapper {
             &contract_samples::eur_gbp_fx(),
             fa_order_group_pc.borrow(),
         );
-        //        // ! [faordergrouppctchange]
-        //
-        //        // ! [faorderprofile]
+
         let mut fa_order_profile = order_samples::limit_order("BUY", 200.0, 100.0);
         fa_order_profile.fa_profile = "Percent_60_40".to_string();
 
@@ -336,9 +295,7 @@ impl TestWrapper {
             &contract_samples::european_stock(),
             fa_order_profile.borrow(),
         );
-        //        // ! [faorderprofile]
-        //
-        //        // ! [modelorder]
+
         let mut model_order = order_samples::limit_order("BUY", 200.0, 100.0);
         model_order.account = "DF12345".to_string();
         model_order.model_code = "Technology".to_string(); // model for tech stocks first created in TWS
@@ -349,8 +306,6 @@ impl TestWrapper {
             &contract_samples::usstock().borrow(),
             model_order.borrow(),
         );
-        //        // ! [modelorder]
-        //
 
         let next_id = self.next_order_id();
         self.client.as_ref().unwrap().lock().unwrap().place_order(
@@ -565,49 +520,39 @@ impl TestWrapper {
         self.oca_sample();
 
         // Request the day's executions
-        // ! [reqexecutions]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_executions(10001, ExecutionFilter::default().borrow());
-        // ! [reqexecutions]
-        //
-        //        // Requesting completed orders
-        //        // ! [reqcompletedorders]
+
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_completed_orders(false);
-        // ! [reqcompletedorders]
     }
 
     //----------------------------------------------------------------------------------------------
     fn order_operations_cancel(&mut self) {
         if self.next_order_id != -1 {
-            // ! [cancelorder]
             self.client
                 .as_ref()
                 .unwrap()
                 .lock()
                 .unwrap()
                 .cancel_order(self.next_order_id);
-            // ! [cancelorder]
 
             // Cancel all orders for all accounts
-            // ! [reqglobalcancel]
             self.req_global_cancel();
-            // ! [reqglobalcancel]
         }
     }
 
     //----------------------------------------------------------------------------------------------
     fn bracket_sample(&mut self) -> Result<(), IBKRApiLibError> {
         // BRACKET ORDER
-        // ! [bracketsubmit]
         let bracket =
             order_samples::bracket_order(self.next_order_id(), "BUY", 100.0, 30.0, 40.0, 20.0);
 
@@ -629,7 +574,7 @@ impl TestWrapper {
             bracket.2.borrow(),
         );
         self.next_order_id();
-        // ! [bracketsubmit]
+
         Ok(())
     }
 
@@ -677,31 +622,28 @@ impl TestWrapper {
             mkt.borrow(),
         );
 
-        // ! [order_conditioning_activate]
-
         // Conditions can make the order active or cancel it. Only LMT orders can be conditionally canceled.
-        // ! [order_conditioning_cancel]
-        //        let mut lmt = order_samples::limit_order("BUY", 100.0, 20.0);
-        //        // The active order will be cancelled if conditioning criteria is met
-        //        lmt.conditions_cancel_order = true;
-        //        lmt.conditions
-        //            .push(twsapi::core::order_condition::OrderConditionEnum::Price(
-        //                order_samples::price_condition(
-        //                    TriggerMethod::Last as i32,
-        //                    208813720,
-        //                    "SMART",
-        //                    600.0,
-        //                    false,
-        //                    false,
-        //                ),
-        //            ));
+        let mut lmt = order_samples::limit_order("BUY", 100.0, 20.0);
+        // The active order will be cancelled if conditioning criteria is met
+        lmt.conditions_cancel_order = true;
+        lmt.conditions
+            .push(twsapi::core::order_condition::OrderConditionEnum::Price(
+                order_samples::price_condition(
+                    TriggerMethod::Last as i32,
+                    208813720,
+                    "SMART",
+                    600.0,
+                    false,
+                    false,
+                ),
+            ));
 
-        //        let next_id = self.next_order_id();
-        //        self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //            next_id,
-        //            contract_samples::european_stock().borrow(),
-        //            lmt.borrow(),
-        //        );
+        let next_id = self.next_order_id();
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::european_stock().borrow(),
+            lmt.borrow(),
+        );
         Ok(())
     }
 
@@ -731,7 +673,6 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn algo_samples(&mut self) -> Result<(), IBKRApiLibError> {
-        // ! [scale_order]
         let next_id = self.next_order_id();
         let mut scale_order = Order::default();
         order_samples::relative_pegged_to_primary("BUY", 70000.0, 189.0, 0.01);
@@ -753,11 +694,9 @@ impl TestWrapper {
             contract_samples::us_stock_at_smart().borrow(),
             scale_order.borrow(),
         );
-        // ! [scale_order]
 
         thread::sleep(Duration::from_secs(1));
 
-        // ! [algo_base_order]
         let mut base_order = order_samples::limit_order("BUY", 1000.0, 1.0);
         // ! [algo_base_order]
 
@@ -1075,7 +1014,6 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn what_if_order_operations(&mut self) {
-        //// ! [whatiflimitorder]
         let mut what_if_order = order_samples::limit_order("SELL", 5.0, 70.0);
         what_if_order.what_if = true;
         let next_id = self.next_order_id();
@@ -1084,7 +1022,7 @@ impl TestWrapper {
             contract_samples::us_stock_at_smart().borrow(),
             what_if_order.borrow(),
         );
-        //// ! [whatiflimitorder]
+
         thread::sleep(Duration::from_secs(2));
     }
 
@@ -1109,7 +1047,6 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     pub fn historical_data_operations_req(&self) {
         // // Requesting historical data
-        // // ![reqHeadTimeStamp]
         self.client
             .as_ref()
             .unwrap()
@@ -1122,9 +1059,7 @@ impl TestWrapper {
                 0,
                 1,
             );
-        //// ![reqHeadTimeStamp]
 
-        //// ![reqhistoricaldata]
         let dt = Utc::now();
         let query_time = dt.format("%Y%m%d %H:%M:%S").to_string();
         info!("Request Time:  {}", query_time);
@@ -1179,11 +1114,9 @@ impl TestWrapper {
                 true,
                 vec![],
             );
-        //// ![reqhistoricaldata]
     }
 
     fn market_data_type_operations(&self) {
-        // ! [reqmarketdatatype]
         // Switch to live (1) frozen (2) delayed (3) delayed frozen (4).
         let result = self
             .client
@@ -1196,7 +1129,6 @@ impl TestWrapper {
         if result.is_err() {
             error!("{}", result.unwrap_err())
         }
-        // ! [reqmarketdatatype]
     }
 
     fn tick_data_operations_req(&self) {
@@ -1209,7 +1141,6 @@ impl TestWrapper {
 
         // Requesting real time market data
 
-        // ! [reqmktdata]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1000,
             contract_samples::us_stock_at_smart().borrow(),
@@ -1226,9 +1157,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqmktdata]
 
-        // ! [reqmktdata_snapshot]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1002,
             contract_samples::future_combo_contract().borrow(),
@@ -1237,9 +1166,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqmktdata_snapshot]
 
-        // ! [regulatorysnapshot]
         // Each regulatory snapshot request incurs a 0.01 USD fee
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1003,
@@ -1249,9 +1176,7 @@ impl TestWrapper {
             true,
             vec![],
         );
-        // ! [regulatorysnapshot]
 
-        // ! [reqmktdata_genticks]
         // Requesting RTVolume (Time & Sales), shortable and Fundamental Ratios generic ticks
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1004,
@@ -1261,9 +1186,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqmktdata_genticks]
 
-        // ! [reqmktdata_contractnews]
         // Without the API news subscription this will generate an "invalid tick type" error
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1005,
@@ -1297,9 +1220,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqmktdata_contractnews]
 
-        // ! [reqmktdata_broadtapenews]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1009,
             contract_samples::brfgbroadtape_news_feed().borrow(),
@@ -1332,9 +1253,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqmktdata_broadtapenews]
 
-        // ! [reqoptiondatagenticks]
         // Requesting data for an option contract will return the greek values
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1013,
@@ -1353,9 +1272,6 @@ impl TestWrapper {
             vec![],
         );
 
-        // ! [reqoptiondatagenticks]
-
-        // ! [reqfuturesopeninterest]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1015,
             contract_samples::simple_future().borrow(),
@@ -1364,9 +1280,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqfuturesopeninterest]
 
-        // ! [reqmktdatapreopenbidask]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1016,
             contract_samples::simple_future().borrow(),
@@ -1375,9 +1289,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqmktdatapreopenbidask]
 
-        // ! [reqavgoptvolume]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             1017,
             contract_samples::us_stock_at_smart().borrow(),
@@ -1386,9 +1298,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqavgoptvolume]
 
-        // ! [reqsmartcomponents]
         // Requests description of map of single letter exchange codes to full exchange names
         self.client
             .as_ref()
@@ -1396,12 +1306,10 @@ impl TestWrapper {
             .lock()
             .unwrap()
             .req_smart_components(1018, "a6");
-        // ! [reqsmartcomponents]
     }
 
     fn market_depth_operations_req(&self) {
         // Requesting the Deep Book
-        // ! [reqmarketdepth]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_depth(
             2001,
             contract_samples::eur_gbp_fx().borrow(),
@@ -1409,9 +1317,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqmarketdepth]
 
-        // ! [reqmarketdepth]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_depth(
             2002,
             contract_samples::us_stock_at_smart().borrow(),
@@ -1419,32 +1325,26 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ! [reqmarketdepth]
 
         // Request list of exchanges sending market depth to UpdateMktDepthL2()
-        // ! [reqMktDepthExchanges]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_mkt_depth_exchanges();
-        // ! [reqMktDepthExchanges]
     }
 
     //----------------------------------------------------------------------------------------------
     fn options_operations_req(&self) {
-        // ! [reqsecdefoptparams]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_sec_def_opt_params(0, "IBM", "", "STK", 8314);
-        // ! [reqsecdefoptparams]
 
         // Calculating implied volatility
-        // ! [calculateimpliedvolatility]
         self.client
             .as_ref()
             .unwrap()
@@ -1457,10 +1357,8 @@ impl TestWrapper {
                 85.0,
                 vec![],
             );
-        // ! [calculateimpliedvolatility]
 
         // Calculating option's price
-        // ! [calculateoptionprice]
         self.client
             .as_ref()
             .unwrap()
@@ -1473,10 +1371,8 @@ impl TestWrapper {
                 85.0,
                 vec![],
             );
-        // ! [calculateoptionprice]
 
         // Exercising options
-        // ! [exercise_options]
         self.client
             .as_ref()
             .unwrap()
@@ -1494,17 +1390,14 @@ impl TestWrapper {
 
     fn market_scanners_perations_req(&mut self) {
         // Requesting list of valid scanner parameters which can be used in TWS
-        // ! [reqscannerparameters]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_scanner_parameters();
-        // ! [reqscannerparameters]
 
         // Triggering a scanner subscription
-        // ! [reqscannersubscription]
         self.client
             .as_ref()
             .unwrap()
@@ -1554,9 +1447,7 @@ impl TestWrapper {
                 _ => {}
             }
         }
-        // ! [reqscannersubscription]
 
-        // ! [reqcomplexscanner]
         let aaplcon_idtag = vec![TagValue::new(
             "underConID".to_string(),
             "265598".to_string(),
@@ -1577,7 +1468,6 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn fundamentals_operations_req(&self) {
         // Requesting Fundamentals
-        // ! [reqfundamentaldata]
         self.client
             .as_ref()
             .unwrap()
@@ -1589,9 +1479,7 @@ impl TestWrapper {
                 "ReportsFinSummary",
                 vec![],
             );
-        // ! [reqfundamentaldata]
 
-        // ! [fundamentalexamples]
         self.client
             .as_ref()
             .unwrap()
@@ -1652,7 +1540,6 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn contract_operations(&self) {
-        // ! [reqcontractdetails]
         self.client
             .as_ref()
             .unwrap()
@@ -1683,9 +1570,7 @@ impl TestWrapper {
             .lock()
             .unwrap()
             .req_contract_details(214, contract_samples::simple_future().borrow());
-        // ! [reqcontractdetails]
 
-        // ! [reqmatchingsymbols]
         self.client
             .as_ref()
             .unwrap()
@@ -1697,7 +1582,6 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn tick_by_tick_operations_req(&self) {
         // Requesting tick - by - tick data (only refresh)
-        // ! [reqtickbytick]
         self.client
             .as_ref()
             .unwrap()
@@ -1746,10 +1630,8 @@ impl TestWrapper {
                 0,
                 false,
             );
-        // ! [reqtickbytick]
 
         // Requesting tick - by - tick data (refresh + historicalticks)
-        // ! [reqtickbytickwithhist]
         self.client
             .as_ref()
             .unwrap()
@@ -1802,7 +1684,6 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn historical_ticks_operations(&self) {
-        // ! [reqhistoricalticks]
         self.client
             .as_ref()
             .unwrap()
@@ -1855,40 +1736,33 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn histogram_operations_req(&self) {
-        // ![reqhistogramdata]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_histogram_data(4002, contract_samples::usstock().borrow(), false, "3 days");
-        // ![reqhistogramdata]
     }
 
     //----------------------------------------------------------------------------------------------
     fn histogram_operations_cancel(&self) {
-        // ! [cancelhistogramdata]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_histogram_data(4002);
-        // ! [cancelhistogramdata]
     }
 
     //----------------------------------------------------------------------------------------------
     fn continuous_futures_operations_req(&self) {
-        // ! [reqcontractdetailscontfut]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_contract_details(18001, contract_samples::cont_fut().borrow());
-        // ! [reqcontractdetailscontfut]
 
-        // ! [reqhistoricaldatacontfut]
         let time_str = Utc::now().format("%Y%m%d %H:%M:%S");
         self.client
             .as_ref()
@@ -1911,44 +1785,36 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn pnl_operations_req(&self) {
-        // ! [reqpnl]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_pnl(17001, "DU228243", "");
-        // ! [reqpnl]
 
-        // ! [reqpnlsingle]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_pnl_single(17002, "DU228243", "", 8314);
-        // ! [reqpnlsingle]
     }
 
     //----------------------------------------------------------------------------------------------
     fn pnl_operations_cancel(&self) {
-        // ! [cancelpnl]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_pnl(17001);
-        // ! [cancelpnl]
 
-        // ! [cancelpnlsingle]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_pnl_single(17002);
-        // ! [cancelpnlsingle]
     }
 
     //--------------------------------------------------------------------------------------------------
@@ -1966,7 +1832,6 @@ impl TestWrapper {
             .unwrap()
             .req_contract_details(17002, contract_samples::bond().borrow());
 
-        // ! [reqmarketrule]
         self.client
             .as_ref()
             .unwrap()
@@ -1983,7 +1848,6 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn reroute_cfd_operations(&self) {
-        // ![reqmktdatacfd]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
             16001,
             contract_samples::usstock_cfd().borrow(),
@@ -2008,9 +1872,7 @@ impl TestWrapper {
             false,
             vec![],
         );
-        // ![reqmktdatacfd]
 
-        // ![reqmktdepthcfd]
         self.client.as_ref().unwrap().lock().unwrap().req_mkt_depth(
             16004,
             contract_samples::usstock_cfd().borrow(),
@@ -2100,93 +1962,78 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn news_operations_req(&self) {
         // Requesting news ticks
-        // ! [reqNewsTicks]
-        //        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-        //            10001,
-        //            contract_samples::usstock().borrow(),
-        //            "mdoff,258",
-        //            false,
-        //            false,
-        //            vec![],
-        //        );
-        // ! [reqNewsTicks]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            10001,
+            contract_samples::usstock().borrow(),
+            "mdoff,258",
+            false,
+            false,
+            vec![],
+        );
 
         // Returns list of subscribed news providers
-        // ! [reqNewsProviders]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_news_providers();
-        // ! [reqNewsProviders]
 
         // Returns body of news article given article ID
-        // ! [reqNewsArticle]
-        //        self.client
-        //            .as_ref()
-        //            .unwrap()
-        //            .lock()
-        //            .unwrap()
-        //            .req_news_article(10002, "BRFG", "BRFG$04fb9da2", vec![]);
-        // ! [reqNewsArticle]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_news_article(10002, "BRFG", "BRFG$04fb9da2", vec![]);
 
         // Returns list of historical news headlines with IDs
-        // ! [reqHistoricalNews]
-        //        self.client
-        //            .as_ref()
-        //            .unwrap()
-        //            .lock()
-        //            .unwrap()
-        //            .req_historical_news(10003, 8314, "BRFG", "", "", 10, vec![]);
-        // ! [reqHistoricalNews]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_historical_news(10003, 8314, "BRFG", "", "", 10, vec![]);
 
-        // ! [reqcontractdetailsnews]
-        //        self.client
-        //            .as_ref()
-        //            .unwrap()
-        //            .lock()
-        //            .unwrap()
-        //            .req_contract_details(10004, contract_samples::news_feed_for_query().borrow());
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(10004, contract_samples::news_feed_for_query().borrow());
     }
 
     //----------------------------------------------------------------------------------------------
     fn news_operations_cancel(&self) {
         // Canceling news ticks
-        // ! [cancelNewsTicks]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_mkt_data(10001);
-        // ! [cancelNewsTicks]
     }
 
     //----------------------------------------------------------------------------------------------
     fn bulletins_operations_req(&self) {
         // Requesting Interactive Broker's news bulletins_operations_req
-        // ! [reqnewsbulletins]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_news_bulletins(true);
-        // ! [reqnewsbulletins]
     }
 
     //----------------------------------------------------------------------------------------------
     fn bulletins_operations_cancel(&self) {
         // Canceling IB's news bulletins_operations_req
-        // ! [cancelnewsbulletins]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_news_bulletins();
-        // ! [cancelnewsbulletins]
     }
 
     //----------------------------------------------------------------------------------------------
@@ -2208,34 +2055,27 @@ impl TestWrapper {
     }
 
     fn linking_operations(&self) {
-        // ! [querydisplaygroups]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .query_display_groups(19001);
-        // ! [querydisplaygroups]
 
-        // ! [subscribetogroupevents]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .subscribe_to_group_events(19002, 1);
-        // ! [subscribetogroupevents]
 
-        // ! [updatedisplaygroup]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .update_display_group(19002, "8314@SMART");
-        // ! [updatedisplaygroup]
 
-        // ! [subscribefromgroupevents]
         self.client
             .as_ref()
             .unwrap()
@@ -2246,7 +2086,6 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn tick_by_tick_operations_cancel(&self) {
-        // ! [canceltickbytick]
         self.client
             .as_ref()
             .unwrap()
@@ -2271,9 +2110,7 @@ impl TestWrapper {
             .lock()
             .unwrap()
             .cancel_tick_by_tick_data(19004);
-        // ! [canceltickbytick]
 
-        // ! [canceltickbytickwithhist]
         self.client
             .as_ref()
             .unwrap()
@@ -2302,14 +2139,12 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn continuous_futures_operations_cancel(&self) {
-        // ! [cancelhistoricaldatacontfut]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_historical_data(18002);
-        // ! [cancelhistoricaldatacontfut]
     }
 
     //----------------------------------------------------------------------------------------------
@@ -2355,7 +2190,6 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn market_scanners_cancel(&self) {
         // Canceling the scanner subscription
-        // ! [cancelscannersubscription]
         self.client
             .as_ref()
             .unwrap()
@@ -2396,17 +2230,14 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn historical_data_operations_cancel(&self) {
-        // ! [cancelHeadTimestamp]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_head_time_stamp(4101);
-        // ! [cancelHeadTimestamp]
 
         // Canceling historical data requests
-        // ! [cancelhistoricaldata]
         self.client
             .as_ref()
             .unwrap()
@@ -2430,7 +2261,6 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn real_time_bars_operations_cancel(&self) {
         // Canceling real time bars
-        // ! [cancelrealtimebars]
         self.client
             .as_ref()
             .unwrap()
@@ -2442,7 +2272,6 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn market_depth_operations_cancel(&self) {
         // Canceling the Deep Book request
-        // ! [cancelmktdepth]
         self.client
             .as_ref()
             .unwrap()
@@ -2460,7 +2289,6 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn tick_data_operations_cancel(&self) {
         // Canceling the market data subscription
-        // ! [cancelmktdata]
         self.client
             .as_ref()
             .unwrap()
@@ -2473,7 +2301,6 @@ impl TestWrapper {
             .lock()
             .unwrap()
             .cancel_mkt_data(1001);
-        // ! [cancelmktdata]
 
         self.client
             .as_ref()
@@ -2569,7 +2396,6 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn account_operations_cancel(&self) {
-        // ! [cancelaaccountsummary]
         self.client
             .as_ref()
             .unwrap()
@@ -2594,43 +2420,34 @@ impl TestWrapper {
             .lock()
             .unwrap()
             .cancel_account_summary(9004);
-        // ! [cancelaaccountsummary]
 
-        // ! [cancelaaccountupdates]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .req_account_updates(false, self.account.as_str());
-        // ! [cancelaaccountupdates]
 
-        // ! [cancelaaccountupdatesmulti]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_account_updates_multi(9005);
-        // ! [cancelaaccountupdatesmulti]
 
-        // ! [cancelpositions]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_positions();
-        // ! [cancelpositions]
 
-        // ! [cancelpositionsmulti]
         self.client
             .as_ref()
             .unwrap()
             .lock()
             .unwrap()
             .cancel_positions_multi(9006);
-        // ! [cancelpositionsmulti]
     }
 }
 

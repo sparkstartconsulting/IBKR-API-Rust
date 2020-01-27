@@ -19,11 +19,13 @@ use crate::core::common::{UNSET_DOUBLE, UNSET_INTEGER};
 use crate::core::errors::IBKRApiLibError;
 use crate::core::wrapper::Wrapper;
 
+//==================================================================================================
 trait EClientMsgSink {
     fn server_version(version: i32, time: &str);
     fn redirect(host: &str);
 }
 
+//==================================================================================================
 pub enum FAMessageDataTypes {
     // FA msg data types
     Groups = 1,
@@ -31,10 +33,7 @@ pub enum FAMessageDataTypes {
     Aliases = 3,
 }
 
-trait IncomingMessageProcessor {
-    fn process(wrapper: &mut dyn Wrapper, params: &Vec<String>);
-}
-
+//==================================================================================================
 // incoming msg id's
 #[derive(FromPrimitive)]
 #[repr(i32)]
@@ -118,6 +117,7 @@ pub enum IncomingMessageIds {
     CompletedOrdersEnd = 102,
 }
 
+//==================================================================================================
 // Outgoing msg id's
 #[derive(FromPrimitive)]
 #[repr(i32)]
@@ -199,44 +199,7 @@ pub enum OutgoingMessageIds {
     ReqCompletedOrders = 99,
 }
 
-pub struct EMessage {
-    buffer: ByteBuffer,
-}
-
-trait NewEmessageFrom<T> {
-    fn new(buf: T) -> EMessage;
-}
-
-impl NewEmessageFrom<&[u8]> for EMessage {
-    fn new(buf: &[u8]) -> EMessage {
-        let mut msg = EMessage::new();
-        msg.buffer.write(buf);
-        msg
-    }
-}
-
-//impl NewEmessageFrom<&Builder> for EMessage {
-//    fn new(builder: &Builder) -> EMessage {
-//        let mut msg = EMessage::new();
-//        builder.write_out(&mut msg.buffer);
-//        msg
-//    }
-//}
-
-impl EMessage {
-    pub fn new() -> Self {
-        EMessage {
-            buffer: ByteBuffer::new(),
-        }
-    }
-    pub fn get_stream(&self) -> &ByteBuffer {
-        &self.buffer
-    }
-    pub fn get_raw_data(&self) -> Vec<u8> {
-        self.buffer.to_bytes()
-    }
-}
-
+//==================================================================================================
 pub fn make_message(msg: &str) -> Result<Vec<u8>, IBKRApiLibError> {
     //let mut buffer = ByteBuffer::new();
     let mut buffer: Vec<u8> = Vec::new();
@@ -253,6 +216,7 @@ pub fn make_message(msg: &str) -> Result<Vec<u8>, IBKRApiLibError> {
     Ok(tmp)
 }
 
+//==================================================================================================
 pub fn read_msg<'a>(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibError> {
     // first the size prefix and then the corresponding msg payload ""
     let mut text = String::new();
@@ -273,6 +237,7 @@ pub fn read_msg<'a>(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibEr
     }
 }
 
+//==================================================================================================
 pub fn read_fields(buf: &str) -> Vec<String> {
     //msg payload is made of fields terminated/separated by NULL chars """
     let a = '\u{0}';
@@ -287,6 +252,7 @@ pub fn read_fields(buf: &str) -> Vec<String> {
         .collect::<Vec<String>>()
 }
 
+//==================================================================================================
 pub fn make_field(val: &dyn Any) -> Result<String, IBKRApiLibError> {
     // adds the NULL string terminator
     let mut field = String::new();
@@ -316,6 +282,7 @@ pub fn make_field(val: &dyn Any) -> Result<String, IBKRApiLibError> {
     Ok(field)
 }
 
+//==================================================================================================
 pub fn make_field_handle_empty(val: &dyn Any) -> Result<String, IBKRApiLibError> {
     if let Some(stringval) = val.downcast_ref::<f64>() {
         if UNSET_DOUBLE == *stringval {

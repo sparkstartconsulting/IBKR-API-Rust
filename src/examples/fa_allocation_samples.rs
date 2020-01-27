@@ -1,5 +1,6 @@
 ///Replace all with your own accountIds
 
+//==================================================================================================
 pub const FA_ONE_GROUP: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \
                                 <ListOfGroups> \
                                 <Group> \
@@ -12,6 +13,7 @@ pub const FA_ONE_GROUP: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \
                                 </Group> \
                                 </ListOfGroups>";
 
+//==================================================================================================
 pub const FA_TWO_GROUPS: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \
                             <ListOfGroups> \
                             <Group> \
@@ -32,6 +34,7 @@ pub const FA_TWO_GROUPS: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \
                             </Group> \
                             </ListOfGroups>";
 
+//==================================================================================================
 pub const FA_ONE_PROFILE: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \
                                 <ListOfAllocationProfiles> \
                                 <AllocationProfile> \
@@ -50,6 +53,7 @@ pub const FA_ONE_PROFILE: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \
                                 </AllocationProfile> \
                                 </ListOfAllocationProfiles>";
 
+//==================================================================================================
 pub const FA_TWO_PROFILES: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \
                                 <ListOfAllocationProfiles> \
                                 <AllocationProfile> \

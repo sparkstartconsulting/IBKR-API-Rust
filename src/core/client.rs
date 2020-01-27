@@ -33,7 +33,7 @@ use crate::core::server_versions::*;
 use crate::core::wrapper::Wrapper;
 
 // 0.2.6 (the trait)
-
+//==================================================================================================
 #[repr(i32)]
 #[derive(FromPrimitive, Copy, Clone)]
 pub enum ConnStatus {
@@ -43,6 +43,7 @@ pub enum ConnStatus {
     REDIRECT,
 }
 
+//==================================================================================================
 pub struct EClient<T: Wrapper + Sync + Send> {
     //decoder: Decoder<'a, T>,
     wrapper: Arc<Mutex<T>>,
@@ -508,7 +509,7 @@ where
         // marketDataType:i32 - 1 for real-time streaming market data || 2 for \
         // frozen market data"
 
-        // // self.logRequest(current_fn_name()); vars())
+        //
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -756,7 +757,7 @@ where
         //        optionPrice:double - The price of the option.
         //        underPrice:double - Price of the underlying.
 
-        // // self.logRequest(current_fn_name()); vars())
+        //
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2809,7 +2810,7 @@ where
         //
         //    NOTE: Time format must be 'yyyymmdd-hh:mm:ss' Eg: '20030702-14:55'
 
-        // // self.logRequest(current_fn_name()); vars())
+        //
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3156,7 +3157,7 @@ where
         //    req_id:i32 - The ID that was specified in the call to reqMktDepth().
         //    is_smart_depth:bool - specifies SMART depth request
 
-        // // self.logRequest(current_fn_name()); vars())
+        //
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3261,8 +3262,6 @@ where
         //
         //    Note:  This request can only be made when connected to a FA managed account.
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -3290,8 +3289,6 @@ where
         //        1 = GROUPS
         //        2 = PROFILE
         //        3 = ACCOUNT ALIASES
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3325,8 +3322,6 @@ where
         //        3 = ACCOUNT ALIASES
         //    cxml: str - The XML string containing the new FA configuration
         //        information.
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3419,8 +3414,6 @@ where
         //        2 - dates are returned as a long integer specifying the number of seconds since
         //            1/1/1970 GMT.
         //    chart_options: - For internal use only. Use pub fnault value XYZ.
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3520,8 +3513,6 @@ where
 
         req_id:i32 - The ticker ID. Must be a unique value*/
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -3556,7 +3547,6 @@ where
         use_rth: i32,
         format_date: i32,
     ) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -3608,8 +3598,6 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn cancel_head_time_stamp(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -3651,8 +3639,6 @@ where
         use_rth: bool,
         time_period: &str,
     ) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -3703,8 +3689,6 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn cancel_histogram_data(&mut self, ticker_id: i32) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -3750,8 +3734,6 @@ where
         ignore_size: bool,
         misc_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -3818,8 +3800,6 @@ where
     pub fn req_scanner_parameters(&mut self) -> Result<(), IBKRApiLibError> {
         /*Requests an XML string that describes all possible scanner queries*/
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -3852,8 +3832,6 @@ where
             possible parameters used to filter results.
         scanner_subscription_options: - For internal use only.
             Use pub fnault value XYZ*/
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3943,8 +3921,6 @@ where
     pub fn cancel_scanner_subscription(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The ticker ID. Must be a unique value*/
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4004,8 +3980,6 @@ where
                 requested is returned, even if the time time span falls
                 partially or completely outside.
         realTimeBarOptions: - For internal use only. Use pub fnault value XYZ*/
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4082,8 +4056,6 @@ where
 
         reqId:i32 - The Id that was specified in the call to req_real_time_bars(). */
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4139,8 +4111,6 @@ where
             ReportsFinStatements (financial statements)
             RESC (analyst estimates)
             CalendarReport (company calendar)*/
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4221,8 +4191,6 @@ where
 
         reqId:i32 - The ID of the data request*/
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4264,8 +4232,6 @@ where
     //#########################################################################
 
     pub fn req_news_providers(&mut self) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4305,8 +4271,6 @@ where
         article_id: &str,
         news_article_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4362,8 +4326,6 @@ where
         total_results: i32,
         historical_news_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4422,8 +4384,6 @@ where
         reqId:i32 - The unique number that will be associated with the
             response */
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4468,8 +4428,6 @@ where
         /*reqId:i32 - The unique number associated with the notification.
         group_id:i32 - The ID of the group, currently it is a number from 1 to 7.
             This is the display group subscription request sent by the API to TWS*/
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4523,8 +4481,6 @@ where
                 Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
             combo = if any combo is selected*/
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4565,8 +4521,6 @@ where
     //----------------------------------------------------------------------------------------------
     pub fn unsubscribe_from_group_events(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The requestId specified in subscribe_to_group_events()*/
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4671,8 +4625,6 @@ where
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4718,8 +4670,6 @@ where
     ) -> Result<(), IBKRApiLibError> {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4782,8 +4732,6 @@ where
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4838,8 +4786,6 @@ where
         i.e. STK underlying_con_id the contract ID of the underlying security.
         Response comes via EWrapper.securityDefinitionOptionParameter()*/
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4883,8 +4829,6 @@ where
         registered professional advisors and hedge and mutual funds who have
         configured Soft Dollar Tiers in Account Management*/
 
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4906,8 +4850,6 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn req_family_codes(&mut self) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4945,8 +4887,6 @@ where
         req_id: i32,
         pattern: &str,
     ) -> Result<(), IBKRApiLibError> {
-        // self.logRequest(current_fn_name()); vars())
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -4987,8 +4927,6 @@ where
         is true, then only completed orders placed from API are requested.
         Each completed order will be fed back through the
         completedOrder() function on the EWrapper*/
-
-        // self.logRequest(current_fn_name()); vars())
 
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(

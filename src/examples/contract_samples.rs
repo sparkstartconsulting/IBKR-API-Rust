@@ -3,6 +3,7 @@
 
 use crate::core::contract::{ComboLeg, Contract};
 
+//==================================================================================================
 pub fn eur_gbp_fx() -> Contract {
     let mut contract = Contract::default();
     contract.symbol = "EUR".to_string();
@@ -13,6 +14,7 @@ pub fn eur_gbp_fx() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn index() -> Contract {
     let mut contract = Contract::default();
     contract.symbol = "DAX".to_string();
@@ -23,6 +25,7 @@ pub fn index() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn cfd() -> Contract {
     let mut contract = Contract::default();
     contract.symbol = "IBDE30".to_string();
@@ -33,6 +36,7 @@ pub fn cfd() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn european_stock() -> Contract {
     let mut contract = Contract::default();
     contract.symbol = "BMW".to_string();
@@ -43,6 +47,7 @@ pub fn european_stock() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn european_stock2() -> Contract {
     let mut contract = Contract::default();
     contract.symbol = "NOKIA".to_string();
@@ -53,6 +58,7 @@ pub fn european_stock2() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn option_at_ise() -> Contract {
     let mut contract = Contract::default();
     contract.symbol = "COF".to_string();
@@ -66,6 +72,7 @@ pub fn option_at_ise() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn bond_with_cusip() -> Contract {
     //bondwithcusip
     let mut contract = Contract::default();
@@ -74,10 +81,11 @@ pub fn bond_with_cusip() -> Contract {
     contract.sec_type = "BOND".to_string();
     contract.exchange = "SMART".to_string();
     contract.currency = "USD".to_string();
-    //
+
     contract
 }
 
+//==================================================================================================
 pub fn bond() -> Contract {
     //bond
     let mut contract = Contract::default();
@@ -87,6 +95,7 @@ pub fn bond() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn mutual_fund() -> Contract {
     //fundcontract
     let mut contract = Contract::default();
@@ -98,6 +107,7 @@ pub fn mutual_fund() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn commodity() -> Contract {
     //commoditycontract
     let mut contract = Contract::default();
@@ -109,6 +119,7 @@ pub fn commodity() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn usstock() -> Contract {
     //stkcontract]
     let mut contract = Contract::default();
@@ -121,6 +132,7 @@ pub fn usstock() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn usstock_with_primary_exch() -> Contract {
     //stkcontractwithprimary]
     let mut contract = Contract::default();
@@ -135,6 +147,7 @@ pub fn usstock_with_primary_exch() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn us_stock_at_smart() -> Contract {
     let mut contract = Contract::default();
     contract.symbol = "MSFT".to_string();
@@ -144,6 +157,7 @@ pub fn us_stock_at_smart() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn us_option_contract() -> Contract {
     //optcontract_us]
     let mut contract = Contract::default();
@@ -159,6 +173,7 @@ pub fn us_option_contract() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn option_at_box() -> Contract {
     //optcontract]
     let mut contract = Contract::default();
@@ -170,15 +185,15 @@ pub fn option_at_box() -> Contract {
     contract.strike = 1180.0;
     contract.right = "C".to_string();
     contract.multiplier = "100".to_string();
-    //optcontract]
+
     contract
 }
 
+//==================================================================================================
 // Option contracts require far more information since there are many
 //    contracts having the exact same attributes such as symbol, currency,
 //    strike, etc. This can be overcome by adding more details such as the
 //    trading class
-
 pub fn option_with_trading_class() -> Contract {
     //optcontract_tradingclass]
     let mut contract = Contract::default();
@@ -195,9 +210,9 @@ pub fn option_with_trading_class() -> Contract {
     contract
 }
 
+//==================================================================================================
 // Using the contract's own symbol (local_symbol) can greatly simplify a
 //    contract description
-
 pub fn option_with_local_symbol() -> Contract {
     //optcontract_localsymbol]
     let mut contract = Contract::default();
@@ -210,8 +225,8 @@ pub fn option_with_local_symbol() -> Contract {
     contract
 }
 
+//==================================================================================================
 // Dutch Warrants (IOPTs) can be pub fnined using the local symbol or conid
-
 pub fn dutch_warrant() -> Contract {
     //ioptcontract]
     let mut contract = Contract::default();
@@ -223,9 +238,9 @@ pub fn dutch_warrant() -> Contract {
     contract
 }
 
+//==================================================================================================
 // Future contracts also require an expiration date but are less
 //    complicated than options.
-
 pub fn simple_future() -> Contract {
     //futcontract]
     let mut contract = Contract::default();
@@ -238,9 +253,9 @@ pub fn simple_future() -> Contract {
     contract
 }
 
+//==================================================================================================
 //Rather than giving expiration dates we can also provide the local symbol
 //    attributes such as symbol, currency, strike, etc.
-
 pub fn future_with_local_symbol() -> Contract {
     //futcontract_local_symbol]
     let mut contract = Contract::default();
@@ -252,6 +267,7 @@ pub fn future_with_local_symbol() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn future_with_multiplier() -> Contract {
     //futcontract_multiplier]
     let mut contract = Contract::default();
@@ -265,6 +281,7 @@ pub fn future_with_multiplier() -> Contract {
     contract
 }
 
+//==================================================================================================
 // Note the space in the symbol!
 pub fn wrong_contract() -> Contract {
     let mut contract = Contract::default();
@@ -276,6 +293,7 @@ pub fn wrong_contract() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn futures_on_options() -> Contract {
     //fopcontract]
     let mut contract = Contract::default();
@@ -291,9 +309,9 @@ pub fn futures_on_options() -> Contract {
     contract
 }
 
+//==================================================================================================
 // It is also possible to pub fnine contracts based on their ISIN (IBKR STK
 //    sample).
-
 pub fn by_isin() -> Contract {
     let mut contract = Contract::default();
     contract.sec_id_type = "ISIN".to_string();
@@ -304,6 +322,7 @@ pub fn by_isin() -> Contract {
     contract
 }
 
+//==================================================================================================
 // Or their con_id (EUR.uSD sample).
 //    Note: passing a contract containing the con_id can cause problems if one of
 //    the other provided attributes does not match 100% with what is in IB's
@@ -311,7 +330,6 @@ pub fn by_isin() -> Contract {
 //    may change their description from one day to another.
 //    If the con_id is provided, it is best not to give too much information as
 //    in the example below.
-
 pub fn by_con_id() -> Contract {
     let mut contract = Contract::default();
     contract.sec_type = "CASH".to_string();
@@ -320,12 +338,12 @@ pub fn by_con_id() -> Contract {
     contract
 }
 
+//==================================================================================================
 // Ambiguous contracts are great to use with
 //use crate::core::contract::Contract; reqContractDetails. This way
 //    you can query the whole option chain for an underlying. Bear in mind that
 //    there are pacing mechanisms in place which will delay any further responses
 //    from the TWS to prevent abuse.
-
 pub fn option_for_query() -> Contract {
     //optionforquery]
     let mut contract = Contract::default();
@@ -337,6 +355,7 @@ pub fn option_for_query() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn option_combo_contract() -> Contract {
     //bagoptcontract]
     let mut contract = Contract::default();
@@ -364,10 +383,10 @@ pub fn option_combo_contract() -> Contract {
     contract
 }
 
+//==================================================================================================
 // STK Combo contract
 //    Leg 1: 43645865 - IBKR's STK
 //    Leg 2: 9408 - McDonald's STK
-
 pub fn stock_combo_contract() -> Contract {
     //bagstkcontract]
     let mut contract = Contract::default();
@@ -395,8 +414,8 @@ pub fn stock_combo_contract() -> Contract {
     contract
 }
 
+//==================================================================================================
 //CBOE volatility Index Future combo contract
-
 pub fn future_combo_contract() -> Contract {
     //bagfutcontract]
     let mut contract = Contract::default();
@@ -424,6 +443,7 @@ pub fn future_combo_contract() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn smart_future_combo_contract() -> Contract {
     //smartfuturespread]
     let mut contract = Contract::default();
@@ -451,6 +471,7 @@ pub fn smart_future_combo_contract() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn inter_cmdty_futures_contract() -> Contract {
     //intcmdfutcontract]
     let mut contract = Contract::default();
@@ -478,6 +499,7 @@ pub fn inter_cmdty_futures_contract() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn news_feed_for_query() -> Contract {
     //newsfeedforquery]
     let mut contract = Contract::default();
@@ -487,6 +509,7 @@ pub fn news_feed_for_query() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn brfgbroadtape_news_feed() -> Contract {
     //newscontractbt]
     let mut contract = Contract::default();
@@ -497,6 +520,7 @@ pub fn brfgbroadtape_news_feed() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn djnlbroadtape_news_feed() -> Contract {
     //newscontractbz]
     let mut contract = Contract::default();
@@ -507,6 +531,7 @@ pub fn djnlbroadtape_news_feed() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn djtopbroadtape_news_feed() -> Contract {
     //newscontractfly]
     let mut contract = Contract::default();
@@ -517,6 +542,7 @@ pub fn djtopbroadtape_news_feed() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn brfupdnbroadtape_news_feed() -> Contract {
     //newscontractmt]
     let mut contract = Contract::default();
@@ -527,6 +553,7 @@ pub fn brfupdnbroadtape_news_feed() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn cont_fut() -> Contract {
     //continuousfuturescontract]
     let mut contract = Contract::default();
@@ -537,6 +564,7 @@ pub fn cont_fut() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn cont_and_expiring_fut() -> Contract {
     //contandexpiringfut]
     let mut contract = Contract::default();
@@ -547,6 +575,7 @@ pub fn cont_and_expiring_fut() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn jefferies_contract() -> Contract {
     //jefferies_contract]
     let mut contract = Contract::default();
@@ -558,6 +587,7 @@ pub fn jefferies_contract() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn csfbcontract() -> Contract {
     //csfb_contract]
     let mut contract = Contract::default();
@@ -569,6 +599,7 @@ pub fn csfbcontract() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn usstock_cfd() -> Contract {
     // ! [usstockcfd_conract]
     let mut contract = Contract::default();
@@ -580,6 +611,7 @@ pub fn usstock_cfd() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn european_stock_cfd() -> Contract {
     // ! [europeanstockcfd_contract]
     let mut contract = Contract::default();
@@ -591,6 +623,7 @@ pub fn european_stock_cfd() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn cash_cfd() -> Contract {
     // ! [cashcfd_contract]
     let mut contract = Contract::default();
@@ -602,6 +635,7 @@ pub fn cash_cfd() -> Contract {
     contract
 }
 
+//==================================================================================================
 pub fn qbalgo_contract() -> Contract {
     // ! [qbalgo_contract]
     let mut contract = Contract::default();

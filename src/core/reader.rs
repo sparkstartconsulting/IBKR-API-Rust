@@ -11,6 +11,7 @@ use log::*;
 use crate::core::errors::IBKRApiLibError;
 use crate::core::messages::read_msg;
 
+//==================================================================================================
 pub struct Reader {
     stream: TcpStream,
     messages: Sender<String>,
@@ -30,6 +31,7 @@ impl Reader {
         }
     }
 
+    //----------------------------------------------------------------------------------------------
     pub fn recv_packet(&mut self) -> Result<Vec<u8>, IBKRApiLibError> {
         //debug!("_recv_all_msg");
         let buf = self._recv_all_msg()?;
@@ -44,6 +46,7 @@ impl Reader {
         Ok(buf)
     }
 
+    //----------------------------------------------------------------------------------------------
     fn _recv_all_msg(&mut self) -> Result<Vec<u8>, IBKRApiLibError> {
         let mut cont = true;
         let mut allbuf: Vec<u8> = Vec::new();
@@ -69,7 +72,8 @@ impl Reader {
         Ok(allbuf)
     }
 
-    pub fn process_reader_msgs(&mut self) -> Result<(), IBKRApiLibError> {
+    //----------------------------------------------------------------------------------------------
+    fn process_reader_msgs(&mut self) -> Result<(), IBKRApiLibError> {
         /// grab a packet of messages from the socket
         let mut message_packet = self.recv_packet()?;
         //debug!(" recvd size {}", message_packet.len());
@@ -108,7 +112,7 @@ impl Reader {
         }
         Ok(())
     }
-
+    //----------------------------------------------------------------------------------------------
     pub fn run(&mut self) {
         debug!("starting reader loop");
         loop {
