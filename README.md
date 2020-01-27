@@ -10,9 +10,9 @@ For usage, please see the example implementation in src/bin.manual_tests.rs
 Example of using client and wrapper.
 Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
 next_valid_id to be called, which will start sending tests requests to TWS (see the
-start_requests function inn TestWrapper which is called by next_valid_id
+start_requests function inn TestWrapper which is called by next_valid_id.
 
-//==================================================================================================
+//=================================================================================
 fn main() -> Result<(), IBKRApiLibError> {
     log4rs::init_file("log_config.yml", Default::default()).unwrap();
 
@@ -22,7 +22,8 @@ fn main() -> Result<(), IBKRApiLibError> {
     info!("getting connection...");
     wrapper.lock().unwrap().client = Option::from(app.clone());
 
-    // Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
+    // Upon connecting, TWS will send the next valid order ID 
+    // which will cause the wrapper callback method
     // next_valid_id to be called, which will start sending tests requests to TWS (see the
     // start_requests function inn TestWrapper which is called by next_valid_id
     app.lock().unwrap().connect("127.0.0.1", 7497, 0);
