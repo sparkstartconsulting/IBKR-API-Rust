@@ -1,7 +1,7 @@
 # IBKR-API-Rust
 Port of Interactive Broker's trading API written in Rust (API_Version=9.76.01)
 
-#####This is a derivative work of the Interactive Brokers API and falls under their non-commercial or commercial licenses.
+### This is a derivative work of the Interactive Brokers API and falls under their non-commercial or commercial licenses.
 
 Please see the latest IB Tws Api documentation here: http://http://interactivebrokers.github.io/tws-api/introduction.html
 
@@ -30,7 +30,7 @@ start_requests function inn TestWrapper which is called by next_valid_id.
 }
 
 
-####TODO:
+###TODO:
 * Expand documentation
 * Write automated tests
 * Write an async function in TestWrapper that checks when next_valid_id has been populated by the callback
