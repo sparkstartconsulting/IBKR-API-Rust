@@ -34,8 +34,10 @@ use crate::core::server_versions::{
     MIN_SERVER_VER_MARKET_CAP_PRICE, MIN_SERVER_VER_MARKET_RULES,
     MIN_SERVER_VER_MD_SIZE_MULTIPLIER, MIN_SERVER_VER_MODELS_SUPPORT,
     MIN_SERVER_VER_ORDER_CONTAINER, MIN_SERVER_VER_PAST_LIMIT, MIN_SERVER_VER_PRE_OPEN_BID_ASK,
-    MIN_SERVER_VER_REALIZED_PNL, MIN_SERVER_VER_SERVICE_DATA_TYPE, MIN_SERVER_VER_SMART_DEPTH,
-    MIN_SERVER_VER_SYNT_REALTIME_BARS, MIN_SERVER_VER_UNREALIZED_PNL,
+    MIN_SERVER_VER_REALIZED_PNL, MIN_SERVER_VER_REAL_EXPIRATION_DATE,
+    MIN_SERVER_VER_SERVICE_DATA_TYPE, MIN_SERVER_VER_SMART_DEPTH,
+    MIN_SERVER_VER_SYNT_REALTIME_BARS, MIN_SERVER_VER_UNDERLYING_INFO,
+    MIN_SERVER_VER_UNREALIZED_PNL,
 };
 use crate::core::wrapper::Wrapper;
 
@@ -665,6 +667,7 @@ where
         contract.contract.right = decode_string(&mut fields_itr)?;
         contract.contract.exchange = decode_string(&mut fields_itr)?;
         contract.contract.currency = decode_string(&mut fields_itr)?;
+        contract.contract.local_symbol = decode_string(&mut fields_itr)?;
         contract.market_name = decode_string(&mut fields_itr)?;
         contract.contract.trading_class = decode_string(&mut fields_itr)?;
         contract.contract.con_id = decode_i32(&mut fields_itr)?;
@@ -672,6 +675,7 @@ where
         if self.server_version >= MIN_SERVER_VER_MD_SIZE_MULTIPLIER {
             contract.md_size_multiplier = decode_i32(&mut fields_itr)?;
         }
+        contract.contract.multiplier = decode_string(&mut fields_itr)?;
         contract.order_types = decode_string(&mut fields_itr)?;
         contract.valid_exchanges = decode_string(&mut fields_itr)?;
         contract.price_magnifier = decode_i32(&mut fields_itr)?;
@@ -712,8 +716,17 @@ where
         if self.server_version >= MIN_SERVER_VER_AGG_GROUP {
             contract.agg_group = decode_i32(&mut fields_itr)?;
         }
+
+        if self.server_version >= MIN_SERVER_VER_UNDERLYING_INFO {
+            contract.under_symbol = decode_string(&mut fields_itr)?;
+            contract.under_sec_type = decode_string(&mut fields_itr)?;
+        }
         if self.server_version >= MIN_SERVER_VER_MARKET_RULES {
             contract.market_rule_ids = decode_string(&mut fields_itr)?;
+        }
+
+        if self.server_version >= MIN_SERVER_VER_REAL_EXPIRATION_DATE {
+            contract.real_expiration_date = decode_string(&mut fields_itr)?;
         }
 
         self.wrapper

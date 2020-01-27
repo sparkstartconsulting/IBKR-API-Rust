@@ -60,18 +60,18 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     pub fn start_requests(&mut self) -> Result<(), IBKRApiLibError> {
-        //self.order_operations_req();
-        //self.what_if_order_operations();
-        //self.account_operations_req();
-        //self.market_data_type_operations();
-        //self.tick_data_operations_req(); //retest with data subscription
-        //self.market_depth_operations_req();
-        //self.real_time_bars_operations_req(); //retest with data subscription
-        //self.historical_data_operations_req();
-        //self.options_operations_req();
-        //self.market_scanners_perations_req();
+        //self.order_operations_req(); //tested ok
+        //self.what_if_order_operations(); //tested ok
+        //self.account_operations_req(); //tested ok
+        //self.market_data_type_operations(); //tested ok
+        //self.tick_data_operations_req(); //tested ok
+        //self.market_depth_operations_req(); //tested ok
+        //self.real_time_bars_operations_req(); // Tested ok
+        //self.historical_data_operations_req(); // Tested ok
+        //self.options_operations_req(); tested ok
+        // self.market_scanners_perations_req(); testd ok
         //self.fundamentals_operations_req(); //retest with data subscription
-        //self.contract_operations();
+        self.contract_operations();
         //self.tick_by_tick_operations_req(); //retest with data subscription
         //self.historical_ticks_operations(); //retest with data subscription.  What to show enum
         //self.histogram_operations_req(); //retest with data subscription.
@@ -82,9 +82,9 @@ impl TestWrapper {
         //self.financial_advisor_operations();
         // self.news_operations_req(); //retest with data subscription.
         // self.bulletins_operations_req();
-        self.miscelaneous_operations();
-        self.linking_operations();
-        self.financial_advisor_operations();
+        //self.miscelaneous_operations();
+        //self.linking_operations();
+        //self.financial_advisor_operations();
         Ok(())
     }
 
@@ -1191,7 +1191,7 @@ impl TestWrapper {
             .unwrap()
             .lock()
             .unwrap()
-            .req_market_data_type(MarketDataTypeEnum::Delayed as i32);
+            .req_market_data_type(MarketDataTypeEnum::Realtime as i32);
 
         if result.is_err() {
             error!("{}", result.unwrap_err())
