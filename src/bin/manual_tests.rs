@@ -72,19 +72,19 @@ impl TestWrapper {
         // self.market_scanners_perations_req(); testd ok
         // self.fundamentals_operations_req(); //retest with research data subscription
         //self.contract_operations(); tested ok
-        self.tick_by_tick_operations_req(); //retest with data subscription
-                                            //self.historical_ticks_operations(); //retest with data subscription.  What to show enum
-                                            //self.histogram_operations_req(); //retest with data subscription.
-                                            // self.continuous_futures_operations_req(); //retest with data subscription.
-                                            //self.pnl_operations_req();
-                                            //self.market_rule_operations();
-                                            //self.reroute_cfd_operations();
-                                            //self.financial_advisor_operations();
-                                            // self.news_operations_req(); //retest with data subscription.
-                                            // self.bulletins_operations_req();
-                                            //self.miscelaneous_operations();
-                                            //self.linking_operations();
-                                            //self.financial_advisor_operations();
+        //self.tick_by_tick_operations_req(); //tested ok
+        // self.historical_ticks_operations(); //tested ok
+        //self.histogram_operations_req(); //tested ok
+        // self.continuous_futures_operations_req(); //tested ok
+        // self.pnl_operations_req(); //tested ok
+        // self.market_rule_operations(); //testd ok
+        // self.reroute_cfd_operations(); //tested ok
+        //self.financial_advisor_operations(); ****************************RETEST
+        // self.news_operations_req(); //retest with news subscription.
+        // self.bulletins_operations_req(); //tested ok
+        //self.miscelaneous_operations(); //tested ok
+        //self.linking_operations(); //tested ok
+        //self.financial_advisor_operations();
         Ok(())
     }
 
@@ -1810,7 +1810,7 @@ impl TestWrapper {
             .unwrap()
             .req_historical_ticks(
                 18001,
-                contract_samples::us_stock_at_smart().borrow(),
+                contract_samples::usstock().borrow(),
                 "20170712 21:39:33",
                 "",
                 10,
@@ -1861,12 +1861,7 @@ impl TestWrapper {
             .unwrap()
             .lock()
             .unwrap()
-            .req_histogram_data(
-                4002,
-                contract_samples::us_stock_at_smart().borrow(),
-                false,
-                "3 days",
-            );
+            .req_histogram_data(4002, contract_samples::usstock().borrow(), false, "3 days");
         // ![reqhistogramdata]
     }
 
@@ -2106,14 +2101,14 @@ impl TestWrapper {
     fn news_operations_req(&self) {
         // Requesting news ticks
         // ! [reqNewsTicks]
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            10001,
-            contract_samples::us_stock_at_smart().borrow(),
-            "mdoff,258",
-            false,
-            false,
-            vec![],
-        );
+        //        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+        //            10001,
+        //            contract_samples::usstock().borrow(),
+        //            "mdoff,258",
+        //            false,
+        //            false,
+        //            vec![],
+        //        );
         // ! [reqNewsTicks]
 
         // Returns list of subscribed news providers
@@ -2128,31 +2123,31 @@ impl TestWrapper {
 
         // Returns body of news article given article ID
         // ! [reqNewsArticle]
-        self.client
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .req_news_article(10002, "BRFG", "BRFG$04fb9da2", vec![]);
+        //        self.client
+        //            .as_ref()
+        //            .unwrap()
+        //            .lock()
+        //            .unwrap()
+        //            .req_news_article(10002, "BRFG", "BRFG$04fb9da2", vec![]);
         // ! [reqNewsArticle]
 
         // Returns list of historical news headlines with IDs
         // ! [reqHistoricalNews]
-        self.client
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .req_historical_news(10003, 8314, "BRFG", "", "", 10, vec![]);
+        //        self.client
+        //            .as_ref()
+        //            .unwrap()
+        //            .lock()
+        //            .unwrap()
+        //            .req_historical_news(10003, 8314, "BRFG", "", "", 10, vec![]);
         // ! [reqHistoricalNews]
 
         // ! [reqcontractdetailsnews]
-        self.client
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .req_contract_details(10004, contract_samples::news_feed_for_query().borrow());
+        //        self.client
+        //            .as_ref()
+        //            .unwrap()
+        //            .lock()
+        //            .unwrap()
+        //            .req_contract_details(10004, contract_samples::news_feed_for_query().borrow());
     }
 
     //----------------------------------------------------------------------------------------------
