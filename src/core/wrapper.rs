@@ -308,7 +308,7 @@ pub trait Wrapper: Send + Sync + 'static {
     ///
     ///        req_id - the request's identifier
     ///        bar.time  - start of bar in unix (or 'epoch') time
-    ///        bar.endTime - for synthetic bars, the end time (requires TWS v964). Otherwise -1.
+    ///        bar.EndTime - for synthetic bars, the end time (requires TWS v964). Otherwise -1.
     ///        bar.open_  - the bar's open value
     ///        bar.high  - the bar's high value
     ///        bar.low   - the bar's low value

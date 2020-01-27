@@ -38,7 +38,7 @@ impl Reader {
         if buf.len() == 0 {
             if !self.disconnect_requested.load(Ordering::Acquire) {
                 info!("socket either closed or broken, disconnecting");
-                self.stream.shutdown(Shutdown::Both).unwrap();
+                self.stream.shutdown(Shutdown::Both)?;
             }
         }
         Ok(buf)
@@ -109,13 +109,16 @@ impl Reader {
         Ok(())
     }
 
-    pub fn run(&mut self) -> Result<(), IBKRApiLibError> {
+    pub fn run(&mut self) {
         debug!("starting reader loop");
         loop {
             if self.disconnect_requested.load(Ordering::Acquire) {
-                return Ok(());
+                return;
             }
-            self.process_reader_msgs()?;
+            let result = self.process_reader_msgs();
+            if result.is_err() {
+                error!("{:?}", result);
+            }
         }
         //debug!("EReader thread finished")
     }

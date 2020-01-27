@@ -45,26 +45,26 @@ pub fn fill_arrival_price_params(
     base_order.algo_strategy = "ArrivalPx".to_string();
 
     base_order.algo_params.push(TagValue::new(
-        "maxPctVol".to_string(),
+        "MaxPctVol".to_string(),
         max_pct_vol.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "riskAversion".to_string(),
+        "RiskAversion".to_string(),
         risk_aversion.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
+        .push(TagValue::new("EndTime".to_string(), end_time.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "forceCompletion".to_string(),
+        "ForceCompletion".to_string(),
         force_completion.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "allowPastEndTime".to_string(),
+        "AllowPastEndTime".to_string(),
         allow_past_time.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
@@ -84,18 +84,18 @@ pub fn fill_dark_ice_params(
 ) {
     base_order.algo_strategy = "DarkIce".to_string();
     base_order.algo_params.push(TagValue::new(
-        "displaySize".to_string(),
+        "DisplaySize".to_string(),
         display_size.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
+        .push(TagValue::new("EndTime".to_string(), end_time.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "allowPastEndTime".to_string(),
+        "AllowPastEndTime".to_string(),
         (allow_past_end_time as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
@@ -117,16 +117,16 @@ pub fn fill_pct_vol_params(
 
     base_order
         .algo_params
-        .push(TagValue::new("pctVol".to_string(), pct_vol.to_string()));
+        .push(TagValue::new("PctVol".to_string(), pct_vol.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
+        .push(TagValue::new("EndTime".to_string(), end_time.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "noTakeLiq".to_string(),
+        "NoTakeLiq".to_string(),
         (no_take_liq as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
@@ -148,18 +148,18 @@ pub fn fill_twap_params(
     base_order.algo_strategy = "Twap".to_string();
 
     base_order.algo_params.push(TagValue::new(
-        "strategyType".to_string(),
+        "StrategyType".to_string(),
         strategy_type.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
+        .push(TagValue::new("EndTime".to_string(), end_time.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "allowPastEndTime".to_string(),
+        "AllowPastEndTime".to_string(),
         (allow_past_end_time as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
@@ -184,22 +184,22 @@ pub fn fill_vwap_params(
     base_order.algo_strategy = "Vwap".to_string();
 
     base_order.algo_params.push(TagValue::new(
-        "maxPctVol".to_string(),
+        "MaxPctVol".to_string(),
         max_pct_vol.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
+        .push(TagValue::new("EndTime".to_string(), end_time.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "allowPastEndTime".to_string(),
+        "AllowPastEndTime".to_string(),
         (allow_past_end_time as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "noTakeLiq".to_string(),
+        "NoTakeLiq".to_string(),
         (no_take_liq as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
@@ -227,30 +227,30 @@ pub fn fill_accumulate_distribute_params(
     base_order.algo_strategy = "AD".to_string();
 
     base_order.algo_params.push(TagValue::new(
-        "componentSize".to_string(),
+        "ComponentSize".to_string(),
         component_size.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "timeBetweenOrders".to_string(),
+        "TimeBetweenOrders".to_string(),
         time_between_orders.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "randomizeTime20".to_string(),
+        "RandomizeTime20".to_string(),
         (randomize_time_20 as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "randomizeSize55".to_string(),
+        "RandomizeSize55".to_string(),
         (randomize_size_55 as i32).to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("giveUp".to_string(), give_up.to_string()));
+        .push(TagValue::new("GiveUp".to_string(), give_up.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "catchUp".to_string(),
+        "CatchUp".to_string(),
         (catch_up as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "waitForFill".to_string(),
+        "WaitForFill".to_string(),
         (wait_for_fill as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
@@ -276,15 +276,15 @@ pub fn fill_balance_impact_risk_params(
     base_order.algo_strategy = "BalanceImpactRisk".to_string();
 
     base_order.algo_params.push(TagValue::new(
-        "maxPctVol".to_string(),
+        "MaxPctVol".to_string(),
         max_pct_vol.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "riskAversion".to_string(),
+        "RiskAversion".to_string(),
         risk_aversion.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "forceCompletion".to_string(),
+        "ForceCompletion".to_string(),
         force_completion.to_string(),
     ));
 }
@@ -297,7 +297,7 @@ pub fn fill_min_impact_params(base_order: &mut Order, max_pct_vol: f64) {
     base_order.algo_strategy = "MinImpact".to_string();
 
     base_order.algo_params.push(TagValue::new(
-        "maxPctVol".to_string(),
+        "MaxPctVol".to_string(),
         max_pct_vol.to_string(),
     ));
 }
@@ -330,19 +330,19 @@ pub fn fill_close_price_params(
     base_order.algo_strategy = "ClosePx".to_string();
 
     base_order.algo_params.push(TagValue::new(
-        "maxPctVol".to_string(),
+        "MaxPctVol".to_string(),
         max_pct_vol.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "riskAversion".to_string(),
+        "RiskAversion".to_string(),
         risk_aversion.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "forceCompletion".to_string(),
+        "ForceCompletion".to_string(),
         (force_completion as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
@@ -370,7 +370,7 @@ pub fn fill_price_variant_pct_vol_params(
 
     base_order
         .algo_params
-        .push(TagValue::new("pctVol".to_string(), pct_vol.to_string()));
+        .push(TagValue::new("PctVol".to_string(), pct_vol.to_string()));
     base_order.algo_params.push(TagValue::new(
         "deltaPctVol".to_string(),
         delta_pct_vol.to_string(),
@@ -384,14 +384,14 @@ pub fn fill_price_variant_pct_vol_params(
         max_pct_vol_4px.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
+        .push(TagValue::new("EndTime".to_string(), end_time.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "noTakeLiq".to_string(),
+        "NoTakeLiq".to_string(),
         (no_take_liq as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
@@ -424,14 +424,14 @@ pub fn fill_size_variant_pct_vol_params(
         end_pct_vol.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
+        .push(TagValue::new("EndTime".to_string(), end_time.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "noTakeLiq".to_string(),
+        "NoTakeLiq".to_string(),
         (no_take_liq as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
@@ -464,14 +464,14 @@ pub fn fill_time_variant_pct_vol_params(
         end_pct_vol.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
+        .push(TagValue::new("EndTime".to_string(), end_time.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "noTakeLiq".to_string(),
+        "NoTakeLiq".to_string(),
         (no_take_liq as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(

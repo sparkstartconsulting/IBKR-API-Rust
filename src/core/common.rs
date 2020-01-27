@@ -17,391 +17,197 @@ pub const UNSET_DOUBLE: f64 = 1.7976931348623157E308_f64;
 //std::f64::MAX;
 pub const UNSET_LONG: i64 = std::i64::MAX;
 
-const BID_SIZE: (i32, &str) = (0, "BidSize");
-const BID: (i32, &str) = (1, "BID");
-const ASK: (i32, &str) = (2, "ASK");
-const ASK_SIZE: (i32, &str) = (3, "AskSize");
-const LAST: (i32, &str) = (4, "LAST");
-const LAST_SIZE: (i32, &str) = (5, "LAST_SIZE");
-const HIGH: (i32, &str) = (6, "HIGH");
-const LOW: (i32, &str) = (7, "LOW");
-const VOLUME: (i32, &str) = (8, "VOLUME");
-const CLOSE: (i32, &str) = (9, "CLOSE");
-const BID_OPTION_COMPUTATION: (i32, &str) = (10, "BID_OPTION_COMPUTATION");
-const ASK_OPTION_COMPUTATION: (i32, &str) = (11, "ASK_OPTION_COMPUTATION");
-const LAST_OPTION_COMPUTATION: (i32, &str) = (12, "LAST_OPTION_COMPUTATION");
-const MODEL_OPTION: (i32, &str) = (13, "MODEL_OPTION");
-const OPEN: (i32, &str) = (14, "OPEN");
-const LOW_13_WEEK: (i32, &str) = (15, "LOW_13_WEEK");
-const HIGH_13_WEEK: (i32, &str) = (16, "HIGH_13_WEEK");
-const LOW_26_WEEK: (i32, &str) = (17, "LOW_26_WEEK");
-const HIGH_26_WEEK: (i32, &str) = (18, "HIGH_26_WEEK");
-const LOW_52_WEEK: (i32, &str) = (19, "LOW_52_WEEK");
-const HIGH_52_WEEK: (i32, &str) = (20, "HIGH_52_WEEK");
-const AVG_VOLUME: (i32, &str) = (21, "AVG_VOLUME");
-const OPEN_INTEREST: (i32, &str) = (22, "OPEN_INTEREST");
-const OPTION_HISTORICAL_VOL: (i32, &str) = (23, "OPTION_HISTORICAL_VOL");
-const OPTION_IMPLIED_VOL: (i32, &str) = (24, "OPTION_IMPLIED_VOL");
-const OPTION_BID_EXCH: (i32, &str) = (25, "OPTION_BID_EXCH");
-const OPTION_ASK_EXCH: (i32, &str) = (26, "OPTION_ASK_EXCH");
-const OPTION_CALL_OPEN_INTEREST: (i32, &str) = (27, "OPTION_CALL_OPEN_INTEREST");
-const OPTION_PUT_OPEN_INTEREST: (i32, &str) = (28, "OPTION_PUT_OPEN_INTEREST");
-const OPTION_CALL_VOLUME: (i32, &str) = (29, "OPTION_CALL_VOLUME");
-const OPTION_PUT_VOLUME: (i32, &str) = (30, "OPTION_PUT_VOLUME");
-const INDEX_FUTURE_PREMIUM: (i32, &str) = (31, "INDEX_FUTURE_PREMIUM");
-const BID_EXCH: (i32, &str) = (32, "BID_EXCH");
-const ASK_EXCH: (i32, &str) = (33, "ASK_EXCH");
-const AUCTION_VOLUME: (i32, &str) = (34, "AUCTION_VOLUME");
-const AUCTION_PRICE: (i32, &str) = (35, "AUCTION_PRICE");
-const AUCTION_IMBALANCE: (i32, &str) = (36, "AUCTION_IMBALANCE");
-const MARK_PRICE: (i32, &str) = (37, "MARK_PRICE");
-const BID_EFP_COMPUTATION: (i32, &str) = (38, "BID_EFP_COMPUTATION");
-const ASK_EFP_COMPUTATION: (i32, &str) = (39, "ASK_EFP_COMPUTATION");
-const LAST_EFP_COMPUTATION: (i32, &str) = (40, "LAST_EFP_COMPUTATION");
-const OPEN_EFP_COMPUTATION: (i32, &str) = (41, "OPEN_EFP_COMPUTATION");
-const HIGH_EFP_COMPUTATION: (i32, &str) = (42, "HIGH_EFP_COMPUTATION");
-const LOW_EFP_COMPUTATION: (i32, &str) = (43, "LOW_EFP_COMPUTATION");
-const CLOSE_EFP_COMPUTATION: (i32, &str) = (44, "CLOSE_EFP_COMPUTATION");
-const LAST_TIMESTAMP: (i32, &str) = (45, "LAST_TIMESTAMP");
-const SHORTABLE: (i32, &str) = (46, "SHORTABLE");
-const FUNDAMENTAL_RATIOS: (i32, &str) = (47, "FUNDAMENTAL_RATIOS");
-const RT_VOLUME: (i32, &str) = (48, "RT_VOLUME");
-const HALTED: (i32, &str) = (49, "HALTED");
-const BID_YIELD: (i32, &str) = (50, "BID_YIELD");
-const ASK_YIELD: (i32, &str) = (51, "ASK_YIELD");
-const LAST_YIELD: (i32, &str) = (52, "LAST_YIELD");
-const CUST_OPTION_COMPUTATION: (i32, &str) = (53, "CUST_OPTION_COMPUTATION");
-const TRADE_COUNT: (i32, &str) = (54, "TRADE_COUNT");
-const TRADE_RATE: (i32, &str) = (55, "TRADE_RATE");
-const VOLUME_RATE: (i32, &str) = (56, "VOLUME_RATE");
-const LAST_RTH_TRADE: (i32, &str) = (57, "LAST_RTH_TRADE");
-const RT_HISTORICAL_VOL: (i32, &str) = (58, "RT_HISTORICAL_VOL");
-const IB_DIVIDENDS: (i32, &str) = (59, "IB_DIVIDENDS");
-const BOND_FACTOR_MULTIPLIER: (i32, &str) = (60, "BOND_FACTOR_MULTIPLIER");
-const REGULATORY_IMBALANCE: (i32, &str) = (62, "REGULATORY_IMBALANCE");
-const NEWS_TICK: (i32, &str) = (63, "NEWS_TICK");
-const SHORT_TERM_VOLUME_3_MIN: (i32, &str) = (64, "SHORT_TERM_VOLUME_3_MIN");
-const SHORT_TERM_VOLUME_5_MIN: (i32, &str) = (65, "SHORT_TERM_VOLUME_5_MIN");
-const SHORT_TERM_VOLUME_10_MIN: (i32, &str) = (66, "SHORT_TERM_VOLUME_10_MIN");
-const DELAYED_BID: (i32, &str) = (67, "DELAYED_BID");
-const DELAYED_ASK: (i32, &str) = (68, "DELAYED_ASK");
-const DELAYED_LAST: (i32, &str) = (69, "DELAYED_LAST");
-const DELAYED_BID_SIZE: (i32, &str) = (70, "DELAYED_BID_SIZE");
-const DELAYED_ASK_SIZE: (i32, &str) = (71, "DELAYED_ASK_SIZE");
-const DELAYED_LAST_SIZE: (i32, &str) = (72, "DELAYED_LAST_SIZE");
-const DELAYED_HIGH: (i32, &str) = (73, "DELAYED_HIGH");
-const DELAYED_LOW: (i32, &str) = (74, "DELAYED_LOW");
-const DELAYED_VOLUME: (i32, &str) = (75, "DELAYED_VOLUME");
-const DELAYED_CLOSE: (i32, &str) = (76, "DELAYED_CLOSE");
-const DELAYED_OPEN: (i32, &str) = (77, "DELAYED_OPEN");
-const RT_TRD_VOLUME: (i32, &str) = (78, "RT_TRD_VOLUME");
-const CREDITMAN_MARK_PRICE: (i32, &str) = (79, "");
-const CREDITMAN_SLOW_MARK_PRICE: (i32, &str) = (80, "CREDITMAN_MARK_PRICE");
-const DELAYED_BID_OPTION: (i32, &str) = (81, "DELAYED_BID_OPTION");
-const DELAYED_ASK_OPTION: (i32, &str) = (82, "DELAYED_ASK_OPTION");
-const DELAYED_LAST_OPTION: (i32, &str) = (83, "DELAYED_LAST_OPTION");
-const DELAYED_MODEL_OPTION: (i32, &str) = (84, "DELAYED_MODEL_OPTION");
-const LAST_EXCH: (i32, &str) = (85, "LAST_EXCH");
-const LAST_REG_TIME: (i32, &str) = (86, "LAST_REG_TIME");
-const FUTURES_OPEN_INTEREST: (i32, &str) = (87, "FUTURES_OPEN_INTEREST");
-const AVG_OPT_VOLUME: (i32, &str) = (89, "AVG_OPT_VOLUME");
-const DELAYED_LAST_TIMESTAMP: (i32, &str) = (90, "DELAYED_LAST_TIMESTAMP");
-const SHORTABLE_SHARES: (i32, &str) = (91, "SHORTABLE_SHARES");
-const NOT_SET: (i32, &str) = (92, "NOT_SET");
-
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]
 pub enum TickType {
-    BidSize,
-    Bid,
-    Ask,
-    AskSize,
-    Last,
-    LastSize,
-    High,
-    Low,
-    Volume,
-    Close,
-    BidOptionComputation,
-    AskOptionComputation,
-    LastOptionComputation,
-    ModelOption,
-    Open,
-    Low13Week,
-    High13Week,
-    Low26Week,
-    High26Week,
-    Low52Week,
-    High52Week,
-    AvgVolume,
-    OpenInterest,
-    OptionHistoricalVol,
-    OptionImpliedVol,
-    OptionBidExch,
-    OptionAskExch,
-    OptionCallOpenInterest,
-    OptionPutOpenInterest,
-    OptionCallVolume,
-    OptionPutVolume,
-    IndexFuturePremium,
-    BidExch,
-    AskExch,
-    AuctionVolume,
-    AuctionPrice,
-    AuctionImbalance,
-    MarkPrice,
-    BidEfpComputation,
-    AskEfpComputation,
-    LastEfpComputation,
-    OpenEfpComputation,
-    HighEfpComputation,
-    LowEfpComputation,
-    CloseEfpComputation,
-    LastTimestamp,
-    Shortable,
-    FundamentalRatios,
-    RtVolume,
-    Halted,
-    BidYield,
-    AskYield,
-    LastYield,
-    CustOptionComputation,
-    TradeCount,
-    TradeRate,
-    VolumeRate,
-    LastRthTrade,
-    RtHistoricalVol,
-    IbDividends,
-    BondFactorMultiplier,
-    RegulatoryImbalance,
-    NewsTick,
-    ShortTermVolume3Min,
-    ShortTermVolume5Min,
-    ShortTermVolume10Min,
-    DelayedBid,
-    DelayedAsk,
-    DelayedLast,
-    DelayedBidSize,
-    DelayedAskSize,
-    DelayedLastSize,
-    DelayedHigh,
-    DelayedLow,
-    DelayedVolume,
-    DelayedClose,
-    DelayedOpen,
-    RtTrdVolume,
-    CreditmanMarkPrice,
-    CreditmanSlowMarkPrice,
-    DelayedBidOption,
-    DelayedAskOption,
-    DelayedLastOption,
-    DelayedModelOption,
-    LastExch,
-    LastRegTime,
-    FuturesOpenInterest,
-    AvgOptVolume,
-    DelayedLastTimestamp,
-    ShortableShares,
-    NotSet,
-}
-
-impl TickType {
-    pub fn code(&self) -> i32 {
-        match *self {
-            TickType::BidSize => BID_SIZE.0,
-            TickType::Bid => BID.0,
-            TickType::Ask => ASK.0,
-            TickType::AskSize => ASK_SIZE.0,
-            TickType::Last => LAST.0,
-            TickType::LastSize => LAST_SIZE.0,
-            TickType::High => HIGH.0,
-            TickType::Low => LOW.0,
-            TickType::Volume => VOLUME.0,
-            TickType::Close => CLOSE.0,
-            TickType::BidOptionComputation => BID_OPTION_COMPUTATION.0,
-            TickType::AskOptionComputation => ASK_OPTION_COMPUTATION.0,
-            TickType::LastOptionComputation => LAST_OPTION_COMPUTATION.0,
-            TickType::ModelOption => MODEL_OPTION.0,
-            TickType::Open => OPEN.0,
-            TickType::Low13Week => LOW_13_WEEK.0,
-            TickType::High13Week => HIGH_13_WEEK.0,
-            TickType::Low26Week => LOW_26_WEEK.0,
-            TickType::High26Week => HIGH_26_WEEK.0,
-            TickType::Low52Week => LOW_52_WEEK.0,
-            TickType::High52Week => HIGH_52_WEEK.0,
-            TickType::AvgVolume => AVG_VOLUME.0,
-            TickType::OpenInterest => OPEN_INTEREST.0,
-            TickType::OptionHistoricalVol => OPTION_HISTORICAL_VOL.0,
-            TickType::OptionImpliedVol => OPTION_IMPLIED_VOL.0,
-            TickType::OptionBidExch => OPTION_BID_EXCH.0,
-            TickType::OptionAskExch => OPTION_ASK_EXCH.0,
-            TickType::OptionCallOpenInterest => OPTION_CALL_OPEN_INTEREST.0,
-            TickType::OptionPutOpenInterest => OPTION_PUT_OPEN_INTEREST.0,
-            TickType::OptionCallVolume => OPTION_CALL_VOLUME.0,
-            TickType::OptionPutVolume => OPTION_PUT_VOLUME.0,
-            TickType::IndexFuturePremium => INDEX_FUTURE_PREMIUM.0,
-            TickType::BidExch => BID_EXCH.0,
-            TickType::AskExch => ASK_EXCH.0,
-            TickType::AuctionVolume => AUCTION_VOLUME.0,
-            TickType::AuctionPrice => AUCTION_PRICE.0,
-            TickType::AuctionImbalance => AUCTION_IMBALANCE.0,
-            TickType::MarkPrice => MARK_PRICE.0,
-            TickType::BidEfpComputation => BID_EFP_COMPUTATION.0,
-            TickType::AskEfpComputation => ASK_EFP_COMPUTATION.0,
-            TickType::LastEfpComputation => LAST_EFP_COMPUTATION.0,
-            TickType::OpenEfpComputation => OPEN_EFP_COMPUTATION.0,
-            TickType::HighEfpComputation => HIGH_EFP_COMPUTATION.0,
-            TickType::LowEfpComputation => LOW_EFP_COMPUTATION.0,
-            TickType::CloseEfpComputation => CLOSE_EFP_COMPUTATION.0,
-            TickType::LastTimestamp => LAST_TIMESTAMP.0,
-            TickType::Shortable => SHORTABLE.0,
-            TickType::FundamentalRatios => FUNDAMENTAL_RATIOS.0,
-            TickType::RtVolume => RT_VOLUME.0,
-            TickType::Halted => HALTED.0,
-            TickType::BidYield => BID_YIELD.0,
-            TickType::AskYield => ASK_YIELD.0,
-            TickType::LastYield => LAST_YIELD.0,
-            TickType::CustOptionComputation => CUST_OPTION_COMPUTATION.0,
-            TickType::TradeCount => TRADE_COUNT.0,
-            TickType::TradeRate => TRADE_RATE.0,
-            TickType::VolumeRate => VOLUME_RATE.0,
-            TickType::LastRthTrade => LAST_RTH_TRADE.0,
-            TickType::RtHistoricalVol => RT_HISTORICAL_VOL.0,
-            TickType::IbDividends => IB_DIVIDENDS.0,
-            TickType::BondFactorMultiplier => BOND_FACTOR_MULTIPLIER.0,
-            TickType::RegulatoryImbalance => REGULATORY_IMBALANCE.0,
-            TickType::NewsTick => NEWS_TICK.0,
-            TickType::ShortTermVolume3Min => SHORT_TERM_VOLUME_3_MIN.0,
-            TickType::ShortTermVolume5Min => SHORT_TERM_VOLUME_5_MIN.0,
-            TickType::ShortTermVolume10Min => SHORT_TERM_VOLUME_10_MIN.0,
-            TickType::DelayedBid => DELAYED_BID.0,
-            TickType::DelayedAsk => DELAYED_ASK.0,
-            TickType::DelayedLast => DELAYED_LAST.0,
-            TickType::DelayedBidSize => DELAYED_BID_SIZE.0,
-            TickType::DelayedAskSize => DELAYED_ASK_SIZE.0,
-            TickType::DelayedLastSize => DELAYED_LAST_SIZE.0,
-            TickType::DelayedHigh => DELAYED_HIGH.0,
-            TickType::DelayedLow => DELAYED_LOW.0,
-            TickType::DelayedVolume => DELAYED_VOLUME.0,
-            TickType::DelayedClose => DELAYED_CLOSE.0,
-            TickType::DelayedOpen => DELAYED_OPEN.0,
-            TickType::RtTrdVolume => RT_TRD_VOLUME.0,
-            TickType::CreditmanMarkPrice => CREDITMAN_MARK_PRICE.0,
-            TickType::CreditmanSlowMarkPrice => CREDITMAN_SLOW_MARK_PRICE.0,
-            TickType::DelayedBidOption => DELAYED_BID_OPTION.0,
-            TickType::DelayedAskOption => DELAYED_ASK_OPTION.0,
-            TickType::DelayedLastOption => DELAYED_LAST_OPTION.0,
-            TickType::DelayedModelOption => DELAYED_MODEL_OPTION.0,
-            TickType::LastExch => LAST_EXCH.0,
-            TickType::LastRegTime => LAST_REG_TIME.0,
-            TickType::FuturesOpenInterest => FUTURES_OPEN_INTEREST.0,
-            TickType::AvgOptVolume => AVG_OPT_VOLUME.0,
-            TickType::DelayedLastTimestamp => DELAYED_LAST_TIMESTAMP.0,
-            TickType::ShortableShares => SHORTABLE_SHARES.0,
-            TickType::NotSet => NOT_SET.0,
-        }
-    }
-
-    pub fn value(&self) -> &str {
-        match *self {
-            TickType::BidSize => BID_SIZE.1,
-            TickType::Bid => BID.1,
-            TickType::Ask => ASK.1,
-            TickType::AskSize => ASK_SIZE.1,
-            TickType::Last => LAST.1,
-            TickType::LastSize => LAST_SIZE.1,
-            TickType::High => HIGH.1,
-            TickType::Low => LOW.1,
-            TickType::Volume => VOLUME.1,
-            TickType::Close => CLOSE.1,
-            TickType::BidOptionComputation => BID_OPTION_COMPUTATION.1,
-            TickType::AskOptionComputation => ASK_OPTION_COMPUTATION.1,
-            TickType::LastOptionComputation => LAST_OPTION_COMPUTATION.1,
-            TickType::ModelOption => MODEL_OPTION.1,
-            TickType::Open => OPEN.1,
-            TickType::Low13Week => LOW_13_WEEK.1,
-            TickType::High13Week => HIGH_13_WEEK.1,
-            TickType::Low26Week => LOW_26_WEEK.1,
-            TickType::High26Week => HIGH_26_WEEK.1,
-            TickType::Low52Week => LOW_52_WEEK.1,
-            TickType::High52Week => HIGH_52_WEEK.1,
-            TickType::AvgVolume => AVG_VOLUME.1,
-            TickType::OpenInterest => OPEN_INTEREST.1,
-            TickType::OptionHistoricalVol => OPTION_HISTORICAL_VOL.1,
-            TickType::OptionImpliedVol => OPTION_IMPLIED_VOL.1,
-            TickType::OptionBidExch => OPTION_BID_EXCH.1,
-            TickType::OptionAskExch => OPTION_ASK_EXCH.1,
-            TickType::OptionCallOpenInterest => OPTION_CALL_OPEN_INTEREST.1,
-            TickType::OptionPutOpenInterest => OPTION_PUT_OPEN_INTEREST.1,
-            TickType::OptionCallVolume => OPTION_CALL_VOLUME.1,
-            TickType::OptionPutVolume => OPTION_PUT_VOLUME.1,
-            TickType::IndexFuturePremium => INDEX_FUTURE_PREMIUM.1,
-            TickType::BidExch => BID_EXCH.1,
-            TickType::AskExch => ASK_EXCH.1,
-            TickType::AuctionVolume => AUCTION_VOLUME.1,
-            TickType::AuctionPrice => AUCTION_PRICE.1,
-            TickType::AuctionImbalance => AUCTION_IMBALANCE.1,
-            TickType::MarkPrice => MARK_PRICE.1,
-            TickType::BidEfpComputation => BID_EFP_COMPUTATION.1,
-            TickType::AskEfpComputation => ASK_EFP_COMPUTATION.1,
-            TickType::LastEfpComputation => LAST_EFP_COMPUTATION.1,
-            TickType::OpenEfpComputation => OPEN_EFP_COMPUTATION.1,
-            TickType::HighEfpComputation => HIGH_EFP_COMPUTATION.1,
-            TickType::LowEfpComputation => LOW_EFP_COMPUTATION.1,
-            TickType::CloseEfpComputation => CLOSE_EFP_COMPUTATION.1,
-            TickType::LastTimestamp => LAST_TIMESTAMP.1,
-            TickType::Shortable => SHORTABLE.1,
-            TickType::FundamentalRatios => FUNDAMENTAL_RATIOS.1,
-            TickType::RtVolume => RT_VOLUME.1,
-            TickType::Halted => HALTED.1,
-            TickType::BidYield => BID_YIELD.1,
-            TickType::AskYield => ASK_YIELD.1,
-            TickType::LastYield => LAST_YIELD.1,
-            TickType::CustOptionComputation => CUST_OPTION_COMPUTATION.1,
-            TickType::TradeCount => TRADE_COUNT.1,
-            TickType::TradeRate => TRADE_RATE.1,
-            TickType::VolumeRate => VOLUME_RATE.1,
-            TickType::LastRthTrade => LAST_RTH_TRADE.1,
-            TickType::RtHistoricalVol => RT_HISTORICAL_VOL.1,
-            TickType::IbDividends => IB_DIVIDENDS.1,
-            TickType::BondFactorMultiplier => BOND_FACTOR_MULTIPLIER.1,
-            TickType::RegulatoryImbalance => REGULATORY_IMBALANCE.1,
-            TickType::NewsTick => NEWS_TICK.1,
-            TickType::ShortTermVolume3Min => SHORT_TERM_VOLUME_3_MIN.1,
-            TickType::ShortTermVolume5Min => SHORT_TERM_VOLUME_5_MIN.1,
-            TickType::ShortTermVolume10Min => SHORT_TERM_VOLUME_10_MIN.1,
-            TickType::DelayedBid => DELAYED_BID.1,
-            TickType::DelayedAsk => DELAYED_ASK.1,
-            TickType::DelayedLast => DELAYED_LAST.1,
-            TickType::DelayedBidSize => DELAYED_BID_SIZE.1,
-            TickType::DelayedAskSize => DELAYED_ASK_SIZE.1,
-            TickType::DelayedLastSize => DELAYED_LAST_SIZE.1,
-            TickType::DelayedHigh => DELAYED_HIGH.1,
-            TickType::DelayedLow => DELAYED_LOW.1,
-            TickType::DelayedVolume => DELAYED_VOLUME.1,
-            TickType::DelayedClose => DELAYED_CLOSE.1,
-            TickType::DelayedOpen => DELAYED_OPEN.1,
-            TickType::RtTrdVolume => RT_TRD_VOLUME.1,
-            TickType::CreditmanMarkPrice => CREDITMAN_MARK_PRICE.1,
-            TickType::CreditmanSlowMarkPrice => CREDITMAN_SLOW_MARK_PRICE.1,
-            TickType::DelayedBidOption => DELAYED_BID_OPTION.1,
-            TickType::DelayedAskOption => DELAYED_ASK_OPTION.1,
-            TickType::DelayedLastOption => DELAYED_LAST_OPTION.1,
-            TickType::DelayedModelOption => DELAYED_MODEL_OPTION.1,
-            TickType::LastExch => LAST_EXCH.1,
-            TickType::LastRegTime => LAST_REG_TIME.1,
-            TickType::FuturesOpenInterest => FUTURES_OPEN_INTEREST.1,
-            TickType::AvgOptVolume => AVG_OPT_VOLUME.1,
-            TickType::DelayedLastTimestamp => DELAYED_LAST_TIMESTAMP.1,
-            TickType::ShortableShares => SHORTABLE_SHARES.1,
-            TickType::NotSet => NOT_SET.1,
-        }
-    }
+    BidSize = 0,
+    Bid = 1,
+    Ask = 2,
+    AskSize = 3,
+    Last = 4,
+    LastSize = 5,
+    High = 6,
+    Low = 7,
+    Volume = 8,
+    Close = 9,
+    BidOptionComputation = 10,
+    AskOptionComputation = 11,
+    LastOptionComputation = 12,
+    ModelOption = 13,
+    Open = 14,
+    Low13Week = 15,
+    High13Week = 16,
+    Low26Week = 17,
+    High26Week = 18,
+    Low52Week = 19,
+    High52Week = 20,
+    AvgVolume = 21,
+    OpenInterest = 22,
+    OptionHistoricalVol = 23,
+    OptionImpliedVol = 24,
+    OptionBidExch = 25,
+    OptionAskExch = 26,
+    OptionCallOpenInterest = 27,
+    OptionPutOpenInterest = 28,
+    OptionCallVolume = 29,
+    OptionPutVolume = 30,
+    IndexFuturePremium = 31,
+    BidExch = 32,
+    AskExch = 33,
+    AuctionVolume = 34,
+    AuctionPrice = 35,
+    AuctionImbalance = 36,
+    MarkPrice = 37,
+    BidEfpComputation = 38,
+    AskEfpComputation = 39,
+    LastEfpComputation = 40,
+    OpenEfpComputation = 41,
+    HighEfpComputation = 42,
+    LowEfpComputation = 43,
+    CloseEfpComputation = 44,
+    LastTimestamp = 45,
+    Shortable = 46,
+    FundamentalRatios = 47,
+    RtVolume = 48,
+    Halted = 49,
+    BidYield = 50,
+    AskYield = 51,
+    LastYield = 52,
+    CustOptionComputation = 53,
+    TradeCount = 54,
+    TradeRate = 55,
+    VolumeRate = 56,
+    LastRthTrade = 57,
+    RtHistoricalVol = 58,
+    IbDividends = 59,
+    BondFactorMultiplier = 60,
+    RegulatoryImbalance = 61,
+    NewsTick = 62,
+    ShortTermVolume3Min = 63,
+    ShortTermVolume5Min = 64,
+    ShortTermVolume10Min = 65,
+    DelayedBid = 66,
+    DelayedAsk = 67,
+    DelayedLast = 68,
+    DelayedBidSize = 69,
+    DelayedAskSize = 70,
+    DelayedLastSize = 71,
+    DelayedHigh = 72,
+    DelayedLow = 73,
+    DelayedVolume = 74,
+    DelayedClose = 75,
+    DelayedOpen = 76,
+    RtTrdVolume = 77,
+    CreditmanMarkPrice = 78,
+    CreditmanSlowMarkPrice = 79,
+    DelayedBidOption = 80,
+    DelayedAskOption = 81,
+    DelayedLastOption = 82,
+    DelayedModelOption = 83,
+    LastExch = 84,
+    LastRegTime = 85,
+    FuturesOpenInterest = 86,
+    AvgOptVolume = 87,
+    DelayedLastTimestamp = 88,
+    ShortableShares = 89,
+    NotSet = UNSET_INTEGER,
 }
 
 impl fmt::Display for TickType {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{}", self.value())
+        match *self {
+            TickType::BidSize => write!(fmt, "bidSize"),
+            TickType::Bid => write!(fmt, "bidPrice"),
+            TickType::Ask => write!(fmt, "askPrice"),
+            TickType::AskSize => write!(fmt, "askSize"),
+            TickType::Last => write!(fmt, "lastPrice"),
+            TickType::LastSize => write!(fmt, "lastSize"),
+            TickType::High => write!(fmt, "high"),
+            TickType::Low => write!(fmt, "low"),
+            TickType::Volume => write!(fmt, "volume"),
+            TickType::Close => write!(fmt, "close"),
+            TickType::BidOptionComputation => write!(fmt, "bidOptComp"),
+            TickType::AskOptionComputation => write!(fmt, "askOptComp"),
+            TickType::LastOptionComputation => write!(fmt, "lastOptComp"),
+            TickType::ModelOption => write!(fmt, "modelOptComp"),
+            TickType::Open => write!(fmt, "open"),
+            TickType::Low13Week => write!(fmt, "13WeekLow"),
+            TickType::High13Week => write!(fmt, "13WeekHigh"),
+            TickType::Low26Week => write!(fmt, "26WeekLow"),
+            TickType::High26Week => write!(fmt, "26WeekHigh"),
+            TickType::Low52Week => write!(fmt, "52WeekLow"),
+            TickType::High52Week => write!(fmt, "52WeekHigh"),
+            TickType::AvgVolume => write!(fmt, "AvgVolume"),
+            TickType::OpenInterest => write!(fmt, "OpenInterest"),
+            TickType::OptionHistoricalVol => write!(fmt, "OptionHistoricalVolatility"),
+            TickType::OptionImpliedVol => write!(fmt, "OptionImpliedVolatility"),
+            TickType::OptionBidExch => write!(fmt, "OptionBidExch"),
+            TickType::OptionAskExch => write!(fmt, "OptionAskExch"),
+            TickType::OptionCallOpenInterest => write!(fmt, "OptionCallOpenInterest"),
+            TickType::OptionPutOpenInterest => write!(fmt, "OptionPutOpenInterest"),
+            TickType::OptionCallVolume => write!(fmt, "OptionCallVolume"),
+            TickType::OptionPutVolume => write!(fmt, "OptionPutVolume"),
+            TickType::IndexFuturePremium => write!(fmt, "IndexFuturePremium"),
+            TickType::BidExch => write!(fmt, "bidExch"),
+            TickType::AskExch => write!(fmt, "askExch"),
+            TickType::AuctionVolume => write!(fmt, "auctionVolume"),
+            TickType::AuctionPrice => write!(fmt, "auctionPrice"),
+            TickType::AuctionImbalance => write!(fmt, "auctionImbalance"),
+            TickType::MarkPrice => write!(fmt, "markPrice"),
+            TickType::BidEfpComputation => write!(fmt, "bidEFP"),
+            TickType::AskEfpComputation => write!(fmt, "askEFP"),
+            TickType::LastEfpComputation => write!(fmt, "lastEFP"),
+            TickType::OpenEfpComputation => write!(fmt, "openEFP"),
+            TickType::HighEfpComputation => write!(fmt, "highEFP"),
+            TickType::LowEfpComputation => write!(fmt, "lowEFP"),
+            TickType::CloseEfpComputation => write!(fmt, "closeEFP"),
+            TickType::LastTimestamp => write!(fmt, "lastTimestamp"),
+            TickType::Shortable => write!(fmt, "shortable"),
+            TickType::FundamentalRatios => write!(fmt, "fundamentals"),
+            TickType::RtVolume => write!(fmt, "RTVolume"),
+            TickType::Halted => write!(fmt, "halted"),
+            TickType::BidYield => write!(fmt, "bidYield"),
+            TickType::AskYield => write!(fmt, "askYield"),
+            TickType::LastYield => write!(fmt, "lastYield"),
+            TickType::CustOptionComputation => write!(fmt, "custOptComp"),
+            TickType::TradeCount => write!(fmt, "tradeCount"),
+            TickType::TradeRate => write!(fmt, "tradeRate"),
+            TickType::VolumeRate => write!(fmt, "volumeRate"),
+            TickType::LastRthTrade => write!(fmt, "lastRTHTrade"),
+            TickType::RtHistoricalVol => write!(fmt, "RTHistoricalVol"),
+            TickType::IbDividends => write!(fmt, "IBDividends"),
+            TickType::BondFactorMultiplier => write!(fmt, "bondFactorMultiplier"),
+            TickType::RegulatoryImbalance => write!(fmt, "regulatoryImbalance"),
+            TickType::NewsTick => write!(fmt, "newsTick"),
+            TickType::ShortTermVolume3Min => write!(fmt, "shortTermVolume3Min"),
+            TickType::ShortTermVolume5Min => write!(fmt, "shortTermVolume5Min"),
+            TickType::ShortTermVolume10Min => write!(fmt, "shortTermVolume10Min"),
+            TickType::DelayedBid => write!(fmt, "delayedBid"),
+            TickType::DelayedAsk => write!(fmt, "delayedAsk"),
+            TickType::DelayedLast => write!(fmt, "delayedLast"),
+            TickType::DelayedBidSize => write!(fmt, "delayedBidSize"),
+            TickType::DelayedAskSize => write!(fmt, "delayedAskSize"),
+            TickType::DelayedLastSize => write!(fmt, "delayedLastSize"),
+            TickType::DelayedHigh => write!(fmt, "delayedHigh"),
+            TickType::DelayedLow => write!(fmt, "delayedLow"),
+            TickType::DelayedVolume => write!(fmt, "delayedVolume"),
+            TickType::DelayedClose => write!(fmt, "delayedClose"),
+            TickType::DelayedOpen => write!(fmt, "delayedOpen"),
+            TickType::RtTrdVolume => write!(fmt, "rtTrdVolume"),
+            TickType::CreditmanMarkPrice => write!(fmt, "creditmanMarkPrice"),
+            TickType::CreditmanSlowMarkPrice => write!(fmt, "creditmanSlowMarkPrice"),
+            TickType::DelayedBidOption => write!(fmt, "delayedBidOptComp"),
+            TickType::DelayedAskOption => write!(fmt, "delayedAskOptComp"),
+            TickType::DelayedLastOption => write!(fmt, "delayedLastOptComp"),
+            TickType::DelayedModelOption => write!(fmt, "delayedModelOptComp"),
+            TickType::LastExch => write!(fmt, "lastExchange"),
+            TickType::LastRegTime => write!(fmt, "lastRegTime"),
+            TickType::FuturesOpenInterest => write!(fmt, "futuresOpenInterest"),
+            TickType::AvgOptVolume => write!(fmt, "avgOptVolume"),
+            TickType::DelayedLastTimestamp => write!(fmt, "delayedLastTimestamp"),
+            TickType::ShortableShares => write!(fmt, "shortableShares"),
+            TickType::NotSet => write!(fmt, "unknown"),
+        }
     }
 }
 
@@ -417,6 +223,28 @@ pub enum FaDataType {
 impl fmt::Display for FaDataType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Type: {}", self)
+    }
+}
+
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum TickByTickType {
+    NA = 0,
+    Last = 1,
+    AllLast = 2,
+    BidAsk = 3,
+    MidPoint = 4,
+}
+
+impl fmt::Display for TickByTickType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TickByTickType::NA => write!(f, "N/A"),
+            TickByTickType::Last => write!(f, "Last"),
+            TickByTickType::AllLast => write!(f, "AllLast"),
+            TickByTickType::BidAsk => write!(f, "BidAsk"),
+            TickByTickType::MidPoint => write!(f, "MidPoint"),
+        }
     }
 }
 
@@ -933,35 +761,612 @@ impl fmt::Display for TagValue {
 //==================================================================================================
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
-pub enum MarketDataTypeEnum {
-    NA = 0,
-    Realtime = 1,
-    Frozen = 2,
-    Delayed = 3,
-    DelayedFrozen = 4,
+pub enum ComboParam {
+    NonGuaranteed,
+    PriceCondConid,
+    CondPriceMax,
+    CondPriceMin,
+    ChangeToMktTime1,
+    ChangeToMktTime2,
+    DiscretionaryPct,
+    DontLeginNext,
+    LeginPrio,
+    MaxSegSize,
 }
 
-impl MarketDataTypeEnum {
-    fn display(&self) -> &str {
-        match (self) {
-            MarketDataTypeEnum::NA => "N/A",
-            MarketDataTypeEnum::Realtime => "REALTIME",
-            MarketDataTypeEnum::Frozen => "FROZEN",
-            MarketDataTypeEnum::Delayed => "DELAYED",
-            MarketDataTypeEnum::DelayedFrozen => "DELAYED_FROZEN",
+impl Display for ComboParam {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            ComboParam::NonGuaranteed => write!(f, "NonGuaranteed"),
+            ComboParam::PriceCondConid => write!(f, "PriceCondConid"),
+            ComboParam::CondPriceMax => write!(f, "CondPriceMax"),
+            ComboParam::CondPriceMin => write!(f, "CondPriceMin"),
+            ComboParam::ChangeToMktTime1 => write!(f, "ChangeToMktTime1"),
+            ComboParam::ChangeToMktTime2 => write!(f, "ChangeToMktTime2"),
+            ComboParam::DiscretionaryPct => write!(f, "DiscretionaryPct"),
+            ComboParam::DontLeginNext => write!(f, "DontLeginNext"),
+            ComboParam::LeginPrio => write!(f, "LeginPrio"),
+            ComboParam::MaxSegSize => write!(f, "MaxSegSize"),
         }
     }
 }
 
-impl Display for MarketDataTypeEnum {
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum HedgeType {
+    None,
+    Delta,
+    Beta,
+    Fx,
+    Pair,
+}
+
+impl Display for HedgeType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{}", self.display())
+        match *self {
+            HedgeType::None => write!(f, ""),
+            HedgeType::Delta => write!(f, "Delta"),
+            HedgeType::Beta => write!(f, "Beta"),
+            HedgeType::Fx => write!(f, "Fx"),
+            HedgeType::Pair => write!(f, "Pair"),
+        }
     }
 }
 
-/*
-def __str__(self):
-# this is not only used for Python dump but when encoding to send
-# so don't change it lightly !
-return "%s=%s;" % (self.tag, self.value)
-*/
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum Right {
+    None,
+    Put,
+    Call,
+}
+
+impl Display for Right {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            Right::None => write!(f, ""),
+            Right::Put => write!(f, "P"),
+            Right::Call => write!(f, "C"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum VolatilityType {
+    None,
+    Daily,
+    Annual,
+}
+
+impl Display for VolatilityType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            VolatilityType::None => write!(f, "None"),
+            VolatilityType::Daily => write!(f, "Daily"),
+            VolatilityType::Annual => write!(f, "Annual"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum ReferencePriceType {
+    None,
+    Midpoint,
+    BidOrAsk,
+}
+
+impl Display for ReferencePriceType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            ReferencePriceType::None => write!(f, "None"),
+            ReferencePriceType::Midpoint => write!(f, "Midpoint"),
+            ReferencePriceType::BidOrAsk => write!(f, "BidOrAsk"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum TriggerMethod {
+    Default,
+    DoubleBidAsk,
+    Last,
+    DoubleLast,
+    BidAsk,
+    LastOrBidAsk,
+    Midpoint,
+}
+
+impl Display for TriggerMethod {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            TriggerMethod::Default => write!(f, "Default"),
+            TriggerMethod::DoubleBidAsk => write!(f, "DoubleBidAsk"),
+            TriggerMethod::Last => write!(f, "Last"),
+            TriggerMethod::DoubleLast => write!(f, "DoubleLast"),
+            TriggerMethod::BidAsk => write!(f, "BidAsk"),
+            TriggerMethod::LastOrBidAsk => write!(f, "LastOrBidAsk"),
+            TriggerMethod::Midpoint => write!(f, "Midpoint"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum Action {
+    BUY,
+    SELL,
+    SSHORT,
+}
+
+impl Display for Action {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            Action::BUY => write!(f, "BUY"),
+            Action::SELL => write!(f, "SELL"),
+            Action::SSHORT => write!(f, "SSHORT"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum Rule80A {
+    None,
+    Individual,
+    Agency,
+    AgentOtherMember,
+    IndividualPTIA,
+    AgencyPTIA,
+    AgentOtherMemberPTIA,
+    IndividualPT,
+    AgencyPT,
+    AgentOtherMemberPT,
+}
+
+impl Display for Rule80A {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match self {
+            Rule80A::None => write!(f, ""),
+            Rule80A::Individual => write!(f, "I"),
+            Rule80A::Agency => write!(f, "A"),
+            Rule80A::AgentOtherMember => write!(f, "W"),
+            Rule80A::IndividualPTIA => write!(f, "J"),
+            Rule80A::AgencyPTIA => write!(f, "U"),
+            Rule80A::AgentOtherMemberPTIA => write!(f, "M"),
+            Rule80A::IndividualPT => write!(f, "K"),
+            Rule80A::AgencyPT => write!(f, "Y"),
+            Rule80A::AgentOtherMemberPT => write!(f, "N"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum OcaType {
+    None,
+    CancelWithBlocking,
+    ReduceWithBlocking,
+    ReduceWithoutBlocking,
+}
+
+impl Display for OcaType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            OcaType::None => write!(f, "None"),
+            OcaType::CancelWithBlocking => write!(f, "CancelWithBlocking"),
+            OcaType::ReduceWithBlocking => write!(f, "ReduceWithBlocking"),
+            OcaType::ReduceWithoutBlocking => write!(f, "ReduceWithoutBlocking"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum TimeInForce {
+    DAY,
+    GTC,
+    OPG,
+    IOC,
+    GTD,
+    GTT,
+    AUC,
+    FOK,
+    GTX,
+    DTC,
+}
+
+impl Display for TimeInForce {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            TimeInForce::DAY => write!(f, "DAY"),
+            TimeInForce::GTC => write!(f, "GTC"),
+            TimeInForce::OPG => write!(f, "OPG"),
+            TimeInForce::IOC => write!(f, "IOC"),
+            TimeInForce::GTD => write!(f, "GTD"),
+            TimeInForce::GTT => write!(f, "GTT"),
+            TimeInForce::AUC => write!(f, "AUC"),
+            TimeInForce::FOK => write!(f, "FOK"),
+            TimeInForce::GTX => write!(f, "GTX"),
+            TimeInForce::DTC => write!(f, "DTC"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum ExerciseType {
+    None,
+    Exercise,
+    Lapse,
+}
+
+impl Display for ExerciseType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            ExerciseType::None => write!(f, ""),
+            ExerciseType::Exercise => write!(f, "Exercise"),
+            ExerciseType::Lapse => write!(f, "Lapse"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum FundamentalType {
+    ReportSnapshot,
+    ReportsFinSummary,
+    ReportRatios,
+    ReportsFinStatements,
+    RESC,
+    CalendarReport,
+    ReportsOwnership,
+}
+
+impl Display for FundamentalType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            FundamentalType::ReportSnapshot => write!(f, "Company overview"),
+            FundamentalType::ReportsFinSummary => write!(f, "Financial summary"),
+            FundamentalType::ReportRatios => write!(f, "Financial ratios"),
+            FundamentalType::ReportsFinStatements => write!(f, "Financial statements"),
+            FundamentalType::RESC => write!(f, "Analyst estimates"),
+            FundamentalType::CalendarReport => write!(f, "Company calendar"),
+            FundamentalType::ReportsOwnership => write!(f, "Company ownership"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum WhatToShow {
+    TRADES,
+    MIDPOINT,
+    BID,
+    ASK,
+    // << only these are valid for real-time bars
+    BID_ASK,
+    HISTORICAL_VOLATILITY,
+    OPTION_IMPLIED_VOLATILITY,
+    YIELD_ASK,
+    YIELD_BID,
+    YIELD_BID_ASK,
+    YIELD_LAST,
+    ADJUSTED_LAST,
+}
+
+impl Display for WhatToShow {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            WhatToShow::TRADES => write!(f, "TRADES"),
+            WhatToShow::MIDPOINT => write!(f, "MIDPOINT"),
+            WhatToShow::BID => write!(f, "BID"),
+            WhatToShow::ASK => write!(f, "ASK"),
+            WhatToShow::BID_ASK => write!(f, "BID_ASK"),
+            WhatToShow::HISTORICAL_VOLATILITY => write!(f, "HISTORICAL_VOLATILITY"),
+            WhatToShow::OPTION_IMPLIED_VOLATILITY => write!(f, "OPTION_IMPLIED_VOLATILITY"),
+            WhatToShow::YIELD_ASK => write!(f, "YIELD_ASK"),
+            WhatToShow::YIELD_BID => write!(f, "YIELD_ASK"),
+            WhatToShow::YIELD_BID_ASK => write!(f, "YIELD_BID_ASK"),
+            WhatToShow::YIELD_LAST => write!(f, "YIELD_LAST"),
+            WhatToShow::ADJUSTED_LAST => write!(f, "ADJUSTED_LAST"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum BarSize {
+    _1_secs,
+    _5_secs,
+    _10_secs,
+    _15_secs,
+    _30_secs,
+    _1_min,
+    _2_mins,
+    _3_mins,
+    _5_mins,
+    _10_mins,
+    _15_mins,
+    _20_mins,
+    _30_mins,
+    _1_hour,
+    _4_hours,
+    _1_day,
+    _1_week,
+    _1_month,
+}
+
+impl Display for BarSize {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            BarSize::_1_secs => write!(f, "1 secs"),
+            BarSize::_5_secs => write!(f, "5 secs"),
+            BarSize::_10_secs => write!(f, "10 secs"),
+            BarSize::_15_secs => write!(f, "15 secs"),
+            BarSize::_30_secs => write!(f, "30 secs"),
+            BarSize::_1_min => write!(f, "1 min"),
+            BarSize::_2_mins => write!(f, "2 mins"),
+            BarSize::_3_mins => write!(f, "3 mins"),
+            BarSize::_5_mins => write!(f, "5 mins"),
+            BarSize::_10_mins => write!(f, "10 mins"),
+            BarSize::_15_mins => write!(f, "15 mins"),
+            BarSize::_20_mins => write!(f, "20 mins"),
+            BarSize::_30_mins => write!(f, "30 mins"),
+            BarSize::_1_hour => write!(f, "1 hour"),
+            BarSize::_4_hours => write!(f, "4 hours"),
+            BarSize::_1_day => write!(f, "1 day"),
+            BarSize::_1_week => write!(f, "1 week"),
+            BarSize::_1_month => write!(f, "1 month"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum DurationUnit {
+    SECOND,
+    DAY,
+    WEEK,
+    MONTH,
+    YEAR,
+}
+
+impl Display for DurationUnit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            DurationUnit::SECOND => write!(f, "SECOND"),
+            DurationUnit::DAY => write!(f, "DAY"),
+            DurationUnit::WEEK => write!(f, "WEEK"),
+            DurationUnit::MONTH => write!(f, "MONTH"),
+            DurationUnit::YEAR => write!(f, "YEAR"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum DeepType {
+    INSERT,
+    UPDATE,
+    DELETE,
+}
+
+impl Display for DeepType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            DeepType::INSERT => write!(f, "INSERT"),
+            DeepType::UPDATE => write!(f, "UPDATE"),
+            DeepType::DELETE => write!(f, "DELETE"),
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum DeepSide {
+    SELL,
+    BUY,
+}
+
+impl Display for DeepSide {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            DeepSide::BUY => write!(f, "BUY"),
+            DeepSide::SELL => write!(f, "SELL"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum NewsType {
+    UNKNOWN,
+    BBS,
+    LIVE_EXCH,
+    DEAD_EXCH,
+    HTML,
+    POPUP_TEXT,
+    POPUP_HTML,
+}
+
+impl Display for NewsType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            NewsType::UNKNOWN => write!(f, "UNKNOWN"),
+            NewsType::BBS => write!(f, "BBS"),
+            NewsType::LIVE_EXCH => write!(f, "LIVE_EXCH"),
+            NewsType::DEAD_EXCH => write!(f, "DEAD_EXCH"),
+            NewsType::HTML => write!(f, "HTML"),
+            NewsType::POPUP_TEXT => write!(f, "POPUP_TEXT"),
+            NewsType::POPUP_HTML => write!(f, "POPUP_HTML"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum SecIdType {
+    None,
+    CUSIP,
+    SEDOL,
+    ISIN,
+    RIC,
+}
+
+impl Display for SecIdType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            SecIdType::None => write!(f, ""),
+            SecIdType::CUSIP => write!(f, "CUSIP"),
+            SecIdType::SEDOL => write!(f, "SEDOL"),
+            SecIdType::ISIN => write!(f, "ISIN"),
+            SecIdType::RIC => write!(f, "RIC"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum SecType {
+    None,
+    STK,
+    OPT,
+    FUT,
+    CONTFUT,
+    CASH,
+    BOND,
+    CFD,
+    FOP,
+    WAR,
+    IOPT,
+    FWD,
+    BAG,
+    IND,
+    BILL,
+    FUND,
+    FIXED,
+    SLB,
+    NEWS,
+    CMDTY,
+    BSK,
+    ICU,
+    ICS,
+}
+
+impl Display for SecType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match *self {
+            SecType::None => write!(f, ""),
+            SecType::STK => write!(f, "STK"),
+            SecType::OPT => write!(f, "OPT"),
+            SecType::FUT => write!(f, "FUT"),
+            SecType::CONTFUT => write!(f, "CONTFUT"),
+            SecType::CASH => write!(f, "CASH"),
+            SecType::BOND => write!(f, "BOND"),
+            SecType::CFD => write!(f, "CFD"),
+            SecType::FOP => write!(f, "FOP"),
+            SecType::WAR => write!(f, "WAR"),
+            SecType::IOPT => write!(f, "IOPT"),
+            SecType::FWD => write!(f, "FWD"),
+            SecType::BAG => write!(f, "BAG"),
+            SecType::IND => write!(f, "IND"),
+            SecType::BILL => write!(f, "BILL"),
+            SecType::FUND => write!(f, "FUND"),
+            SecType::FIXED => write!(f, "FIXED"),
+            SecType::SLB => write!(f, "SLB"),
+            SecType::NEWS => write!(f, "NEWS"),
+            SecType::CMDTY => write!(f, "CMDTY"),
+            SecType::BSK => write!(f, "BSK"),
+            SecType::ICU => write!(f, "ICU"),
+            SecType::ICS => write!(f, "ICS"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum MarketDataTypeEnum {
+    Unknown,
+    Realtime,
+    Frozen,
+    Delayed,
+    DelayedFrozen, //public static MktDataType get( int ordinal) {
+                   //return getEnum( ordinal, values() );
+                   //}
+}
+
+impl Display for MarketDataTypeEnum {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match (self) {
+            MarketDataTypeEnum::Unknown => write!(f, "N/A"),
+            MarketDataTypeEnum::Realtime => write!(f, "REALTIME"),
+            MarketDataTypeEnum::Frozen => write!(f, "FROZEN"),
+            MarketDataTypeEnum::Delayed => write!(f, "DELAYED"),
+            MarketDataTypeEnum::DelayedFrozen => write!(f, "DELAYED_FROZEN"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum Method {
+    None,
+    EqualQuantity,
+    AvailableEquity,
+    NetLiq,
+    PctChange,
+}
+
+impl Display for Method {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        match (self) {
+            Method::None => write!(f, ""),
+            Method::EqualQuantity => write!(f, "EqualQuantity"),
+            Method::AvailableEquity => write!(f, "AvailableEquity"),
+            Method::NetLiq => write!(f, "NetLiq"),
+            Method::PctChange => write!(f, "PctChange"),
+        }
+    }
+}
+
+//==================================================================================================
+#[repr(i32)]
+#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+pub enum UsePriceMgmtAlgo {
+    Default,
+    NotUse,
+    Use,
+}
+
+impl UsePriceMgmtAlgo {
+    pub fn value(&self) -> Option<bool> {
+        match *self {
+            UsePriceMgmtAlgo::Default => None,
+            UsePriceMgmtAlgo::NotUse => Some(false),
+            UsePriceMgmtAlgo::Use => Some(true),
+        }
+    }
+}

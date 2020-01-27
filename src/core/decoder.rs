@@ -2387,8 +2387,8 @@ where
         let mut theta = f64::max_value();
         let mut und_price = f64::max_value();
         if version >= 6
-            || tick_type == TickType::ModelOption.code()
-            || tick_type == TickType::DelayedModelOption.code()
+            || tick_type == TickType::ModelOption as i32
+            || tick_type == TickType::DelayedModelOption as i32
         {
             // introduced in version == 5
             opt_price = decode_f64(&mut fields_itr)?;

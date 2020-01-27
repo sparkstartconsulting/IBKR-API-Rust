@@ -8,7 +8,7 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use bigdecimal::BigDecimal;
 use chrono;
-use chrono::{DateTime, Duration as ChronoDuration, Utc};
+use chrono::{DateTime, Duration as ChronoDuration, TimeZone, Utc};
 use log::*;
 
 use twsapi::core::account_summary_tags::AccountSummaryTags;
@@ -25,7 +25,7 @@ use twsapi::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, MarketDataTypeEnum, NewsProvider,
     PriceIncrement, SmartComponent, TagValue, TickAttrib, TickAttribBidAsk, TickAttribLast,
-    TickType, UNSET_DOUBLE,
+    TickByTickType, TickType, UNSET_DOUBLE,
 };
 use twsapi::core::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
@@ -37,6 +37,7 @@ use twsapi::core::order::{Order, OrderState, SoftDollarTier};
 use twsapi::core::order_condition::{PriceCondition, TriggerMethod};
 use twsapi::core::wrapper::Wrapper;
 use twsapi::examples::contract_samples;
+use twsapi::examples::fa_allocation_samples;
 use twsapi::examples::order_samples;
 use twsapi::examples::scanner_subscription_samples;
 
@@ -63,14 +64,27 @@ impl TestWrapper {
         //self.what_if_order_operations();
         //self.account_operations_req();
         //self.market_data_type_operations();
-        //self.tick_data_operations_req();
+        //self.tick_data_operations_req(); //retest with data subscription
         //self.market_depth_operations_req();
-        //self.real_time_bars_operations_req();
+        //self.real_time_bars_operations_req(); //retest with data subscription
         //self.historical_data_operations_req();
         //self.options_operations_req();
         //self.market_scanners_perations_req();
-        //self.fundamentals_operations_req();
-        self.contract_operations();
+        //self.fundamentals_operations_req(); //retest with data subscription
+        //self.contract_operations();
+        //self.tick_by_tick_operations_req(); //retest with data subscription
+        //self.historical_ticks_operations(); //retest with data subscription.  What to show enum
+        //self.histogram_operations_req(); //retest with data subscription.
+        // self.continuous_futures_operations_req(); //retest with data subscription.
+        //self.pnl_operations_req();
+        //self.market_rule_operations();
+        //self.reroute_cfd_operations();
+        //self.financial_advisor_operations();
+        // self.news_operations_req(); //retest with data subscription.
+        // self.bulletins_operations_req();
+        self.miscelaneous_operations();
+        self.linking_operations();
+        self.financial_advisor_operations();
         Ok(())
     }
 
@@ -101,16 +115,13 @@ impl TestWrapper {
         // Requesting accounts' summary
         // ! [reqaaccountsummary]
         {
+            let all_tags = AccountSummaryTags::AllTags.to_string();
             self.client
                 .as_ref()
                 .unwrap()
                 .lock()
                 .unwrap()
-                .req_account_summary(
-                    9001,
-                    "All".to_string(),
-                    AccountSummaryTags::AllTags.to_string(),
-                );
+                .req_account_summary(9001, "All", all_tags.as_str());
         }
         //        // ! [reqaaccountsummary]
         //
@@ -121,7 +132,7 @@ impl TestWrapper {
                 .unwrap()
                 .lock()
                 .unwrap()
-                .req_account_summary(9002, "All".to_string(), "$LEDGER".to_string());
+                .req_account_summary(9002, "All", "$LEDGER");
         }
         //        // ! [reqaaccountsummaryledger]
         //
@@ -132,7 +143,7 @@ impl TestWrapper {
                 .unwrap()
                 .lock()
                 .unwrap()
-                .req_account_summary(9003, "All".to_string(), "$LEDGER:EUR".to_string());
+                .req_account_summary(9003, "All", "$LEDGER:EUR");
         }
         //        // ! [reqaaccountsummaryledgercurrency]
         //
@@ -142,7 +153,7 @@ impl TestWrapper {
             .unwrap()
             .lock()
             .unwrap()
-            .req_account_summary(9004, "All".to_string(), "$LEDGER:ALL".to_string());
+            .req_account_summary(9004, "All", "$LEDGER:ALL");
         //        // ! [reqaaccountsummaryledgerall]
         //
         //        // Subscribing to an account's information.Only one at a time!
@@ -152,7 +163,7 @@ impl TestWrapper {
             .unwrap()
             .lock()
             .unwrap()
-            .req_account_updates(true, (&self.account).parse().unwrap());
+            .req_account_updates(true, self.account.as_str());
         //        // ! [reqaaccountupdates]
         //
         //        // ! [reqaaccountupdatesmulti]
@@ -161,12 +172,7 @@ impl TestWrapper {
             .unwrap()
             .lock()
             .unwrap()
-            .req_account_updates_multi(
-                9005,
-                (&self.account).parse().unwrap(),
-                "".parse().unwrap(),
-                true,
-            );
+            .req_account_updates_multi(9005, self.account.as_str(), "", true);
 
         //        // Requesting all accounts' positions.
         self.client
@@ -183,14 +189,14 @@ impl TestWrapper {
             .unwrap()
             .lock()
             .unwrap()
-            .req_positions_multi(9006, &self.account, &"".to_string());
+            .req_positions_multi(9006, &self.account, "");
         //        // ! [reqpositionsmulti]
     }
 
     //----------------------------------------------------------------------------------------------
     pub fn real_time_bars_operations_req(&self) {
         // Requesting real time bars
-        // # ![reqrealtimebars]
+        // // ![reqrealtimebars]
         self.client
             .as_ref()
             .unwrap()
@@ -204,7 +210,7 @@ impl TestWrapper {
                 true,
                 vec![],
             );
-        // # ![reqrealtimebars]
+        // // ![reqrealtimebars]
     }
 
     //----------------------------------------------------------------------------------------------
@@ -801,7 +807,7 @@ impl TestWrapper {
         // ! [place_midprice]
 
         // ! [ad]
-        // The Time Zone in "startTime" and "endTime" attributes is ignored and always defaulted to GMT
+        // The Time Zone in "StartTime" and "EndTime" attributes is ignored and always defaulted to GMT
         let next_id = self.next_order_id();
         fill_accumulate_distribute_params(
             &mut base_order,
@@ -1069,7 +1075,7 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     fn what_if_order_operations(&mut self) {
-        //# ! [whatiflimitorder]
+        //// ! [whatiflimitorder]
         let mut what_if_order = order_samples::limit_order("SELL", 5.0, 70.0);
         what_if_order.what_if = true;
         let next_id = self.next_order_id();
@@ -1078,7 +1084,7 @@ impl TestWrapper {
             contract_samples::us_stock_at_smart().borrow(),
             what_if_order.borrow(),
         );
-        //# ! [whatiflimitorder]
+        //// ! [whatiflimitorder]
         thread::sleep(Duration::from_secs(2));
     }
 
@@ -1130,10 +1136,10 @@ impl TestWrapper {
             .req_historical_data(
                 4102,
                 contract_samples::simple_future().borrow(),
-                query_time.clone(),
-                "1 M".parse().unwrap(),
-                "1 day".parse().unwrap(),
-                "MIDPOINT".parse().unwrap(),
+                query_time.as_str(),
+                "1 M",
+                "1 day",
+                "MIDPOINT",
                 1,
                 1,
                 false,
@@ -1147,10 +1153,10 @@ impl TestWrapper {
             .req_historical_data(
                 4103,
                 contract_samples::simple_future().borrow(),
-                query_time.clone(),
-                "10 D".parse().unwrap(),
-                "1 min".parse().unwrap(),
-                "TRADES".parse().unwrap(),
+                query_time.as_str(),
+                "10 D",
+                "1 min",
+                "TRADES",
                 1,
                 1,
                 false,
@@ -1164,10 +1170,10 @@ impl TestWrapper {
             .req_historical_data(
                 4104,
                 contract_samples::eur_gbp_fx().borrow(),
-                "".parse().unwrap(),
-                "1 M".parse().unwrap(),
-                "1 day".parse().unwrap(),
-                "MIDPOINT".parse().unwrap(),
+                "",
+                "1 M",
+                "1 day",
+                "MIDPOINT",
                 1,
                 1,
                 true,
@@ -1446,7 +1452,7 @@ impl TestWrapper {
             .unwrap()
             .calculate_implied_volatility(
                 5001,
-                contract_samples::option_at_box(),
+                contract_samples::option_at_box().borrow(),
                 5.0,
                 85.0,
                 vec![],
@@ -1686,6 +1692,950 @@ impl TestWrapper {
             .lock()
             .unwrap()
             .req_matching_symbols(211, "IB");
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn tick_by_tick_operations_req(&self) {
+        // Requesting tick - by - tick data (only refresh)
+        // ! [reqtickbytick]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_tick_by_tick_data(
+                19001,
+                contract_samples::usstock().borrow(),
+                TickByTickType::Last,
+                0,
+                true,
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_tick_by_tick_data(
+                19002,
+                contract_samples::european_stock2().borrow(),
+                TickByTickType::Last,
+                0,
+                false,
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_tick_by_tick_data(
+                19003,
+                contract_samples::european_stock2().borrow(),
+                TickByTickType::Last,
+                0,
+                true,
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_tick_by_tick_data(
+                19004,
+                contract_samples::eur_gbp_fx().borrow(),
+                TickByTickType::Last,
+                0,
+                false,
+            );
+        // ! [reqtickbytick]
+
+        // Requesting tick - by - tick data (refresh + historicalticks)
+        // ! [reqtickbytickwithhist]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_tick_by_tick_data(
+                19005,
+                contract_samples::european_stock2().borrow(),
+                TickByTickType::Last,
+                10,
+                false,
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_tick_by_tick_data(
+                19006,
+                contract_samples::european_stock2().borrow(),
+                TickByTickType::Last,
+                10,
+                false,
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_tick_by_tick_data(
+                19007,
+                contract_samples::european_stock2().borrow(),
+                TickByTickType::Last,
+                10,
+                false,
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_tick_by_tick_data(
+                19008,
+                contract_samples::eur_gbp_fx().borrow(),
+                TickByTickType::Last,
+                10,
+                true,
+            );
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn historical_ticks_operations(&self) {
+        // ! [reqhistoricalticks]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_historical_ticks(
+                18001,
+                contract_samples::us_stock_at_smart().borrow(),
+                "20170712 21:39:33",
+                "",
+                10,
+                "TRADES",
+                1,
+                true,
+                vec![],
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_historical_ticks(
+                18002,
+                contract_samples::us_stock_at_smart().borrow(),
+                "20170712 21:39:33",
+                "",
+                10,
+                "BID_ASK",
+                1,
+                true,
+                vec![],
+            );
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_historical_ticks(
+                18003,
+                contract_samples::us_stock_at_smart().borrow(),
+                "20170712 21:39:33",
+                "",
+                10,
+                "MIDPOINT",
+                1,
+                true,
+                vec![],
+            );
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn histogram_operations_req(&self) {
+        // ![reqhistogramdata]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_histogram_data(
+                4002,
+                contract_samples::us_stock_at_smart().borrow(),
+                false,
+                "3 days",
+            );
+        // ![reqhistogramdata]
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn histogram_operations_cancel(&self) {
+        // ! [cancelhistogramdata]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_histogram_data(4002);
+        // ! [cancelhistogramdata]
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn continuous_futures_operations_req(&self) {
+        // ! [reqcontractdetailscontfut]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(18001, contract_samples::cont_fut().borrow());
+        // ! [reqcontractdetailscontfut]
+
+        // ! [reqhistoricaldatacontfut]
+        let time_str = Utc::now().format("%Y%m%d %H:%M:%S");
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_historical_data(
+                18002,
+                contract_samples::cont_fut().borrow(),
+                time_str.to_string().as_str(),
+                "1 Y",
+                "1 month",
+                "TRADES",
+                0,
+                1,
+                false,
+                vec![],
+            );
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn pnl_operations_req(&self) {
+        // ! [reqpnl]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_pnl(17001, "DU228243", "");
+        // ! [reqpnl]
+
+        // ! [reqpnlsingle]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_pnl_single(17002, "DU228243", "", 8314);
+        // ! [reqpnlsingle]
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn pnl_operations_cancel(&self) {
+        // ! [cancelpnl]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_pnl(17001);
+        // ! [cancelpnl]
+
+        // ! [cancelpnlsingle]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_pnl_single(17002);
+        // ! [cancelpnlsingle]
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    fn market_rule_operations(&self) {
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(17001, contract_samples::usstock().borrow());
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(17002, contract_samples::bond().borrow());
+
+        // ! [reqmarketrule]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_market_rule(26);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_market_rule(239);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn reroute_cfd_operations(&self) {
+        // ![reqmktdatacfd]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            16001,
+            contract_samples::usstock_cfd().borrow(),
+            "",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            16002,
+            contract_samples::european_stock_cfd().borrow(),
+            "",
+            false,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            16003,
+            contract_samples::cash_cfd().borrow(),
+            "",
+            false,
+            false,
+            vec![],
+        );
+        // ![reqmktdatacfd]
+
+        // ![reqmktdepthcfd]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_depth(
+            16004,
+            contract_samples::usstock_cfd().borrow(),
+            10,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_depth(
+            16005,
+            contract_samples::european_stock_cfd().borrow(),
+            10,
+            false,
+            vec![],
+        );
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_depth(
+            16006,
+            contract_samples::cash_cfd().borrow(),
+            10,
+            false,
+            vec![],
+        );
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn financial_advisor_operations(&self) {
+        // Requesting FA information
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .request_fa(FaDataType::ALIASES);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .request_fa(FaDataType::GROUPS);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .request_fa(FaDataType::PROFILES);
+
+        // Replacing FA information - Fill in with the appropriate XML string.
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .replace_fa(FaDataType::GROUPS, fa_allocation_samples::FA_ONE_GROUP);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .replace_fa(FaDataType::GROUPS, fa_allocation_samples::FA_TWO_GROUPS);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .replace_fa(FaDataType::PROFILES, fa_allocation_samples::FA_ONE_PROFILE);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .replace_fa(FaDataType::PROFILES, fa_allocation_samples::FA_TWO_PROFILES);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_soft_dollar_tiers(14001);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn news_operations_req(&self) {
+        // Requesting news ticks
+        // ! [reqNewsTicks]
+        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
+            10001,
+            contract_samples::us_stock_at_smart().borrow(),
+            "mdoff,258",
+            false,
+            false,
+            vec![],
+        );
+        // ! [reqNewsTicks]
+
+        // Returns list of subscribed news providers
+        // ! [reqNewsProviders]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_news_providers();
+        // ! [reqNewsProviders]
+
+        // Returns body of news article given article ID
+        // ! [reqNewsArticle]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_news_article(10002, "BRFG", "BRFG$04fb9da2", vec![]);
+        // ! [reqNewsArticle]
+
+        // Returns list of historical news headlines with IDs
+        // ! [reqHistoricalNews]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_historical_news(10003, 8314, "BRFG", "", "", 10, vec![]);
+        // ! [reqHistoricalNews]
+
+        // ! [reqcontractdetailsnews]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_contract_details(10004, contract_samples::news_feed_for_query().borrow());
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn news_operations_cancel(&self) {
+        // Canceling news ticks
+        // ! [cancelNewsTicks]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(10001);
+        // ! [cancelNewsTicks]
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn bulletins_operations_req(&self) {
+        // Requesting Interactive Broker's news bulletins_operations_req
+        // ! [reqnewsbulletins]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_news_bulletins(true);
+        // ! [reqnewsbulletins]
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn bulletins_operations_cancel(&self) {
+        // Canceling IB's news bulletins_operations_req
+        // ! [cancelnewsbulletins]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_news_bulletins();
+        // ! [cancelnewsbulletins]
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn miscelaneous_operations(&self) {
+        // Request TWS' current time
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_current_time();
+        // Setting TWS logging level
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .set_server_log_level(1);
+    }
+
+    fn linking_operations(&self) {
+        // ! [querydisplaygroups]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .query_display_groups(19001);
+        // ! [querydisplaygroups]
+
+        // ! [subscribetogroupevents]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .subscribe_to_group_events(19002, 1);
+        // ! [subscribetogroupevents]
+
+        // ! [updatedisplaygroup]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .update_display_group(19002, "8314@SMART");
+        // ! [updatedisplaygroup]
+
+        // ! [subscribefromgroupevents]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .unsubscribe_from_group_events(19002);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn tick_by_tick_operations_cancel(&self) {
+        // ! [canceltickbytick]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_tick_by_tick_data(19001);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_tick_by_tick_data(19002);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_tick_by_tick_data(19003);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_tick_by_tick_data(19004);
+        // ! [canceltickbytick]
+
+        // ! [canceltickbytickwithhist]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_tick_by_tick_data(19005);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_tick_by_tick_data(19006);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_tick_by_tick_data(19007);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_tick_by_tick_data(19008);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn continuous_futures_operations_cancel(&self) {
+        // ! [cancelhistoricaldatacontfut]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_historical_data(18002);
+        // ! [cancelhistoricaldatacontfut]
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn fundamentals_operations_cancel(&self) {
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_fundamental_data(8001);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_fundamental_data(8002);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_fundamental_data(8003);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_fundamental_data(8004);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_fundamental_data(8005);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_fundamental_data(8006);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn market_scanners_cancel(&self) {
+        // Canceling the scanner subscription
+        // ! [cancelscannersubscription]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_scanner_subscription(7001);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_scanner_subscription(7002);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_scanner_subscription(7003);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn options_operations_cancel(&self) {
+        // Canceling implied volatility
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_calculate_implied_volatility(5001);
+        // Canceling option's price calculation
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_calculate_option_price(5002);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn historical_data_operations_cancel(&self) {
+        // ! [cancelHeadTimestamp]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_head_time_stamp(4101);
+        // ! [cancelHeadTimestamp]
+
+        // Canceling historical data requests
+        // ! [cancelhistoricaldata]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_historical_data(4102);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_historical_data(4103);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_historical_data(4104);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn real_time_bars_operations_cancel(&self) {
+        // Canceling real time bars
+        // ! [cancelrealtimebars]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_real_time_bars(3001);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn market_depth_operations_cancel(&self) {
+        // Canceling the Deep Book request
+        // ! [cancelmktdepth]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_depth(2001, false);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_depth(2002, true);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn tick_data_operations_cancel(&self) {
+        // Canceling the market data subscription
+        // ! [cancelmktdata]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1000);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1001);
+        // ! [cancelmktdata]
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1004);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1005);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1006);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1007);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1008);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1009);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1010);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1011);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1012);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1013);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1014);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1015);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1016);
+
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_mkt_data(1017);
+    }
+
+    //----------------------------------------------------------------------------------------------
+    fn account_operations_cancel(&self) {
+        // ! [cancelaaccountsummary]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_account_summary(9001);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_account_summary(9002);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_account_summary(9003);
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_account_summary(9004);
+        // ! [cancelaaccountsummary]
+
+        // ! [cancelaaccountupdates]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .req_account_updates(false, self.account.as_str());
+        // ! [cancelaaccountupdates]
+
+        // ! [cancelaaccountupdatesmulti]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_account_updates_multi(9005);
+        // ! [cancelaaccountupdatesmulti]
+
+        // ! [cancelpositions]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_positions();
+        // ! [cancelpositions]
+
+        // ! [cancelpositionsmulti]
+        self.client
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .cancel_positions_multi(9006);
+        // ! [cancelpositionsmulti]
     }
 }
 
@@ -2562,9 +3512,7 @@ fn main() -> Result<(), IBKRApiLibError> {
 
     //thread::sleep(Duration::from_secs(2));
     {
-        app.lock()
-            .unwrap()
-            .connect("127.0.0.1".to_string(), 7497, 0);
+        app.lock().unwrap().connect("127.0.0.1", 7497, 0);
     }
     //    {
     //        wrapper.try_lock().unwrap().order_operations_req();

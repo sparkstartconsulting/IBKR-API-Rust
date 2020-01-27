@@ -98,11 +98,11 @@ where
     //----------------------------------------------------------------------------------------------
     pub fn connect(
         &mut self,
-        host: String,
+        host: &str,
         port: u32,
         client_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-        self.host = host;
+        self.host = host.to_string();
         self.port = port;
         self.client_id = client_id;
         debug!("Connecting");
@@ -302,7 +302,7 @@ where
         &mut self,
         req_id: i32,
         contract: &Contract,
-        generic_tick_list: &'static str,
+        generic_tick_list: &str,
         snapshot: bool,
         regulatory_snapshot: bool,
         mkt_data_options: Vec<TagValue>,
@@ -434,7 +434,7 @@ where
                 msg.push_str(&make_field(&false)?);
             }
 
-            msg.push_str(&make_field(&generic_tick_list)?); // srv v31 and above
+            msg.push_str(&make_field(&String::from(generic_tick_list))?); // srv v31 and above
             msg.push_str(&make_field(&snapshot)?); // srv v35 and above
         }
 
@@ -549,7 +549,7 @@ where
     pub fn req_smart_components(
         &mut self,
         req_id: i32,
-        bbo_exchange: &'static str,
+        bbo_exchange: &str,
     ) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -580,7 +580,7 @@ where
 
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&req_id)?);
-        msg.push_str(&make_field(&bbo_exchange)?);
+        msg.push_str(&make_field(&String::from(bbo_exchange))?);
 
         self.send_request(msg.as_str())?;
         Ok(())
@@ -626,8 +626,8 @@ where
     pub fn req_tick_by_tick_data(
         &mut self,
         req_id: i32,
-        contract: Contract,
-        tick_type: TickType,
+        contract: &Contract,
+        tick_type: TickByTickType,
         number_of_ticks: i32,
         ignore_size: bool,
     ) -> Result<(), IBKRApiLibError> {
@@ -688,7 +688,7 @@ where
         msg.push_str(&make_field(&contract.currency)?);
         msg.push_str(&make_field(&contract.local_symbol)?);
         msg.push_str(&make_field(&contract.trading_class)?);
-        msg.push_str(&make_field(&tick_type.value().to_string())?);
+        msg.push_str(&make_field(&(tick_type as i32))?);
 
         if self.server_version() >= MIN_SERVER_VER_TICK_BY_TICK_IGNORE_SIZE {
             msg.push_str(&make_field(&number_of_ticks)?);
@@ -742,7 +742,7 @@ where
     pub fn calculate_implied_volatility(
         &mut self,
         req_id: i32,
-        contract: Contract,
+        contract: &Contract,
         option_price: f64,
         under_price: f64,
         impl_vol_options: Vec<TagValue>,
@@ -982,6 +982,53 @@ where
         let mut msg = "".to_string();
 
         let message_id = OutgoingMessageIds::CancelCalcOptionPrice as i32;
+
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        msg.push_str(&make_field(&req_id)?);
+
+        self.send_request(msg.as_str())?;
+        Ok(())
+    }
+
+    //----------------------------------------------------------------------------------------------
+    pub fn cancel_calculate_implied_volatility(
+        &mut self,
+        req_id: i32,
+    ) -> Result<(), IBKRApiLibError> {
+        //        Call this function to cancel a request to calculate the option
+        //        price and greek values for a supplied volatility and underlying price.
+        //
+        //        req_id:i32 - The request ID.
+
+        if !self.is_connected() {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
+        }
+
+        if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support calculateImpliedVolatility req."
+                ),
+            ));
+
+            return Err(err);
+        }
+
+        let version = 1;
+
+        let mut msg = "".to_string();
+
+        let message_id = OutgoingMessageIds::CancelCalcImpliedVolat as i32;
 
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&version)?);
@@ -2175,7 +2222,7 @@ where
     pub fn req_account_updates(
         &mut self,
         subscribe: bool,
-        acct_code: String,
+        acct_code: &str,
     ) -> Result<(), IBKRApiLibError> {
         /*Call this function to start getting account values, portfolio,
         and last update time information via EWrapper.updateAccountValue());
@@ -2211,7 +2258,7 @@ where
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&version)?);
         msg.push_str(&make_field(&subscribe)?); // TRUE = subscribe, FALSE = unsubscribe
-        msg.push_str(&make_field(&acct_code)?); // srv v9 and above, the account code.This will only be used for FA clients
+        msg.push_str(&make_field(&String::from(acct_code))?); // srv v9 and above, the account code.This will only be used for FA clients
 
         self.send_request(msg.as_str())?;
 
@@ -2222,8 +2269,8 @@ where
     pub fn req_account_summary(
         &self,
         req_id: i32,
-        group_name: String,
-        tags: String,
+        group_name: &str,
+        tags: &str,
     ) -> Result<(), IBKRApiLibError> {
         /* Call this method to request and keep up to date the data that appears
         on the TWS Account Window Summary tab. The data is returned by
@@ -2289,17 +2336,15 @@ where
         }
 
         let version = 2;
-        let _req_id = req_id;
-        let _group_name = group_name;
-        let _tags = tags;
+
         let message_id: i32 = OutgoingMessageIds::ReqAccountSummary as i32;
         let mut msg = "".to_string();
 
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&version)?);
-        msg.push_str(&make_field(&_req_id)?);
-        msg.push_str(&make_field(&_group_name)?);
-        msg.push_str(&make_field(&_tags)?);
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&String::from(group_name))?);
+        msg.push_str(&make_field(&String::from(tags))?);
 
         self.send_request(msg.as_str())?;
         Ok(())
@@ -2413,8 +2458,8 @@ where
     pub fn req_positions_multi(
         &mut self,
         req_id: i32,
-        account: &String,
-        model_code: &String,
+        account: &str,
+        model_code: &str,
     ) -> Result<(), IBKRApiLibError> {
         //        """Requests positions for account and/or model.
         //                Results are delivered via EWrapper.positionMulti() and
@@ -2452,8 +2497,8 @@ where
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&version)?);
         msg.push_str(&make_field(&mut_req_id)?);
-        msg.push_str(&make_field(mut_account)?);
-        msg.push_str(&make_field(mut_model_code)?);
+        msg.push_str(&make_field(&String::from(mut_account))?);
+        msg.push_str(&make_field(&String::from(mut_model_code))?);
 
         self.send_request(msg.as_str())?;
 
@@ -2503,8 +2548,8 @@ where
     pub fn req_account_updates_multi(
         &mut self,
         req_id: i32,
-        account: String,
-        model_code: String,
+        account: &str,
+        model_code: &str,
         ledger_and_nlv: bool,
     ) -> Result<(), IBKRApiLibError> {
         //"""Requests account updates for account and/or model."""
@@ -2543,8 +2588,8 @@ where
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&version)?);
         msg.push_str(&make_field(&mut_req_id)?);
-        msg.push_str(&make_field(&mut_account)?);
-        msg.push_str(&make_field(&mut_model_code)?);
+        msg.push_str(&make_field(&String::from(mut_account))?);
+        msg.push_str(&make_field(&String::from(mut_model_code))?);
         msg.push_str(&make_field(&mut_ledger_and_nlv)?);
 
         self.send_request(msg.as_str())?;
@@ -2594,11 +2639,11 @@ where
     //################## Daily PnL
     //#########################################################################
 
-    pub fn req_pn_l(
+    pub fn req_pnl(
         &mut self,
         req_id: i32,
-        account: &'static str,
-        model_code: &'static str,
+        account: &str,
+        model_code: &str,
     ) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2627,8 +2672,8 @@ where
         let mut msg = "".to_string();
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&req_id)?);
-        msg.push_str(&make_field(&account)?);
-        msg.push_str(&make_field(&model_code)?);
+        msg.push_str(&make_field(&String::from(account))?);
+        msg.push_str(&make_field(&String::from(model_code))?);
 
         self.send_request(msg.as_str())
     }
@@ -2670,8 +2715,8 @@ where
     pub fn req_pnl_single(
         &mut self,
         req_id: i32,
-        account: &'static str,
-        model_code: &'static str,
+        account: &str,
+        model_code: &str,
         con_id: i32,
     ) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
@@ -2701,8 +2746,8 @@ where
         let mut msg = "".to_string();
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&req_id)?);
-        msg.push_str(&make_field(&account)?);
-        msg.push_str(&make_field(&model_code)?);
+        msg.push_str(&make_field(&String::from(account))?);
+        msg.push_str(&make_field(&String::from(model_code))?);
         msg.push_str(&make_field(&con_id)?);
 
         self.send_request(msg.as_str())
@@ -3180,7 +3225,30 @@ where
         msg.push_str(&make_field(&version)?);
         msg.push_str(&make_field(&all_msgs)?);
 
-        self.send_request(msg.as_str())
+        self.send_request(msg.as_str())?;
+        Ok(())
+    }
+
+    //----------------------------------------------------------------------------------------------
+    ///Call this function to stop receiving news bulletins.
+    pub fn cancel_news_bulletins(&self) -> Result<(), IBKRApiLibError> {
+        if !self.is_connected() {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                NO_VALID_ID,
+                TwsError::NotConnected.code().to_string(),
+                TwsError::NotConnected.message().to_string(),
+            ));
+            return Err(err);
+        }
+
+        let version = 1;
+
+        let message_id: i32 = OutgoingMessageIds::CancelNewsBulletins as i32;
+        let mut msg = "".to_string();
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&version)?);
+        self.send_request(msg.as_str())?;
+        Ok(())
     }
 
     //#########################################################################
@@ -3239,18 +3307,14 @@ where
         let mut msg = "".to_string();
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&version)?);
-        msg.push_str(&make_field(&fa_data)?);
+        msg.push_str(&make_field(&(fa_data as i32))?);
 
         self.send_request(msg.as_str())?;
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn replace_fa(
-        &mut self,
-        fa_data: FaDataType,
-        cxml: &'static str,
-    ) -> Result<(), IBKRApiLibError> {
+    pub fn replace_fa(&mut self, fa_data: FaDataType, cxml: &str) -> Result<(), IBKRApiLibError> {
         //    Call this function to modify FA configuration information from the
         //    API. Note that this can also be done manually in TWS itself.
         //
@@ -3280,7 +3344,7 @@ where
 
         msg.push_str(&make_field(&version)?);
         msg.push_str(&make_field(&fa_data)?);
-        msg.push_str(&make_field(&cxml)?);
+        msg.push_str(&make_field(&String::from(cxml))?);
 
         self.send_request(msg.as_str())
     }
@@ -3293,10 +3357,10 @@ where
         &mut self,
         req_id: i32,
         contract: &Contract,
-        end_date_time: String,
-        duration_str: String,
-        bar_size_setting: String,
-        what_to_show: String,
+        end_date_time: &str,
+        duration_str: &str,
+        bar_size_setting: &str,
+        what_to_show: &str,
         use_rth: i32,
         format_date: i32,
         keep_up_to_date: bool,
@@ -3415,11 +3479,11 @@ where
         }
         msg.push_str(&make_field(&contract.include_expired)?); // srv v31 and above
 
-        msg.push_str(&make_field(&end_date_time)?); // srv v20 and above
-        msg.push_str(&make_field(&bar_size_setting)?); // srv v20 and above
-        msg.push_str(&make_field(&duration_str)?);
+        msg.push_str(&make_field(&String::from(end_date_time))?); // srv v20 and above
+        msg.push_str(&make_field(&String::from(bar_size_setting))?); // srv v20 and above
+        msg.push_str(&make_field(&String::from(duration_str))?);
         msg.push_str(&make_field(&use_rth)?);
-        msg.push_str(&make_field(&what_to_show)?);
+        msg.push_str(&make_field(&String::from(what_to_show))?);
         msg.push_str(&make_field(&format_date)?); // srv v16 and above
 
         // Send combo legs for BAG requests
@@ -3488,7 +3552,7 @@ where
         &mut self,
         req_id: i32,
         contract: &Contract,
-        what_to_show: &'static str,
+        what_to_show: &str,
         use_rth: i32,
         format_date: i32,
     ) -> Result<(), IBKRApiLibError> {
@@ -3535,7 +3599,7 @@ where
         msg.push_str(&make_field(&contract.trading_class)?);
         msg.push_str(&make_field(&contract.include_expired)?);
         msg.push_str(&make_field(&use_rth)?);
-        msg.push_str(&make_field(&what_to_show)?);
+        msg.push_str(&make_field(&String::from(what_to_show))?);
         msg.push_str(&make_field(&format_date)?);
 
         self.send_request(msg.as_str())?;
@@ -3583,9 +3647,9 @@ where
     pub fn req_histogram_data(
         &mut self,
         ticker_id: i32,
-        contract: Contract,
+        contract: &Contract,
         use_rth: bool,
-        time_period: &'static str,
+        time_period: &str,
     ) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
@@ -3631,7 +3695,7 @@ where
         msg.push_str(&make_field(&contract.trading_class)?);
         msg.push_str(&make_field(&contract.include_expired)?);
         msg.push_str(&make_field(&use_rth)?);
-        msg.push_str(&make_field(&time_period)?);
+        msg.push_str(&make_field(&String::from(time_period))?);
 
         self.send_request(msg.as_str())?;
         Ok(())
@@ -3678,10 +3742,10 @@ where
         &mut self,
         req_id: i32,
         contract: &Contract,
-        start_date_time: &'static str,
-        end_date_time: &'static str,
+        start_date_time: &str,
+        end_date_time: &str,
         number_of_ticks: i32,
-        what_to_show: &'static str,
+        what_to_show: &str,
         use_rth: i32,
         ignore_size: bool,
         misc_options: Vec<TagValue>,
@@ -3729,10 +3793,10 @@ where
         msg.push_str(&make_field(&contract.local_symbol)?);
         msg.push_str(&make_field(&contract.trading_class)?);
         msg.push_str(&make_field(&contract.include_expired)?);
-        msg.push_str(&make_field(&start_date_time)?);
-        msg.push_str(&make_field(&end_date_time)?);
+        msg.push_str(&make_field(&String::from(start_date_time))?);
+        msg.push_str(&make_field(&String::from(end_date_time))?);
         msg.push_str(&make_field(&number_of_ticks)?);
-        msg.push_str(&make_field(&what_to_show)?);
+        msg.push_str(&make_field(&String::from(what_to_show))?);
         msg.push_str(&make_field(&use_rth)?);
         msg.push_str(&make_field(&ignore_size)?);
 
@@ -3912,7 +3976,7 @@ where
         req_id: i32,
         contract: &Contract,
         bar_size: i32,
-        what_to_show: &'static str,
+        what_to_show: &str,
         use_rth: bool,
         real_time_bars_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
@@ -3995,7 +4059,7 @@ where
             msg.push_str(&make_field(&contract.trading_class)?);
         }
         msg.push_str(&make_field(&bar_size)?);
-        msg.push_str(&make_field(&what_to_show)?);
+        msg.push_str(&make_field(&String::from(what_to_show))?);
         msg.push_str(&make_field(&use_rth)?);
 
         // Send real_time_bars_options parameter
@@ -4051,7 +4115,7 @@ where
         &mut self,
         req_id: i32,
         contract: &Contract,
-        report_type: &'static str,
+        report_type: &str,
         fundamental_data_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
         /*Call this function to receive fundamental data for
@@ -4134,7 +4198,7 @@ where
         msg.push_str(&make_field(&contract.primary_exchange)?);
         msg.push_str(&make_field(&contract.currency)?);
         msg.push_str(&make_field(&contract.local_symbol)?);
-        msg.push_str(&make_field(&report_type)?);
+        msg.push_str(&make_field(&String::from(report_type))?);
 
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             let tags_value_count = fundamental_data_options.len();
@@ -4237,8 +4301,8 @@ where
     pub fn req_news_article(
         &mut self,
         req_id: i32,
-        provider_code: &'static str,
-        article_id: &'static str,
+        provider_code: &str,
+        article_id: &str,
         news_article_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
@@ -4271,8 +4335,8 @@ where
         msg.push_str(&make_field(&message_id)?);
 
         msg.push_str(&make_field(&req_id)?);
-        msg.push_str(&make_field(&provider_code)?);
-        msg.push_str(&make_field(&article_id)?);
+        msg.push_str(&make_field(&String::from(provider_code))?);
+        msg.push_str(&make_field(&String::from(article_id))?);
 
         // Send news_article_options parameter
         if self.server_version() >= MIN_SERVER_VER_NEWS_QUERY_ORIGINS {
@@ -4292,9 +4356,9 @@ where
         &mut self,
         req_id: i32,
         con_id: i32,
-        provider_codes: &'static str,
-        start_date_time: &'static str,
-        end_date_time: &'static str,
+        provider_codes: &str,
+        start_date_time: &str,
+        end_date_time: &str,
         total_results: i32,
         historical_news_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
@@ -4329,9 +4393,9 @@ where
 
         msg.push_str(&make_field(&req_id)?);
         msg.push_str(&make_field(&con_id)?);
-        msg.push_str(&make_field(&provider_codes)?);
-        msg.push_str(&make_field(&start_date_time)?);
-        msg.push_str(&make_field(&end_date_time)?);
+        msg.push_str(&make_field(&String::from(provider_codes))?);
+        msg.push_str(&make_field(&String::from(start_date_time))?);
+        msg.push_str(&make_field(&String::from(end_date_time))?);
         msg.push_str(&make_field(&total_results)?);
 
         // Send historical_news_options parameter
@@ -4448,7 +4512,7 @@ where
     pub fn update_display_group(
         &mut self,
         req_id: i32,
-        contract_info: &'static str,
+        contract_info: &str,
     ) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The requestId specified in subscribe_to_group_events().
         contract_info:&'static str - The encoded value that uniquely represents the
@@ -4492,7 +4556,7 @@ where
 
         msg.push_str(&make_field(&version)?);
         msg.push_str(&make_field(&req_id)?);
-        msg.push_str(&make_field(&contract_info)?);
+        msg.push_str(&make_field(&String::from(contract_info))?);
 
         self.send_request(msg.as_str())?;
         Ok(())
@@ -4543,8 +4607,8 @@ where
     //----------------------------------------------------------------------------------------------
     pub fn verify_request(
         &mut self,
-        api_name: &'static str,
-        api_version: &'static str,
+        api_name: &str,
+        api_version: &str,
     ) -> Result<(), IBKRApiLibError> {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
@@ -4595,8 +4659,8 @@ where
         msg.push_str(&make_field(&message_id)?);
 
         msg.push_str(&make_field(&version)?);
-        msg.push_str(&make_field(&api_name)?);
-        msg.push_str(&make_field(&api_version)?);
+        msg.push_str(&make_field(&String::from(api_name))?);
+        msg.push_str(&make_field(&String::from(api_version))?);
 
         self.send_request(msg.as_str())?;
         Ok(())
@@ -4648,9 +4712,9 @@ where
     //----------------------------------------------------------------------------------------------
     pub fn verify_and_auth_request(
         &mut self,
-        api_name: &'static str,
-        api_version: &'static str,
-        opaque_isv_key: &'static str,
+        api_name: &str,
+        api_version: &str,
+        opaque_isv_key: &str,
     ) -> Result<(), IBKRApiLibError> {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
@@ -4701,9 +4765,9 @@ where
         msg.push_str(&make_field(&message_id)?);
 
         msg.push_str(&make_field(&version)?);
-        msg.push_str(&make_field(&api_name)?);
-        msg.push_str(&make_field(&api_version)?);
-        msg.push_str(&make_field(&opaque_isv_key)?);
+        msg.push_str(&make_field(&String::from(api_name))?);
+        msg.push_str(&make_field(&String::from(api_version))?);
+        msg.push_str(&make_field(&String::from(opaque_isv_key))?);
 
         self.send_request(msg.as_str())?;
         Ok(())
@@ -4712,8 +4776,8 @@ where
     //----------------------------------------------------------------------------------------------
     pub fn verify_and_auth_message(
         &mut self,
-        api_data: &'static str,
-        xyz_response: &'static str,
+        api_data: &str,
+        xyz_response: &str,
     ) -> Result<(), IBKRApiLibError> {
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
@@ -4750,8 +4814,8 @@ where
         msg.push_str(&make_field(&message_id)?);
 
         msg.push_str(&make_field(&version)?);
-        msg.push_str(&make_field(&api_data)?);
-        msg.push_str(&make_field(&xyz_response)?);
+        msg.push_str(&make_field(&String::from(api_data))?);
+        msg.push_str(&make_field(&String::from(xyz_response))?);
 
         self.send_request(msg.as_str())?;
         Ok(())
@@ -4761,9 +4825,9 @@ where
     pub fn req_sec_def_opt_params(
         &mut self,
         req_id: i32,
-        underlying_symbol: &'static str,
-        fut_fop_exchange: &'static str,
-        underlying_sec_type: &'static str,
+        underlying_symbol: &str,
+        fut_fop_exchange: &str,
+        underlying_sec_type: &str,
         underlying_con_id: i32,
     ) -> Result<(), IBKRApiLibError> {
         /*Requests security pub fninition option parameters for viewing a
@@ -4804,9 +4868,9 @@ where
         msg.push_str(&make_field(&message_id)?);
 
         msg.push_str(&make_field(&req_id)?);
-        msg.push_str(&make_field(&underlying_symbol)?);
-        msg.push_str(&make_field(&fut_fop_exchange)?);
-        msg.push_str(&make_field(&underlying_sec_type)?);
+        msg.push_str(&make_field(&String::from(underlying_symbol))?);
+        msg.push_str(&make_field(&String::from(fut_fop_exchange))?);
+        msg.push_str(&make_field(&String::from(underlying_sec_type))?);
         msg.push_str(&make_field(&underlying_con_id)?);
 
         self.send_request(msg.as_str())?;
@@ -4879,7 +4943,7 @@ where
     pub fn req_matching_symbols(
         &mut self,
         req_id: i32,
-        pattern: &'static str,
+        pattern: &str,
     ) -> Result<(), IBKRApiLibError> {
         // self.logRequest(current_fn_name()); vars())
 
@@ -4911,7 +4975,7 @@ where
         msg.push_str(&make_field(&message_id)?);
 
         msg.push_str(&make_field(&req_id)?);
-        msg.push_str(&make_field(&pattern)?);
+        msg.push_str(&make_field(&String::from(pattern))?);
 
         self.send_request(msg.as_str())?;
         Ok(())
