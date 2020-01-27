@@ -3498,6 +3498,11 @@ unsafe impl Send for TestWrapper {}
 
 unsafe impl Sync for TestWrapper {}
 
+/// Example of using client and wrapper.
+/// Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
+/// next_valid_id to be called, which will start sending tests requests to TWS (see the
+/// start_requests function inn TestWrapper which is called by next_valid_id
+
 //==================================================================================================
 fn main() -> Result<(), IBKRApiLibError> {
     log4rs::init_file("log_config.yml", Default::default()).unwrap();
@@ -3506,23 +3511,10 @@ fn main() -> Result<(), IBKRApiLibError> {
     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
 
     info!("getting connection...");
-    {
-        wrapper.lock().unwrap().client = Option::from(app.clone());
-    }
+    wrapper.lock().unwrap().client = Option::from(app.clone());
+    app.lock().unwrap().connect("127.0.0.1", 7497, 0);
 
-    //thread::sleep(Duration::from_secs(2));
-    {
-        app.lock().unwrap().connect("127.0.0.1", 7497, 0);
-    }
-    //    {
-    //        wrapper.try_lock().unwrap().order_operations_req();
-    //    }
-    {
-        // wrapper.try_lock().unwrap().real_time_bars_operations_req();
-    }
-    {
-        // wrapper.try_lock().unwrap().historical_data_operations_req();
-    }
+    wrapper.lock().unwrap().start_requests();
 
     thread::sleep(Duration::new(18600, 0));
 

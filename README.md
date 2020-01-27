@@ -3,7 +3,32 @@ Port of Interactive Broker's trading API written in Rust (API_Version=9.76.01)
 
 This is a derivative work of the Interactive Brokers API and falls under their non-commercial or commercial licenses.
 
-Please see the latest IB Tws Api documentation here: http://interactivebrokers.github.io/tws-api/market_depth.html#request
+Please see the latest IB Tws Api documentation here: http://http://interactivebrokers.github.io/tws-api/introduction.html
+
+For usage, please see the example implementation in src/bin.manual_tests.rs
+
+Example of using client and wrapper.
+Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
+next_valid_id to be called, which will start sending tests requests to TWS (see the
+start_requests function inn TestWrapper which is called by next_valid_id
+
+//==================================================================================================
+fn main() -> Result<(), IBKRApiLibError> {
+    log4rs::init_file("log_config.yml", Default::default()).unwrap();
+
+    let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
+    let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
+
+    info!("getting connection...");
+    wrapper.lock().unwrap().client = Option::from(app.clone());
+    app.lock().unwrap().connect("127.0.0.1", 7497, 0);
+
+    wrapper.lock().unwrap().start_requests();
+
+    thread::sleep(Duration::new(18600, 0));
+
+    Ok(())
+}
 
 
 DISCLAIMER:
