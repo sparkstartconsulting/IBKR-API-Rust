@@ -3512,9 +3512,11 @@ fn main() -> Result<(), IBKRApiLibError> {
 
     info!("getting connection...");
     wrapper.lock().unwrap().client = Option::from(app.clone());
-    app.lock().unwrap().connect("127.0.0.1", 7497, 0);
 
-    wrapper.lock().unwrap().start_requests();
+    // Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
+    // next_valid_id to be called, which will start sending tests requests to TWS (see the
+    // start_requests function inn TestWrapper which is called by next_valid_id
+    app.lock().unwrap().connect("127.0.0.1", 7497, 0);
 
     thread::sleep(Duration::new(18600, 0));
 
