@@ -71,20 +71,20 @@ impl TestWrapper {
         //self.options_operations_req(); tested ok
         // self.market_scanners_perations_req(); testd ok
         // self.fundamentals_operations_req(); //retest with research data subscription
-        //self.contract_operations(); tested ok
-        //self.tick_by_tick_operations_req(); //tested ok
-        // self.historical_ticks_operations(); //tested ok
-        //self.histogram_operations_req(); //tested ok
-        // self.continuous_futures_operations_req(); //tested ok
-        // self.pnl_operations_req(); //tested ok
-        // self.market_rule_operations(); //testd ok
-        // self.reroute_cfd_operations(); //tested ok
-        //self.financial_advisor_operations(); ****************************RETEST
-        // self.news_operations_req(); //retest with news subscription.
-        // self.bulletins_operations_req(); //tested ok
-        //self.miscelaneous_operations(); //tested ok
-        //self.linking_operations(); //tested ok
-        //self.financial_advisor_operations();
+        self.contract_operations(); //tested ok
+                                    //self.tick_by_tick_operations_req(); //tested ok
+                                    // self.historical_ticks_operations(); //tested ok
+                                    //self.histogram_operations_req(); //tested ok
+                                    // self.continuous_futures_operations_req(); //tested ok
+                                    // self.pnl_operations_req(); //tested ok
+                                    // self.market_rule_operations(); //testd ok
+                                    // self.reroute_cfd_operations(); //tested ok
+                                    //self.financial_advisor_operations(); ****************************RETEST
+                                    // self.news_operations_req(); //retest with news subscription.
+                                    // self.bulletins_operations_req(); //tested ok
+                                    //self.miscelaneous_operations(); //tested ok
+                                    //self.linking_operations(); //tested ok
+                                    //self.financial_advisor_operations();
         Ok(())
     }
 
