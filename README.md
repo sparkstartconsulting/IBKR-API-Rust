@@ -27,7 +27,6 @@ start_requests function inn TestWrapper which is called by next_valid_id.
     thread::sleep(Duration::new(18600, 0));
 
     Ok(())
-}
 
 
 ###TODO:
