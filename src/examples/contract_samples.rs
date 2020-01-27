@@ -137,7 +137,7 @@ pub fn usstock_with_primary_exch() -> Contract {
 
 pub fn us_stock_at_smart() -> Contract {
     let mut contract = Contract::default();
-    contract.symbol = "GOOG".to_string();
+    contract.symbol = "MSFT".to_string();
     contract.sec_type = "STK".to_string();
     contract.currency = "USD".to_string();
     contract.exchange = "SMART".to_string();

@@ -12,7 +12,7 @@ use crate::core::client::EClient;
 use crate::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
-    SmartComponent, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType,
+    SmartComponent, TickAttrib, TickAttribBidAsk, TickAttribLast, TickByTickType, TickType,
 };
 use crate::core::contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract};
 use crate::core::execution::Execution;
@@ -741,7 +741,7 @@ impl Wrapper for DefaultWrapper {
     fn tick_by_tick_all_last(
         &mut self,
         req_id: i32,
-        tick_type: TickType,
+        tick_type: TickByTickType,
         time: i64,
         price: f64,
         size: i32,

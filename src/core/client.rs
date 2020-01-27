@@ -688,7 +688,7 @@ where
         msg.push_str(&make_field(&contract.currency)?);
         msg.push_str(&make_field(&contract.local_symbol)?);
         msg.push_str(&make_field(&contract.trading_class)?);
-        msg.push_str(&make_field(&(tick_type as i32))?);
+        msg.push_str(&make_field(&(tick_type.to_string()))?);
 
         if self.server_version() >= MIN_SERVER_VER_TICK_BY_TICK_IGNORE_SIZE {
             msg.push_str(&make_field(&number_of_ticks)?);

@@ -70,21 +70,21 @@ impl TestWrapper {
         //self.historical_data_operations_req(); // Tested ok
         //self.options_operations_req(); tested ok
         // self.market_scanners_perations_req(); testd ok
-        //self.fundamentals_operations_req(); //retest with data subscription
-        self.contract_operations();
-        //self.tick_by_tick_operations_req(); //retest with data subscription
-        //self.historical_ticks_operations(); //retest with data subscription.  What to show enum
-        //self.histogram_operations_req(); //retest with data subscription.
-        // self.continuous_futures_operations_req(); //retest with data subscription.
-        //self.pnl_operations_req();
-        //self.market_rule_operations();
-        //self.reroute_cfd_operations();
-        //self.financial_advisor_operations();
-        // self.news_operations_req(); //retest with data subscription.
-        // self.bulletins_operations_req();
-        //self.miscelaneous_operations();
-        //self.linking_operations();
-        //self.financial_advisor_operations();
+        // self.fundamentals_operations_req(); //retest with research data subscription
+        //self.contract_operations(); tested ok
+        self.tick_by_tick_operations_req(); //retest with data subscription
+                                            //self.historical_ticks_operations(); //retest with data subscription.  What to show enum
+                                            //self.histogram_operations_req(); //retest with data subscription.
+                                            // self.continuous_futures_operations_req(); //retest with data subscription.
+                                            //self.pnl_operations_req();
+                                            //self.market_rule_operations();
+                                            //self.reroute_cfd_operations();
+                                            //self.financial_advisor_operations();
+                                            // self.news_operations_req(); //retest with data subscription.
+                                            // self.bulletins_operations_req();
+                                            //self.miscelaneous_operations();
+                                            //self.linking_operations();
+                                            //self.financial_advisor_operations();
         Ok(())
     }
 
@@ -1585,7 +1585,7 @@ impl TestWrapper {
             .unwrap()
             .req_fundamental_data(
                 8001,
-                contract_samples::us_stock_at_smart().borrow(),
+                contract_samples::usstock().borrow(),
                 "ReportsFinSummary",
                 vec![],
             );
@@ -1706,9 +1706,9 @@ impl TestWrapper {
             .req_tick_by_tick_data(
                 19001,
                 contract_samples::usstock().borrow(),
-                TickByTickType::Last,
+                TickByTickType::AllLast,
                 0,
-                true,
+                false,
             );
         self.client
             .as_ref()
@@ -3431,7 +3431,7 @@ impl Wrapper for TestWrapper {
     fn tick_by_tick_all_last(
         &mut self,
         req_id: i32,
-        tick_type: TickType,
+        tick_type: TickByTickType,
         time: i64,
         price: f64,
         size: i32,
@@ -3440,7 +3440,7 @@ impl Wrapper for TestWrapper {
         special_conditions: &str,
     ) {
         info!(
-            "tick_by_tick_all_last -- req_id: {}, tick_type: {}, time: {}, price: {}, size: {}, \
+            "tick_by_tick_all_last -- req_id: {}, tick_type: {:?}, time: {}, price: {}, size: {}, \
              tick_attrib_last: {}, exchange: {}, special_conditions: {}",
             req_id, tick_type, time, price, size, tick_attrib_last, exchange, special_conditions
         );
