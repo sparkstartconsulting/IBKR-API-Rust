@@ -10,10 +10,12 @@ For usage, please see the example implementation in src/bin.manual_tests.rs
 Example of using client and wrapper.
 Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
 next_valid_id to be called, which will start sending tests requests to TWS (see the
-start_requests function inn TestWrapper which is called by next_valid_id.
+start_requests function in TestWrapper which is called by next_valid_id.
 
-
+    // TestWrapper implements the Wrapper trait and handles messages sent from TWS
     let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
+    
+    //EClient sends requests to TWS
     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
 
     info!("getting connection...");
@@ -21,7 +23,7 @@ start_requests function inn TestWrapper which is called by next_valid_id.
 
     // Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
     // next_valid_id to be called, which will start sending tests requests to TWS (see the
-    // start_requests function inn TestWrapper which is called by next_valid_id
+    // start_requests function in TestWrapper which is called by next_valid_id
     app.lock().unwrap().connect("127.0.0.1", 7497, 0);
 
     thread::sleep(Duration::new(18600, 0));
