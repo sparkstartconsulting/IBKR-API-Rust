@@ -7,10 +7,15 @@ Please see the latest IB Tws Api documentation here: http://http://interactivebr
 
 For usage, please see the example implementation in src/bin.manual_tests.rs
 
-Example of using client and wrapper.
+The main structs and traits that clients will use are <b>Client</b> , a struct that is responsible for 
+connecting to TWS or IB Gateway and sending requests,  and <b>Wrapper</b>, a trait that clients will implement that declares callback functions 
+that get called when the application receives messages from the server.
+
+<b>Example of using client and wrapper:</b>
+
 Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
 next_valid_id to be called, which will start sending tests requests to TWS (see the
-start_requests function in TestWrapper which is called by next_valid_id.
+<i>start_requests</i> function in TestWrapper which is called by <i>next_valid_id</i>.
 
     // TestWrapper implements the Wrapper trait and handles messages sent from TWS
     let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
