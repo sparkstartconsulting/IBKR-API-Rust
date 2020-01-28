@@ -3317,7 +3317,7 @@ unsafe impl Sync for TestWrapper {}
 
 //==================================================================================================
 fn main() -> Result<(), IBKRApiLibError> {
-    log4rs::init_file("log_config.yml", Default::default()).unwrap();
+    log4rs::init_file("./ibkr-api-rust/log_config.yml", Default::default()).unwrap();
 
     let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
