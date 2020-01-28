@@ -6,7 +6,7 @@ Port of Interactive Broker's trading API written in Rust (API_Version=9.76.01)
 Please see the latest IB Tws Api documentation here: http://interactivebrokers.github.io/tws-api/introduction.html.
 The documentation has information regarding configuring Trader WorkStation and IB Gateway to enable API access.
 
-For usage of this library, please see the example implementation in src/bin.manual_tests.rs
+For usage of this library, please see the example implementation in src/bin/manual_tests.rs
 
 The main structs and traits that clients will use are <b>EClient</b> , a struct that is responsible for 
 connecting to TWS or IB Gateway and sending requests,  and <b>Wrapper</b>, a trait that clients will implement that declares callback functions 
