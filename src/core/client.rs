@@ -29,7 +29,6 @@ use crate::core::scanner::ScannerSubscription;
 use crate::core::server_versions::*;
 use crate::core::wrapper::Wrapper;
 
-
 //==================================================================================================
 /// Connection status
 #[repr(i32)]
@@ -190,7 +189,6 @@ where
     //----------------------------------------------------------------------------------------------
     /// Get the server version (important for checking feature flags for different versions)
     pub fn server_version(&self) -> i32 {
-
         self.server_version
     }
 
@@ -265,7 +263,6 @@ where
     //----------------------------------------------------------------------------------------------
     /// Initiates the message exchange between the core application and the TWS/IB Gateway
     fn start_api(&mut self) -> Result<(), IBKRApiLibError> {
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -326,8 +323,6 @@ where
         regulatory_snapshot: bool,
         mkt_data_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -470,11 +465,10 @@ where
     /**
         After calling this function, market data for the specified id
         will stop flowing.
-        
+
         req_id: req_id - The ID that was specified in the call to req_mkt_data()
     */
     pub fn cancel_mkt_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -497,17 +491,16 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /** The API can receive frozen market data from Trader 
-        Workstation. Frozen market data is the last data recorded in our system. 
-        During normal trading hours, the API receives real-time market data. If 
-        you use this function, you are telling TWS to automatically switch to 
-        frozen market data after the close. Then, before the opening of the next 
-        trading day, market data will automatically switch back to real-time 
-        market data. 
-    
-        marketDataType:i32 - 1 for real-time streaming market data 02 2 for frozen market data */
-    pub fn req_market_data_type(&mut self, market_data_type: i32) -> Result<(), IBKRApiLibError> {
+    /** The API can receive frozen market data from Trader
+    Workstation. Frozen market data is the last data recorded in our system.
+    During normal trading hours, the API receives real-time market data. If
+    you use this function, you are telling TWS to automatically switch to
+    frozen market data after the close. Then, before the opening of the next
+    trading day, market data will automatically switch back to real-time
+    market data.
 
+    marketDataType:i32 - 1 for real-time streaming market data 02 2 for frozen market data */
+    pub fn req_market_data_type(&mut self, market_data_type: i32) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -740,13 +733,13 @@ where
     /** Call this function to calculate volatility for a supplied
         option price and underlying price. Result will be delivered
         via EWrapper.tickOptionComputation()
-        
+
         # Arguments
-        
+
         * reqId:i32 -  The request id.
         * contract:&Contract -  Describes the contract.
         * optionPrice:f64 - The price of the option.
-        * underPrice:f64 - Price of the underlying. 
+        * underPrice:f64 - Price of the underlying.
     */
     pub fn calculate_implied_volatility(
         &mut self,
@@ -756,7 +749,6 @@ where
         under_price: f64,
         impl_vol_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
