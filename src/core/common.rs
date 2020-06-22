@@ -2,12 +2,10 @@ use std::fmt;
 use std::fmt::Display;
 
 use num_derive::FromPrimitive;
-// 0.2.4 (the derive)
-use num_traits::FromPrimitive;
-use serde::{Deserialize, Serialize};
-// 0.2.6 (the trait)
+
 use serde::export::fmt::Error;
 use serde::export::Formatter;
+use serde::{Deserialize, Serialize};
 
 pub const NO_VALID_ID: i32 = -1;
 pub const MAX_MSG_LEN: i64 = 0xFFFFFF; //16Mb - 1byte
@@ -1054,36 +1052,36 @@ impl Display for FundamentalType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum WhatToShow {
-    TRADES,
-    MIDPOINT,
-    BID,
-    ASK,
+    Trades,
+    Midpoint,
+    Bid,
+    Ask,
     // << only these are valid for real-time bars
-    BID_ASK,
-    HISTORICAL_VOLATILITY,
-    OPTION_IMPLIED_VOLATILITY,
-    YIELD_ASK,
-    YIELD_BID,
-    YIELD_BID_ASK,
-    YIELD_LAST,
-    ADJUSTED_LAST,
+    BidAsk,
+    HistoricalVolatility,
+    OptionImpliedVolatility,
+    YieldAsk,
+    YieldBid,
+    YieldBidAsk,
+    YieldLast,
+    AdjustedLast,
 }
 
 impl Display for WhatToShow {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
-            WhatToShow::TRADES => write!(f, "TRADES"),
-            WhatToShow::MIDPOINT => write!(f, "MIDPOINT"),
-            WhatToShow::BID => write!(f, "BID"),
-            WhatToShow::ASK => write!(f, "ASK"),
-            WhatToShow::BID_ASK => write!(f, "BID_ASK"),
-            WhatToShow::HISTORICAL_VOLATILITY => write!(f, "HISTORICAL_VOLATILITY"),
-            WhatToShow::OPTION_IMPLIED_VOLATILITY => write!(f, "OPTION_IMPLIED_VOLATILITY"),
-            WhatToShow::YIELD_ASK => write!(f, "YIELD_ASK"),
-            WhatToShow::YIELD_BID => write!(f, "YIELD_ASK"),
-            WhatToShow::YIELD_BID_ASK => write!(f, "YIELD_BID_ASK"),
-            WhatToShow::YIELD_LAST => write!(f, "YIELD_LAST"),
-            WhatToShow::ADJUSTED_LAST => write!(f, "ADJUSTED_LAST"),
+            WhatToShow::Trades => write!(f, "TRADES"),
+            WhatToShow::Midpoint => write!(f, "MIDPOINT"),
+            WhatToShow::Bid => write!(f, "BID"),
+            WhatToShow::Ask => write!(f, "ASK"),
+            WhatToShow::BidAsk => write!(f, "BID_ASK"),
+            WhatToShow::HistoricalVolatility => write!(f, "HISTORICAL_VOLATILITY"),
+            WhatToShow::OptionImpliedVolatility => write!(f, "OPTION_IMPLIED_VOLATILITY"),
+            WhatToShow::YieldAsk => write!(f, "YIELD_ASK"),
+            WhatToShow::YieldBid => write!(f, "YIELD_ASK"),
+            WhatToShow::YieldBidAsk => write!(f, "YIELD_BID_ASK"),
+            WhatToShow::YieldLast => write!(f, "YIELD_LAST"),
+            WhatToShow::AdjustedLast => write!(f, "ADJUSTED_LAST"),
         }
     }
 }
@@ -1092,47 +1090,47 @@ impl Display for WhatToShow {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum BarSize {
-    _1_secs,
-    _5_secs,
-    _10_secs,
-    _15_secs,
-    _30_secs,
-    _1_min,
-    _2_mins,
-    _3_mins,
-    _5_mins,
-    _10_mins,
-    _15_mins,
-    _20_mins,
-    _30_mins,
-    _1_hour,
-    _4_hours,
-    _1_day,
-    _1_week,
-    _1_month,
+    _1Secs,
+    _5Secs,
+    _10Secs,
+    _15Secs,
+    _30Secs,
+    _1Min,
+    _2Mins,
+    _3Mins,
+    _5Mins,
+    _10Mins,
+    _15Mins,
+    _20Mins,
+    _30Mins,
+    _1Hour,
+    _4Hours,
+    _1Day,
+    _1Week,
+    _1Month,
 }
 
 impl Display for BarSize {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
-            BarSize::_1_secs => write!(f, "1 secs"),
-            BarSize::_5_secs => write!(f, "5 secs"),
-            BarSize::_10_secs => write!(f, "10 secs"),
-            BarSize::_15_secs => write!(f, "15 secs"),
-            BarSize::_30_secs => write!(f, "30 secs"),
-            BarSize::_1_min => write!(f, "1 min"),
-            BarSize::_2_mins => write!(f, "2 mins"),
-            BarSize::_3_mins => write!(f, "3 mins"),
-            BarSize::_5_mins => write!(f, "5 mins"),
-            BarSize::_10_mins => write!(f, "10 mins"),
-            BarSize::_15_mins => write!(f, "15 mins"),
-            BarSize::_20_mins => write!(f, "20 mins"),
-            BarSize::_30_mins => write!(f, "30 mins"),
-            BarSize::_1_hour => write!(f, "1 hour"),
-            BarSize::_4_hours => write!(f, "4 hours"),
-            BarSize::_1_day => write!(f, "1 day"),
-            BarSize::_1_week => write!(f, "1 week"),
-            BarSize::_1_month => write!(f, "1 month"),
+            BarSize::_1Secs => write!(f, "1 secs"),
+            BarSize::_5Secs => write!(f, "5 secs"),
+            BarSize::_10Secs => write!(f, "10 secs"),
+            BarSize::_15Secs => write!(f, "15 secs"),
+            BarSize::_30Secs => write!(f, "30 secs"),
+            BarSize::_1Min => write!(f, "1 min"),
+            BarSize::_2Mins => write!(f, "2 mins"),
+            BarSize::_3Mins => write!(f, "3 mins"),
+            BarSize::_5Mins => write!(f, "5 mins"),
+            BarSize::_10Mins => write!(f, "10 mins"),
+            BarSize::_15Mins => write!(f, "15 mins"),
+            BarSize::_20Mins => write!(f, "20 mins"),
+            BarSize::_30Mins => write!(f, "30 mins"),
+            BarSize::_1Hour => write!(f, "1 hour"),
+            BarSize::_4Hours => write!(f, "4 hours"),
+            BarSize::_1Day => write!(f, "1 day"),
+            BarSize::_1Week => write!(f, "1 week"),
+            BarSize::_1Month => write!(f, "1 month"),
         }
     }
 }
@@ -1182,15 +1180,15 @@ impl Display for DeepType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum DeepSide {
-    SELL,
-    BUY,
+    Sell,
+    Buy,
 }
 
 impl Display for DeepSide {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
-            DeepSide::BUY => write!(f, "BUY"),
-            DeepSide::SELL => write!(f, "SELL"),
+            DeepSide::Buy => write!(f, "BUY"),
+            DeepSide::Sell => write!(f, "SELL"),
         }
     }
 }
@@ -1199,25 +1197,25 @@ impl Display for DeepSide {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum NewsType {
-    UNKNOWN,
+    Unknown,
     BBS,
-    LIVE_EXCH,
-    DEAD_EXCH,
+    LiveExch,
+    DeadExch,
     HTML,
-    POPUP_TEXT,
-    POPUP_HTML,
+    PopupText,
+    PopupHtml,
 }
 
 impl Display for NewsType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
-            NewsType::UNKNOWN => write!(f, "UNKNOWN"),
+            NewsType::Unknown => write!(f, "UNKNOWN"),
             NewsType::BBS => write!(f, "BBS"),
-            NewsType::LIVE_EXCH => write!(f, "LIVE_EXCH"),
-            NewsType::DEAD_EXCH => write!(f, "DEAD_EXCH"),
+            NewsType::LiveExch => write!(f, "LIVE_EXCH"),
+            NewsType::DeadExch => write!(f, "DEAD_EXCH"),
             NewsType::HTML => write!(f, "HTML"),
-            NewsType::POPUP_TEXT => write!(f, "POPUP_TEXT"),
-            NewsType::POPUP_HTML => write!(f, "POPUP_HTML"),
+            NewsType::PopupText => write!(f, "POPUP_TEXT"),
+            NewsType::PopupHtml => write!(f, "POPUP_HTML"),
         }
     }
 }
@@ -1319,7 +1317,7 @@ pub enum MarketDataTypeEnum {
 
 impl Display for MarketDataTypeEnum {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        match (self) {
+        match self {
             MarketDataTypeEnum::Unknown => write!(f, "N/A"),
             MarketDataTypeEnum::Realtime => write!(f, "REALTIME"),
             MarketDataTypeEnum::Frozen => write!(f, "FROZEN"),
@@ -1342,7 +1340,7 @@ pub enum Method {
 
 impl Display for Method {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        match (self) {
+        match self {
             Method::None => write!(f, ""),
             Method::EqualQuantity => write!(f, "EqualQuantity"),
             Method::AvailableEquity => write!(f, "AvailableEquity"),

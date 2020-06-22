@@ -1,3 +1,5 @@
+//! Examples of populating fields of various order types
+
 use num_traits::FromPrimitive;
 
 use crate::core::common::TagValue;
@@ -7,138 +9,106 @@ use crate::core::order_condition::{
     PriceCondition, TimeCondition, VolumeCondition,
 };
 
-///*
-//    #/ An auction order is entered into the electronic trading system during the pre-market opening period for execution at the
-//    #/ Calculated Opening Price (COP). If your order is not filled on the open, the order is re-submitted as a limit order with
-//    #/ the limit price set to the COP or the best bid/ask after the market opens.
-//    #/ Products: FUT, STK
-//    */
+/**! An auction order is entered into the electronic trading system during the pre-market opening period for execution at the
+Calculated Opening Price (COP). If your order is not filled on the open, the order is re-submitted as a limit order with
+the limit price set to the COP or the best bid/ask after the market opens.
+Products: FUT, STK **/
 //==================================================================================================
 pub fn at_auction(action: &str, quantity: f64, price: f64) -> Order {
-    //auction]
     let mut order = Order::default();
     order.action = action.to_string();
     order.tif = "AUC".to_string();
     order.order_type = "MTL".to_string();
     order.total_quantity = quantity;
     order.lmt_price = price;
-    //auction]
     order
 }
 
-///*
-//    #/ A discretionary order is a limit order submitted with a hidden, specified 'discretionary' amount off the limit price which
-//    #/ may be used to increase the price range over which the limit order is eligible to execute. The market sees only the limit price.
-//    #/ Products: STK
-//    */
 //==================================================================================================
+/// A discretionary order is a limit order submitted with a hidden, specified 'discretionary' amount off the limit price which
+/// may be used to increase the price range over which the limit order is eligible to execute. The market sees only the limit price.
+/// Products: STK
 pub fn discretionary(action: &str, quantity: f64, price: f64, discretionary_amount: f64) -> Order {
-    //discretionary]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "LMT".to_string();
     order.total_quantity = quantity;
     order.lmt_price = price;
     order.discretionary_amt = discretionary_amount;
-    //discretionary]
     order
 }
 
-///*
-//    #/ A Market order is an order to buy or sell at the market bid or offer price. A market order may increase the likelihood of a fill
-//    #/ and the speed of execution, but unlike the Limit order a Market order provides no price protection and may fill at a price far
-//    #/ lower/higher than the current displayed bid/ask.
-//    #/ Products: BOND, CFD, EFP, CASH, FUND, FUT, FOP, OPT, STK, WAR
-//    */
 //==================================================================================================
+/// A Market order is an order to buy or sell at the market bid or offer price. A market order may increase the likelihood of a fill
+/// and the speed of execution, but unlike the Limit order a Market order provides no price protection and may fill at a price far
+/// lower/higher than the current displayed bid/ask.
+/// Products: BOND, CFD, EFP, CASH, FUND, FUT, FOP, OPT, STK, WAR
 pub fn market_order(action: &str, quantity: f64) -> Order {
-    //market]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "MKT".to_string();
     order.total_quantity = quantity;
-    //market]
     order
 }
 
-/*
-#/ A Market if Touched (MIT) is an order to buy (or sell) a contract below (or above) the market. Its purpose is to take advantage
-#/ of sudden or unexpected changes in share or other prices and provides investors with a trigger price to set an order in motion.
-#/ Investors may be waiting for excessive strength (or weakness) to cease, which might be represented by a specific price point.
-#/ MIT orders can be used to determine whether or not to enter the market once a specific price level has been achieved. This order
-#/ is held in the system until the trigger price is touched, and is then submitted as a market order. An MIT order is similar to a
-#/ stop order, except that an MIT sell order is placed above the current market price, and a stop sell order is placed below
-#/ Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
-*/
 //==================================================================================================
+/// A Market if Touched (MIT) is an order to buy (or sell) a contract below (or above) the market. Its purpose is to take advantage
+/// of sudden or unexpected changes in share or other prices and provides investors with a trigger price to set an order in motion.
+/// Investors may be waiting for excessive strength (or weakness) to cease, which might be represented by a specific price point.
+/// MIT orders can be used to determine whether or not to enter the market once a specific price level has been achieved. This order
+/// is held in the system until the trigger price is touched, and is then submitted as a market order. An MIT order is similar to a
+/// stop order, except that an MIT sell order is placed above the current market price, and a stop sell order is placed below
+/// Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
 pub fn market_if_touched(action: &str, quantity: f64, price: f64) -> Order {
-    //market_if_touched]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "MIT".to_string();
     order.total_quantity = quantity;
     order.aux_price = price;
-    //market_if_touched]
     order
 }
 
-/*
-#/ A Market-on-Close (MOC) order is a market order that is submitted to execute as close to the closing price as possible.
-#/ Products: CFD, FUT, STK, WAR
-*/
 //==================================================================================================
+/// A Market-on-Close (MOC) order is a market order that is submitted to execute as close to the closing price as possible.
+/// Products: CFD, FUT, STK, WAR
 pub fn market_on_close(action: &str, quantity: f64) -> Order {
-    //market_on_close]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "MOC".to_string();
     order.total_quantity = quantity;
-    //market_on_close]
     order
 }
-
-/*
-#/ A Market-on-Open (MOO) order combines a market order with the OPG time in force to create an order that is automatically
-#/ submitted at the market's open and fills at the market price.
-#/ Products: CFD, STK, OPT, WAR
-*/
 //==================================================================================================
+/// A Market-on-Open (MOO) order combines a market order with the OPG time in force to create an order that is automatically
+/// submitted at the market's open and fills at the market price.
+/// Products: CFD, STK, OPT, WAR
 pub fn market_on_open(action: &str, quantity: f64) -> Order {
-    //market_on_open]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "MKT".to_string();
     order.total_quantity = quantity;
     order.tif = "OPG".to_string();
-    //market_on_open]
     order
 }
 
-/*
-#/ ISE MidpoMatch:i32 (MPM) orders always execute at the midpoof:the:i32 NBBO. You can submit market and limit orders direct-routed
-#/ to ISE for MPM execution. Market orders execute at the midpowhenever:an:i32 eligible contra-order is available. Limit orders
-#/ execute only when the midpoprice:is:i32 better than the limit price. Standard MPM orders are completely anonymous.
-#/ Products: STK
-*/
 //==================================================================================================
+/// ISE MidpoMatch:i32 (MPM) orders always execute at the midpoof:the:i32 NBBO. You can submit market and limit orders direct-routed
+/// to ISE for MPM execution. Market orders execute at the midpowhenever:an:i32 eligible contra-order is available. Limit orders
+/// execute only when the midpoprice:is:i32 better than the limit price. Standard MPM orders are completely anonymous.
+/// Products: STK
 pub fn midpoint_match(action: &str, quantity: f64) -> Order {
-    //midpoint_match]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "MKT".to_string();
     order.total_quantity = quantity;
-    //midpoint_match]
     order
 }
 
-/*
-#/ A midprice order is designed to split the difference between the bid and ask prices, and fill at the current midpoint of
-#/ the NBBO or better. Set an optional price cap to define the highest price (for a buy order) or the lowest price (for a sell
-#/ order) you are willing to accept. Requires TWS 975+. Smart-routing to US stocks only.
-*/
 //==================================================================================================
+/// A midprice order is designed to split the difference between the bid and ask prices, and fill at the current midpoint of
+/// the NBBO or better. Set an optional price cap to define the highest price (for a buy order) or the lowest price (for a sell
+/// order) you are willing to accept. Requires TWS 975+. Smart-routing to US stocks only.
 pub fn midprice(action: &str, quantity: f64, price_cap: f64) -> Order {
-    //midprice]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "MIDPRICE".to_string();
@@ -148,16 +118,14 @@ pub fn midprice(action: &str, quantity: f64, price_cap: f64) -> Order {
     order
 }
 
-/*
-#/ A pegged-to-market order is designed to maintain a purchase price relative to the national best offer (NBO) or a sale price
-#/ relative to the national best bid (NBB). Depending on the width of the quote, this order may be passive or aggressive.
-#/ The trader creates the order by entering a limit price which defines the worst limit price that they are willing to accept.
-#/ Next, the trader enters an offset amount which computes the active limit price as follows:
-#/     Sell order price = Bid price + offset amount
-#/     Buy order price = Ask price - offset amount
-#/ Products: STK
-*/
 //==================================================================================================
+/// A pegged-to-market order is designed to maintain a purchase price relative to the national best offer (NBO) or a sale price
+/// relative to the national best bid (NBB). Depending on the width of the quote, this order may be passive or aggressive.
+/// The trader creates the order by entering a limit price which defines the worst limit price that they are willing to accept.
+/// Next, the trader enters an offset amount which computes the active limit price as follows:
+///     Sell order price = Bid price + offset amount
+///     Buy order price = Ask price - offset amount
+/// Products: STK
 pub fn pegged_to_market(action: &str, quantity: f64, market_offset: f64) -> Order {
     //pegged_market]
     let mut order = Order::default();
@@ -169,17 +137,15 @@ pub fn pegged_to_market(action: &str, quantity: f64, market_offset: f64) -> Orde
     order
 }
 
-/*
-#/ A Pegged to Stock order continually adjusts the option order price by the product of a signed user-define delta and the change of
-#/ the option's underlying stock price. The delta is entered as an absolute and assumed to be positive for calls and negative for puts.
-#/ A buy or sell call order price is determined by adding the delta times a change in an underlying stock price to a specified starting
-#/ price for the call. To determine the change in price, the stock reference price is subtracted from the current NBBO midpoint.
-#/ The Stock Reference Price can be defined by the user, or defaults to the NBBO midpoat:the:i32 time of the order if no reference price
-#/ is entered. You may also enter a high/low stock price range which cancels the order when reached. The delta times the change in stock
-#/ price will be rounded to the nearest penny in favor of the order.
-#/ Products: OPT
-*/
 //==================================================================================================
+/// A Pegged to Stock order continually adjusts the option order price by the product of a signed user-define delta and the change of
+/// the option's underlying stock price. The delta is entered as an absolute and assumed to be positive for calls and negative for puts.
+/// A buy or sell call order price is determined by adding the delta times a change in an underlying stock price to a specified starting
+/// price for the call. To determine the change in price, the stock reference price is subtracted from the current NBBO midpoint.
+/// The Stock Reference Price can be defined by the user, or defaults to the NBBO midpoat:the:i32 time of the order if no reference price
+/// is entered. You may also enter a high/low stock price range which cancels the order when reached. The delta times the change in stock
+/// price will be rounded to the nearest penny in favor of the order.
+/// Products: OPT
 pub fn pegged_to_stock(
     action: &str,
     quantity: f64,

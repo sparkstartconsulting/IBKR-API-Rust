@@ -1,5 +1,4 @@
-// Usually, the easiest way to pub fnine a Stock/CASH contract is through
-//    these four attributes.
+//! Examples of populating fields that define various types of contacts
 
 use crate::core::contract::{ComboLeg, Contract};
 

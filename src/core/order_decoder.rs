@@ -1,6 +1,5 @@
 use std::slice::Iter;
 
-use log::*;
 use num_traits::FromPrimitive;
 
 use crate::core::common::{TagValue, UNSET_DOUBLE};
@@ -52,144 +51,144 @@ impl<'a> OrderDecoder<'a> {
         fields_iter: &mut Iter<String>,
     ) -> Result<(), IBKRApiLibError> {
         // read contract fields
-        self.decode_contract_fields(fields_iter);
+        self.decode_contract_fields(fields_iter)?;
 
         // read order fields
-        self.decode_action(fields_iter);
-        self.decode_total_quantity(fields_iter);
-        self.decode_order_type(fields_iter);
-        self.decode_lmt_price(fields_iter);
-        self.decode_aux_price(fields_iter);
-        self.decode_tif(fields_iter);
-        self.decode_oca_group(fields_iter);
-        self.decode_account(fields_iter);
-        self.decode_open_close(fields_iter);
-        self.decode_origin(fields_iter);
-        self.decode_order_ref(fields_iter);
-        self.decode_perm_id(fields_iter);
-        self.decode_outside_rth(fields_iter);
-        self.decode_hidden(fields_iter);
-        self.decode_discretionary_amt(fields_iter);
-        self.decode_good_after_time(fields_iter);
-        self.decode_faparams(fields_iter);
-        self.decode_model_code(fields_iter);
-        self.decode_good_till_date(fields_iter);
-        self.decode_rule80a(fields_iter);
-        self.decode_percent_offset(fields_iter);
-        self.decode_settling_firm(fields_iter);
-        self.decode_short_sale_params(fields_iter);
-        self.decode_box_order_params(fields_iter);
-        self.decode_peg_to_stk_or_vol_order_params(fields_iter);
-        self.decode_display_size(fields_iter);
-        self.decode_sweep_to_fill(fields_iter);
-        self.decode_all_or_none(fields_iter);
-        self.decode_min_qty(fields_iter);
-        self.decode_oca_type(fields_iter);
-        self.decode_trigger_method(fields_iter);
-        self.decode_vol_order_params(fields_iter, false);
-        self.decode_trail_params(fields_iter);
-        self.decode_combo_legs(fields_iter);
-        self.decode_smart_combo_routing_params(fields_iter);
-        self.decode_scale_order_params(fields_iter);
-        self.decode_hedge_params(fields_iter);
-        self.decode_clearing_params(fields_iter);
-        self.decode_not_held(fields_iter);
-        self.decode_delta_neutral(fields_iter);
-        self.decode_algo_params(fields_iter);
-        self.decode_solicited(fields_iter);
-        self.decode_order_status(fields_iter);
-        self.decode_vol_randomize_flags(fields_iter);
-        self.decode_peg_to_bench_params(fields_iter);
-        self.decode_conditions(fields_iter);
-        self.decode_stop_price_and_lmt_price_offset(fields_iter);
-        self.decode_cash_qty(fields_iter);
-        self.decode_dont_use_auto_price_for_hedge(fields_iter);
-        self.decode_is_oms_containers(fields_iter);
-        self.decode_auto_cancel_date(fields_iter);
-        self.decode_filled_quantity(fields_iter);
-        self.decode_ref_futures_con_id(fields_iter);
-        self.decode_auto_cancel_parent(fields_iter);
-        self.decode_shareholder(fields_iter);
-        self.decode_imbalance_only(fields_iter);
-        self.decode_route_marketable_to_bbo(fields_iter);
-        self.decode_parent_perm_id(fields_iter);
-        self.decode_completed_time(fields_iter);
-        self.decode_completed_status(fields_iter);
+        self.decode_action(fields_iter)?;
+        self.decode_total_quantity(fields_iter)?;
+        self.decode_order_type(fields_iter)?;
+        self.decode_lmt_price(fields_iter)?;
+        self.decode_aux_price(fields_iter)?;
+        self.decode_tif(fields_iter)?;
+        self.decode_oca_group(fields_iter)?;
+        self.decode_account(fields_iter)?;
+        self.decode_open_close(fields_iter)?;
+        self.decode_origin(fields_iter)?;
+        self.decode_order_ref(fields_iter)?;
+        self.decode_perm_id(fields_iter)?;
+        self.decode_outside_rth(fields_iter)?;
+        self.decode_hidden(fields_iter)?;
+        self.decode_discretionary_amt(fields_iter)?;
+        self.decode_good_after_time(fields_iter)?;
+        self.decode_faparams(fields_iter)?;
+        self.decode_model_code(fields_iter)?;
+        self.decode_good_till_date(fields_iter)?;
+        self.decode_rule80a(fields_iter)?;
+        self.decode_percent_offset(fields_iter)?;
+        self.decode_settling_firm(fields_iter)?;
+        self.decode_short_sale_params(fields_iter)?;
+        self.decode_box_order_params(fields_iter)?;
+        self.decode_peg_to_stk_or_vol_order_params(fields_iter)?;
+        self.decode_display_size(fields_iter)?;
+        self.decode_sweep_to_fill(fields_iter)?;
+        self.decode_all_or_none(fields_iter)?;
+        self.decode_min_qty(fields_iter)?;
+        self.decode_oca_type(fields_iter)?;
+        self.decode_trigger_method(fields_iter)?;
+        self.decode_vol_order_params(fields_iter, false)?;
+        self.decode_trail_params(fields_iter)?;
+        self.decode_combo_legs(fields_iter)?;
+        self.decode_smart_combo_routing_params(fields_iter)?;
+        self.decode_scale_order_params(fields_iter)?;
+        self.decode_hedge_params(fields_iter)?;
+        self.decode_clearing_params(fields_iter)?;
+        self.decode_not_held(fields_iter)?;
+        self.decode_delta_neutral(fields_iter)?;
+        self.decode_algo_params(fields_iter)?;
+        self.decode_solicited(fields_iter)?;
+        self.decode_order_status(fields_iter)?;
+        self.decode_vol_randomize_flags(fields_iter)?;
+        self.decode_peg_to_bench_params(fields_iter)?;
+        self.decode_conditions(fields_iter)?;
+        self.decode_stop_price_and_lmt_price_offset(fields_iter)?;
+        self.decode_cash_qty(fields_iter)?;
+        self.decode_dont_use_auto_price_for_hedge(fields_iter)?;
+        self.decode_is_oms_containers(fields_iter)?;
+        self.decode_auto_cancel_date(fields_iter)?;
+        self.decode_filled_quantity(fields_iter)?;
+        self.decode_ref_futures_con_id(fields_iter)?;
+        self.decode_auto_cancel_parent(fields_iter)?;
+        self.decode_shareholder(fields_iter)?;
+        self.decode_imbalance_only(fields_iter)?;
+        self.decode_route_marketable_to_bbo(fields_iter)?;
+        self.decode_parent_perm_id(fields_iter)?;
+        self.decode_completed_time(fields_iter)?;
+        self.decode_completed_status(fields_iter)?;
 
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     pub fn decode_open(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
-        self.decode_order_id(fields_iter);
+        self.decode_order_id(fields_iter)?;
 
         // read contract fields
-        self.decode_contract_fields(fields_iter);
+        self.decode_contract_fields(fields_iter)?;
 
         // read order fields
-        self.decode_action(fields_iter);
-        self.decode_total_quantity(fields_iter);
-        self.decode_order_type(fields_iter);
-        self.decode_lmt_price(fields_iter);
-        self.decode_aux_price(fields_iter);
-        self.decode_tif(fields_iter);
-        self.decode_oca_group(fields_iter);
-        self.decode_account(fields_iter);
-        self.decode_open_close(fields_iter);
-        self.decode_origin(fields_iter);
-        self.decode_order_ref(fields_iter);
-        self.decode_client_id(fields_iter);
-        self.decode_perm_id(fields_iter);
-        self.decode_outside_rth(fields_iter);
-        self.decode_hidden(fields_iter);
-        self.decode_discretionary_amt(fields_iter);
-        self.decode_good_after_time(fields_iter);
-        self.skip_shares_allocation(fields_iter);
-        self.decode_faparams(fields_iter);
-        self.decode_model_code(fields_iter);
-        self.decode_good_till_date(fields_iter);
-        self.decode_rule80a(fields_iter);
-        self.decode_percent_offset(fields_iter);
-        self.decode_settling_firm(fields_iter);
-        self.decode_short_sale_params(fields_iter);
-        self.decode_auction_strategy(fields_iter);
-        self.decode_box_order_params(fields_iter);
-        self.decode_peg_to_stk_or_vol_order_params(fields_iter);
-        self.decode_display_size(fields_iter);
-        self.decode_block_order(fields_iter);
-        self.decode_sweep_to_fill(fields_iter);
-        self.decode_all_or_none(fields_iter);
-        self.decode_min_qty(fields_iter);
-        self.decode_oca_type(fields_iter);
-        self.decode_etrade_only(fields_iter);
-        self.decode_firm_quote_only(fields_iter);
-        self.decode_nbbo_price_cap(fields_iter);
-        self.decode_parent_id(fields_iter);
-        self.decode_trigger_method(fields_iter);
-        self.decode_vol_order_params(fields_iter, true);
-        self.decode_trail_params(fields_iter);
-        self.decode_basis_points(fields_iter);
-        self.decode_combo_legs(fields_iter);
-        self.decode_smart_combo_routing_params(fields_iter);
-        self.decode_scale_order_params(fields_iter);
-        self.decode_hedge_params(fields_iter);
-        self.decode_opt_out_smart_routing(fields_iter);
-        self.decode_clearing_params(fields_iter);
-        self.decode_not_held(fields_iter);
-        self.decode_delta_neutral(fields_iter);
-        self.decode_algo_params(fields_iter);
-        self.decode_solicited(fields_iter);
-        self.decode_what_if_info_and_commission(fields_iter);
-        self.decode_vol_randomize_flags(fields_iter);
-        self.decode_peg_to_bench_params(fields_iter);
-        self.decode_conditions(fields_iter);
-        self.decode_adjusted_order_params(fields_iter);
-        self.decode_soft_dollar_tier(fields_iter);
-        self.decode_cash_qty(fields_iter);
-        self.decode_dont_use_auto_price_for_hedge(fields_iter);
-        self.decode_is_oms_containers(fields_iter);
-        self.decode_discretionary_up_to_limit_price(fields_iter);
-        self.decode_use_price_mgmt_algo(fields_iter);
+        self.decode_action(fields_iter)?;
+        self.decode_total_quantity(fields_iter)?;
+        self.decode_order_type(fields_iter)?;
+        self.decode_lmt_price(fields_iter)?;
+        self.decode_aux_price(fields_iter)?;
+        self.decode_tif(fields_iter)?;
+        self.decode_oca_group(fields_iter)?;
+        self.decode_account(fields_iter)?;
+        self.decode_open_close(fields_iter)?;
+        self.decode_origin(fields_iter)?;
+        self.decode_order_ref(fields_iter)?;
+        self.decode_client_id(fields_iter)?;
+        self.decode_perm_id(fields_iter)?;
+        self.decode_outside_rth(fields_iter)?;
+        self.decode_hidden(fields_iter)?;
+        self.decode_discretionary_amt(fields_iter)?;
+        self.decode_good_after_time(fields_iter)?;
+        self.skip_shares_allocation(fields_iter)?;
+        self.decode_faparams(fields_iter)?;
+        self.decode_model_code(fields_iter)?;
+        self.decode_good_till_date(fields_iter)?;
+        self.decode_rule80a(fields_iter)?;
+        self.decode_percent_offset(fields_iter)?;
+        self.decode_settling_firm(fields_iter)?;
+        self.decode_short_sale_params(fields_iter)?;
+        self.decode_auction_strategy(fields_iter)?;
+        self.decode_box_order_params(fields_iter)?;
+        self.decode_peg_to_stk_or_vol_order_params(fields_iter)?;
+        self.decode_display_size(fields_iter)?;
+        self.decode_block_order(fields_iter)?;
+        self.decode_sweep_to_fill(fields_iter)?;
+        self.decode_all_or_none(fields_iter)?;
+        self.decode_min_qty(fields_iter)?;
+        self.decode_oca_type(fields_iter)?;
+        self.decode_etrade_only(fields_iter)?;
+        self.decode_firm_quote_only(fields_iter)?;
+        self.decode_nbbo_price_cap(fields_iter)?;
+        self.decode_parent_id(fields_iter)?;
+        self.decode_trigger_method(fields_iter)?;
+        self.decode_vol_order_params(fields_iter, true)?;
+        self.decode_trail_params(fields_iter)?;
+        self.decode_basis_points(fields_iter)?;
+        self.decode_combo_legs(fields_iter)?;
+        self.decode_smart_combo_routing_params(fields_iter)?;
+        self.decode_scale_order_params(fields_iter)?;
+        self.decode_hedge_params(fields_iter)?;
+        self.decode_opt_out_smart_routing(fields_iter)?;
+        self.decode_clearing_params(fields_iter)?;
+        self.decode_not_held(fields_iter)?;
+        self.decode_delta_neutral(fields_iter)?;
+        self.decode_algo_params(fields_iter)?;
+        self.decode_solicited(fields_iter)?;
+        self.decode_what_if_info_and_commission(fields_iter)?;
+        self.decode_vol_randomize_flags(fields_iter)?;
+        self.decode_peg_to_bench_params(fields_iter)?;
+        self.decode_conditions(fields_iter)?;
+        self.decode_adjusted_order_params(fields_iter)?;
+        self.decode_soft_dollar_tier(fields_iter)?;
+        self.decode_cash_qty(fields_iter)?;
+        self.decode_dont_use_auto_price_for_hedge(fields_iter)?;
+        self.decode_is_oms_containers(fields_iter)?;
+        self.decode_discretionary_up_to_limit_price(fields_iter)?;
+        self.decode_use_price_mgmt_algo(fields_iter)?;
 
         Ok(())
     }
@@ -799,7 +798,7 @@ impl<'a> OrderDecoder<'a> {
         fields_iter: &mut Iter<String>,
     ) -> Result<(), IBKRApiLibError> {
         self.order.what_if = decode_bool(fields_iter)?;
-        self.decode_order_status(fields_iter);
+        self.decode_order_status(fields_iter)?;
         if self.server_version >= MIN_SERVER_VER_WHAT_IF_EXT_FIELDS {
             self.order_state.init_margin_before = decode_string(fields_iter)?;
             self.order_state.maint_margin_before = decode_string(fields_iter)?;
@@ -861,7 +860,7 @@ impl<'a> OrderDecoder<'a> {
                     let condition_type = FromPrimitive::from_i32(decode_i32(fields_iter)?).unwrap();
 
                     let mut condition = create_condition(condition_type);
-                    condition.decode(fields_iter);
+                    condition.decode(fields_iter)?;
 
                     self.order.conditions.push(condition);
                 }

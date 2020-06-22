@@ -287,7 +287,7 @@ impl ExecutionCondition {
 impl Condition for ExecutionCondition {
     //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
-        self.order_condition.decode(fields_iter);
+        self.order_condition.decode(fields_iter)?;
         self.sec_type = decode_string(fields_iter)?;
         self.exchange = decode_string(fields_iter)?;
         self.symbol = decode_string(fields_iter)?;
@@ -411,7 +411,7 @@ impl MarginCondition {
 impl Condition for MarginCondition {
     //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
-        self.operator_condition.decode(fields_iter);
+        self.operator_condition.decode(fields_iter)?;
         self.percent = decode_f64(fields_iter).unwrap();
         Ok(())
     }
@@ -552,7 +552,7 @@ impl TimeCondition {
 impl Condition for TimeCondition {
     //----------------------------------------------------------------------------------------------
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
-        self.operator_condition.decode(fields_iter);
+        self.operator_condition.decode(fields_iter)?;
         self.time = decode_string(fields_iter).unwrap();
         Ok(())
     }

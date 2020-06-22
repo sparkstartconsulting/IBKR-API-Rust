@@ -1,10 +1,6 @@
-use std::borrow::Borrow;
-use std::io::Error;
 use std::num::{ParseFloatError, ParseIntError};
-use std::sync::mpsc::{RecvError, RecvTimeoutError, SendError};
+use std::sync::mpsc::{RecvError, RecvTimeoutError};
 use std::{error, fmt, io};
-
-const BITS: (i32, &str) = (501, "message");
 
 const ALREADY_CONNECTED: (i32, &str) = (501, "Already connected.");
 const CONNECT_FAIL: (i32, &str) = (502, "Couldn't connect to TWS. Confirm that \"Enable ActiveX and Socket EClients\"

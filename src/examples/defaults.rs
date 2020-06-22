@@ -1,3 +1,4 @@
+//! Example implementation of the Wrapper callback trait.  Just logs callback methods
 use std::collections::HashSet;
 use std::marker::{Send, Sync};
 use std::sync::{Arc, Mutex};

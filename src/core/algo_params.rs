@@ -1,7 +1,9 @@
+//! Utility functions that illustrate setting fields related to algo parameters
 use crate::core::common::TagValue;
 use crate::core::order::Order;
 
 //==================================================================================================
+/// Scale parameters
 pub fn fill_scale_params(
     base_order: &mut Order,
     scale_init_level_size: i32,
@@ -32,6 +34,7 @@ pub fn fill_scale_params(
 }
 
 //==================================================================================================
+/// Arrival price parameters
 pub fn fill_arrival_price_params(
     base_order: &mut Order,
     max_pct_vol: f64,
@@ -74,6 +77,7 @@ pub fn fill_arrival_price_params(
 }
 
 //==================================================================================================
+/// Dark ice parameters
 pub fn fill_dark_ice_params(
     base_order: &mut Order,
     display_size: i32,
@@ -105,6 +109,7 @@ pub fn fill_dark_ice_params(
 }
 
 //==================================================================================================
+/// Percent volume parameters
 pub fn fill_pct_vol_params(
     base_order: &mut Order,
     pct_vol: f64,
@@ -137,6 +142,7 @@ pub fn fill_pct_vol_params(
 
 // ! [twap_params]
 //==================================================================================================
+/// Fill Twap parameters
 pub fn fill_twap_params(
     base_order: &mut Order,
     strategy_type: &str,
@@ -172,6 +178,7 @@ pub fn fill_twap_params(
 
 // ! [vwap_params]
 //==================================================================================================
+/// Fill Vwap parameters
 pub fn fill_vwap_params(
     base_order: &mut Order,
     max_pct_vol: f64,
@@ -212,6 +219,7 @@ pub fn fill_vwap_params(
 
 // ! [ad_params]
 //==================================================================================================
+/// Accumulate/Distrubute parameters
 pub fn fill_accumulate_distribute_params(
     base_order: &mut Order,
     component_size: i32,
@@ -263,10 +271,8 @@ pub fn fill_accumulate_distribute_params(
     ));
 }
 
-// ! [ad_params]
-
-// ! [balanceimpactrisk_params]
 //==================================================================================================
+/// Balance impact risk parameters
 pub fn fill_balance_impact_risk_params(
     base_order: &mut Order,
     max_pct_vol: f64,
@@ -293,6 +299,7 @@ pub fn fill_balance_impact_risk_params(
 
 // ! [minimpact_params]
 //==================================================================================================
+/// Minimal impact parameters
 pub fn fill_min_impact_params(base_order: &mut Order, max_pct_vol: f64) {
     base_order.algo_strategy = "MinImpact".to_string();
 
@@ -302,10 +309,8 @@ pub fn fill_min_impact_params(base_order: &mut Order, max_pct_vol: f64) {
     ));
 }
 
-// ! [minimpact_params]
-
-// ! [adaptive_params]
 //==================================================================================================
+/// Adaptive priority parameters
 pub fn fill_adaptive_params(base_order: &mut Order, priority: &str) {
     base_order.algo_strategy = "Adaptive".to_string();
 
@@ -315,10 +320,8 @@ pub fn fill_adaptive_params(base_order: &mut Order, priority: &str) {
     ));
 }
 
-// ! [adaptive_params]
-
-// ! [closepx_params]
 //==================================================================================================
+/// Close price parameters
 pub fn fill_close_price_params(
     base_order: &mut Order,
     max_pct_vol: f64,
@@ -351,10 +354,8 @@ pub fn fill_close_price_params(
     ));
 }
 
-// ! [closepx_params]
-
-// ! [pctvolpx_params]
 //==================================================================================================
+/// Price variant percent volume parameters
 pub fn fill_price_variant_pct_vol_params(
     base_order: &mut Order,
     pct_vol: f64,
@@ -400,10 +401,8 @@ pub fn fill_price_variant_pct_vol_params(
     ));
 }
 
-// ! [pctvolpx_params]
-
-// ! [pctvolsz_params]
 //==================================================================================================
+/// Size variant percent volume parameters
 pub fn fill_size_variant_pct_vol_params(
     base_order: &mut Order,
     start_pct_vol: f64,
@@ -440,10 +439,8 @@ pub fn fill_size_variant_pct_vol_params(
     ));
 }
 
-// ! [pctvolsz_params]
-
-// ! [pctvoltm_params]
 //==================================================================================================
+/// Time variant percent volume parameters
 pub fn fill_time_variant_pct_vol_params(
     base_order: &mut Order,
     start_pct_vol: f64,
@@ -479,10 +476,9 @@ pub fn fill_time_variant_pct_vol_params(
         monetary_value.to_string(),
     ));
 }
-// ! [pctvoltm_params]
 
-// ! [jefferies_vwap_params]
 //==================================================================================================
+/// Jefferies Vwap parameters
 pub fn fill_jefferies_vwapparams(
     base_order: &mut Order,
     start_time: &str,
@@ -547,10 +543,9 @@ pub fn fill_jefferies_vwapparams(
         wow_reference.to_string(),
     ));
 }
-// ! [jefferies_vwap_params]
 
-// ! [csfb_inline_params]
 //==================================================================================================
+/// CSFB inline parameters
 pub fn fill_csfbinline_params(
     base_order: &mut Order,
     start_time: &str,
@@ -616,15 +611,14 @@ pub fn fill_csfbinline_params(
         i_would_price.to_string(),
     ));
 }
-// ! [csfb_inline_params]
 
-// ! [qbalgo_strobe_params]
 //==================================================================================================
+/// QB algo parameters
 pub fn fill_qbalgo_in_line_params(
     base_order: &mut Order,
     start_time: &str,
     end_time: &str,
-    duration: f64,
+    _duration: f64,
     benchmark: &str,
     percent_volume: f64,
     no_clean_up: bool,
@@ -654,4 +648,3 @@ pub fn fill_qbalgo_in_line_params(
         (no_clean_up as i32).to_string(),
     ));
 }
-// ! [qbalgo_strobe_params]
