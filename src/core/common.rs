@@ -1,3 +1,4 @@
+//! Common types
 use std::fmt;
 use std::fmt::Display;
 
@@ -12,9 +13,9 @@ pub const MAX_MSG_LEN: i64 = 0xFFFFFF; //16Mb - 1byte
 
 pub const UNSET_INTEGER: i32 = std::i32::MAX;
 pub const UNSET_DOUBLE: f64 = 1.7976931348623157E308_f64;
-//std::f64::MAX;
 pub const UNSET_LONG: i64 = std::i64::MAX;
 
+//==================================================================================================
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]
 pub enum TickType {
@@ -209,6 +210,7 @@ impl fmt::Display for TickType {
     }
 }
 
+//==================================================================================================
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum FaDataType {
@@ -224,6 +226,7 @@ impl fmt::Display for FaDataType {
     }
 }
 
+//==================================================================================================
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum TickByTickType {

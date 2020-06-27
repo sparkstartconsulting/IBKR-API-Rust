@@ -1,7 +1,6 @@
 //! Binary for testing twsapi
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashSet;
-use std::marker::{Send, Sync};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, UNIX_EPOCH};
@@ -3426,9 +3425,6 @@ impl Wrapper for TestWrapper {
     }
 }
 
-unsafe impl Send for TestWrapper {}
-
-unsafe impl Sync for TestWrapper {}
 
 /// Example of using client and wrapper.
 /// Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method

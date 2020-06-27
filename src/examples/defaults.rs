@@ -1,6 +1,5 @@
 //! Example implementation of the Wrapper callback trait.  Just logs callback methods
 use std::collections::HashSet;
-use std::marker::{Send, Sync};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, UNIX_EPOCH};
 
@@ -883,6 +882,3 @@ impl Wrapper for DefaultWrapper {
     }
 }
 
-unsafe impl Send for DefaultWrapper {}
-
-unsafe impl Sync for DefaultWrapper {}

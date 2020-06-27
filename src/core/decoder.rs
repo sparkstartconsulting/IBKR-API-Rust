@@ -515,9 +515,9 @@ where
         contract.ratings = decode_string(&mut fields_itr)?;
         contract.bond_type = decode_string(&mut fields_itr)?;
         contract.coupon_type = decode_string(&mut fields_itr)?;
-        contract.convertible = i32::from_str(fields_itr.next().unwrap().as_ref()).unwrap() != 0;
-        contract.callable = i32::from_str(fields_itr.next().unwrap().as_ref()).unwrap() != 0;
-        contract.putable = i32::from_str(fields_itr.next().unwrap().as_ref()).unwrap() != 0;
+        contract.convertible = i32::from_str(fields_itr.next().unwrap().as_ref())? != 0;
+        contract.callable = i32::from_str(fields_itr.next().unwrap().as_ref())? != 0;
+        contract.putable = i32::from_str(fields_itr.next().unwrap().as_ref())? != 0;
         contract.desc_append = decode_string(&mut fields_itr)?;
         contract.contract.exchange = decode_string(&mut fields_itr)?;
         contract.contract.currency = decode_string(&mut fields_itr)?;
