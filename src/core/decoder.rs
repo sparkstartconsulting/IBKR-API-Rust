@@ -1899,7 +1899,7 @@ where
         let req_id = decode_i32(&mut fields_itr)?;
 
         let mut bar = RealTimeBar::default();
-        bar.time = decode_string(&mut fields_itr)?;
+        bar.date_time = decode_string(&mut fields_itr)?;
         bar.open = decode_f64(&mut fields_itr)?;
         bar.high = decode_f64(&mut fields_itr)?;
         bar.low = decode_f64(&mut fields_itr)?;
@@ -1908,17 +1908,11 @@ where
         bar.wap = decode_f64(&mut fields_itr)?;
         bar.count = decode_i32(&mut fields_itr)?;
 
-        self.wrapper.lock().unwrap().deref_mut().realtime_bar(
-            req_id,
-            bar.time.parse().unwrap(),
-            bar.open,
-            bar.high,
-            bar.low,
-            bar.close,
-            bar.volume,
-            bar.wap,
-            bar.count,
-        );
+        self.wrapper
+            .lock()
+            .unwrap()
+            .deref_mut()
+            .realtime_bar(req_id, bar);
         Ok(())
     }
 

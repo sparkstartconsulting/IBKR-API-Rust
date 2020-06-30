@@ -250,6 +250,17 @@ impl fmt::Display for TickByTickType {
 }
 
 //==================================================================================================
+/// date - the bar's date and time (either as a yyyymmss hh:mm:ssformatted
+///        string or as system time according to the request)
+/// open  - the bar's open point
+/// high  - the bar's high point
+/// low   - the bar's low point
+/// close - the bar's closing point
+/// volume - the bar's traded volume if available
+/// count - the number of trades during the bar's timespan (only available
+///         for TRADES).
+/// bar_count - running count of the bars received for this request
+/// average - average price of the bar
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct BarData {
     pub date: String,
@@ -294,10 +305,20 @@ impl fmt::Display for BarData {
 }
 
 //==================================================================================================
+/// date_time - the bar's date and time (either as a yyyymmss hh:mm:ssformatted
+///        string or as system time according to the request)
+/// open  - the bar's open point
+/// high  - the bar's high point
+/// low   - the bar's low point
+/// close - the bar's closing point
+/// volume - the bar's traded volume if available
+/// count - the number of trades during the bar's timespan (only available
+///         for TRADES).
+/// wap -   the bar's Weighted Average Price
+/// count - running count of the bars for this request
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct RealTimeBar {
-    pub time: String,
-    pub end_time: String,
+    pub date_time: String,
     pub open: f64,
     pub high: f64,
     pub low: f64,
@@ -309,8 +330,7 @@ pub struct RealTimeBar {
 
 impl RealTimeBar {
     pub fn new(
-        time: String,
-        end_time: String,
+        date_time: String,
         open: f64,
         high: f64,
         low: f64,
@@ -320,8 +340,7 @@ impl RealTimeBar {
         count: i32,
     ) -> Self {
         RealTimeBar {
-            time,
-            end_time,
+            date_time,
             open,
             high,
             low,
@@ -335,8 +354,18 @@ impl RealTimeBar {
 
 impl fmt::Display for RealTimeBar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "time: {}, end_time: {},open: {}, high: {}, low: {}, close: {}, volume: {}, wap: {}, count: {}", self.time, self.end_time, self.open, self.high,
-               self.low, self.close, self.volume, self.wap, self.count)
+        write!(
+            f,
+            "date_time: {},open: {}, high: {}, low: {}, close: {}, volume: {}, wap: {}, count: {}",
+            self.date_time,
+            self.open,
+            self.high,
+            self.low,
+            self.close,
+            self.volume,
+            self.wap,
+            self.count
+        )
     }
 }
 

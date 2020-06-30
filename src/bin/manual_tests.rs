@@ -23,8 +23,8 @@ use twsapi::core::client::EClient;
 use twsapi::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, MarketDataTypeEnum, NewsProvider,
-    PriceIncrement, SmartComponent, TagValue, TickAttrib, TickAttribBidAsk, TickAttribLast,
-    TickByTickType, TickType,
+    PriceIncrement, RealTimeBar, SmartComponent, TagValue, TickAttrib, TickAttribBidAsk,
+    TickAttribLast, TickByTickType, TickType,
 };
 use twsapi::core::contract::{
     Contract, ContractDescription, ContractDetails, DeltaNeutralContract,
@@ -2906,29 +2906,18 @@ impl Wrapper for TestWrapper {
     }
 
     //----------------------------------------------------------------------------------------------
-    fn realtime_bar(
-        &mut self,
-        req_id: i32,
-        time: i32,
-        open_: f64,
-        high: f64,
-        low: f64,
-        close: f64,
-        volume: i64,
-        wap: f64,
-        count: i32,
-    ) {
+    fn realtime_bar(&mut self, req_id: i32, bar: RealTimeBar) {
         info!(
-            "realtime_bar -- req_id: {}, time: {}, open_: {}, high: {}, low: {}, close: {}, volume: {}, wap: {}, count: {}",
+            "realtime_bar -- req_id: {}, time: {}, open: {}, high: {}, low: {}, close: {}, volume: {}, wap: {}, count: {}",
             req_id,
-            time,
-            open_,
-            high,
-            low,
-            close,
-            volume,
-            wap,
-            count,
+            bar.time,
+            bar.open,
+            bar.high,
+            bar.low,
+            bar.close,
+            bar.volume,
+            bar.wap,
+            bar.count,
         );
     }
 
@@ -3424,7 +3413,6 @@ impl Wrapper for TestWrapper {
         info!("completed_orders_end -- (no parameters for this message)");
     }
 }
-
 
 /// Example of using client and wrapper.
 /// Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
