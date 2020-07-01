@@ -1,4 +1,4 @@
-//! Clients implement the Wrapper trait in this module to receive data and notifications from the Trader WorkStation or IB Gateway
+//! Clients implement the Wrapper trait in this module to receive data and notifications from Trader WorkStation or IB Gateway
 use std::collections::HashSet;
 use std::marker::{Send, Sync};
 
