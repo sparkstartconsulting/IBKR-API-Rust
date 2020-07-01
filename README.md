@@ -14,7 +14,7 @@ The main structs and traits that clients will use are **EClient** , a struct tha
 connecting to TWS or IB Gateway and sending requests,  and **Wrapper**, a trait that clients will implement that declares callback functions 
 that get called when the application receives messages from the server.
 
-# Example
+### Example
 
 Upon connecting, TWS will send the next valid order ID which will cause the ***Wrapper*** callback method
 next_valid_id to be called, which will start sending tests requests to TWS (see the
