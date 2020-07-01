@@ -1,3 +1,4 @@
+//! Error types
 use std::num::{ParseFloatError, ParseIntError};
 use std::sync::mpsc::{RecvError, RecvTimeoutError};
 use std::{error, fmt, io};

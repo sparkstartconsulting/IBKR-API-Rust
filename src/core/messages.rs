@@ -1,4 +1,4 @@
-// 0.2.6 (the trait)
+//! Functions for processing messages
 use std::any::Any;
 use std::convert::TryInto;
 use std::io::Write;

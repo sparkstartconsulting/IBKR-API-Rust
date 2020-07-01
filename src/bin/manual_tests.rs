@@ -2908,9 +2908,9 @@ impl Wrapper for TestWrapper {
     //----------------------------------------------------------------------------------------------
     fn realtime_bar(&mut self, req_id: i32, bar: RealTimeBar) {
         info!(
-            "realtime_bar -- req_id: {}, time: {}, open: {}, high: {}, low: {}, close: {}, volume: {}, wap: {}, count: {}",
+            "realtime_bar -- req_id: {}, date_time: {}, open: {}, high: {}, low: {}, close: {}, volume: {}, wap: {}, count: {}",
             req_id,
-            bar.time,
+            bar.date_time,
             bar.open,
             bar.high,
             bar.low,

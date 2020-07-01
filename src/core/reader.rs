@@ -87,22 +87,14 @@ impl Reader {
 
             // clear the Vec that holds the bytes from the packet
             // and reload with the bytes that haven't been read.
-            // The variable new_buf only holds the unread bytes (messages) left in the packet
+            // The variable remaining_messages only holds the unread messages left in the packet
             message_packet.clear();
             message_packet.extend_from_slice(remaining_messages.as_slice());
-
-            //            debug!(
-            //                "size:{} msg.size:{} msg:|{}| buf:{:?}|",
-            //                size,
-            //                msg.len(),
-            //                msg,
-            //                message_packet.to_owned()
-            //            );
 
             if msg.as_str() != "" {
                 self.messages.send(msg).expect("READER CANNOT SEND MESSAGE");
             } else {
-                //Break to the outer loop and get another packet of messages.
+                //Break to the outer loop in run and get another packet of messages.
 
                 debug!("more incoming packet(s) are needed ");
                 break;
@@ -122,6 +114,5 @@ impl Reader {
                 error!("{:?}", result);
             }
         }
-        //debug!("EReader thread finished")
     }
 }

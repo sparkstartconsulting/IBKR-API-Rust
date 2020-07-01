@@ -1,6 +1,6 @@
+//! Types related to orders
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
-// 0.2.6 (the trait)
 use serde::export::fmt::{Display, Error};
 use serde::export::Formatter;
 

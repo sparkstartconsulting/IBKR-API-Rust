@@ -1,3 +1,4 @@
+//! Types and functions related to decoding order type messages
 use std::slice::Iter;
 
 use num_traits::FromPrimitive;

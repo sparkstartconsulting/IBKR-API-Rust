@@ -1,3 +1,4 @@
+//! Types related to order and execution conditions
 use std::fmt::{Debug, Display};
 use std::slice::Iter;
 
