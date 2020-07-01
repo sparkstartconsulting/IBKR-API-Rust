@@ -1,3 +1,4 @@
+//! Core structs, enums, and functions
 pub mod account_summary_tags;
 pub mod algo_params;
 pub mod client;
