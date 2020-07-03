@@ -6,7 +6,7 @@ Please see the latest IB Tws Api documentation here: <http://interactivebrokers.
 
 The documentation has information regarding configuring Trader WorkStation and IB Gateway to enable API access.
 
-For usage of this library, please see the example implementation in [src/examples/test_helpers/manual_tests.rs](src/examples/test_helpers/manual_tests.rs)
+For usage of this library, please see the example implementation in [src/examples/test_helpers/manual_tests.rs](src/bin/manual_tests.rs)
 
  The main structs and traits that clients will use are [**EClient**](src/core/client.rs) , a struct that is responsible for
  connecting to TWS or IB Gateway and sending requests,  and [**Wrapper**](src/core/wrapper.rs), a trait that clients will implement that declares callback functions
