@@ -8,31 +8,35 @@ The documentation has information regarding configuring Trader WorkStation and I
 
 For usage of this library, please see the example implementation in [src/examples/test_helpers/manual_tests.rs](src/bin/manual_tests.rs)
 
- The main structs and traits that clients will use are [**EClient**](src/core/client.rs) , a struct that is responsible for
- connecting to TWS or IB Gateway and sending requests,  and [**Wrapper**](src/core/wrapper.rs), a trait that clients will implement that declares callback functions
- that get called when the application receives messages from the server.
+The main structs and traits that clients will use are [**EClient**](src/core/client.rs) , a struct that is responsible for
+connecting to TWS or IB Gateway and sending requests,  and [**Wrapper**](src/core/wrapper.rs), a trait that clients will implement that declares callback functions
+that get called when the application receives messages from the server.
 
 ## Example
 
- In the example below, TWS will send the next valid order ID when the sample application connects. This will cause the ***Wrapper*** callback method
- ***next_valid_id*** to be called, which will start sending test requests to TWS (see the
- ***start_requests*** method in ***TestWrapper*** which is called by ***next_valid_id***).
+In the example below, TWS will send the next valid order ID when the sample application connects. This will cause the ***Wrapper*** callback method
+***next_valid_id*** to be called, which will start sending test requests to TWS (see the
+***start_requests*** method in ***TestWrapper*** which is called by ***next_valid_id***).
 
- ```no_run
- use twsapi::core::errors::IBKRApiLibError;
- use twsapi::core::client::EClient;
- use std::time::Duration;
- fn main() -> Result<(), IBKRApiLibError> {
-     let wrapper = std::sync::Arc::new(std::sync::Mutex::new(twsapi::examples::test_helpers::TestWrapper::new()));
-     let app = std::sync::Arc::new(std::sync::Mutex::new(twsapi::core::client::EClient::new(wrapper.clone())));
-     wrapper.lock().unwrap().client = Option::from(app.clone());
+```no_run
+use twsapi::core::errors::IBKRApiLibError;
+use twsapi::core::client::EClient;
+use std::time::Duration;
+use twsapi::examples::test_helpers::TestWrapper;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
-     app.lock().unwrap().connect("127.0.0.1", 7497, 0)?;
-     std::thread::sleep(std::time::Duration::new(18600, 0));
+fn main() -> Result<(), IBKRApiLibError> {
+    let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
+    let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
+    wrapper.lock().unwrap().client = Option::from(app.clone());
 
-     Ok(())
- }
- ```
+    app.lock().unwrap().connect("127.0.0.1", 7497, 0)?;
+    thread::sleep(Duration::new(18600, 0));
+
+    Ok(())
+}
+```
 
 ## TODO
 
