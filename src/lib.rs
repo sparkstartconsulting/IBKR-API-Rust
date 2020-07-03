@@ -14,13 +14,17 @@
 //! use twsapi::core::errors::IBKRApiLibError;
 //! use twsapi::core::client::EClient;
 //! use std::time::Duration;
+//! use twsapi::examples::test_helpers::TestWrapper;
+//! use std::sync::{Arc, Mutex};
+//! use std::thread;
+//!
 //! fn main() -> Result<(), IBKRApiLibError> {
-//!     let wrapper = std::sync::Arc::new(std::sync::Mutex::new(twsapi::examples::test_helpers::TestWrapper::new()));
-//!     let app = std::sync::Arc::new(std::sync::Mutex::new(twsapi::core::client::EClient::new(wrapper.clone())));
+//!     let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
+//!     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
 //!     wrapper.lock().unwrap().client = Option::from(app.clone());
 //!
 //!     app.lock().unwrap().connect("127.0.0.1", 7497, 0)?;
-//!     std::thread::sleep(std::time::Duration::new(18600, 0));
+//!     thread::sleep(Duration::new(18600, 0));
 //!
 //!     Ok(())
 //! }
