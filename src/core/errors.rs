@@ -75,7 +75,7 @@ impl fmt::Display for TwsError {
     }
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub enum IBKRApiLibError {
     Io(io::Error),
     ParseFloat(ParseFloatError),
@@ -86,6 +86,21 @@ pub enum IBKRApiLibError {
 }
 
 impl fmt::Display for IBKRApiLibError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            // Both underlying errors already impl `Display`, so we defer to
+            // their implementations.
+            IBKRApiLibError::Io(ref err) => write!(f, "IO error: {}", err),
+            IBKRApiLibError::ParseFloat(ref err) => write!(f, "Parse error: {}", err),
+            IBKRApiLibError::ParseInt(ref err) => write!(f, "Parse error: {}", err),
+            IBKRApiLibError::RecvError(ref err) => write!(f, "Recieve error: {}", err),
+            IBKRApiLibError::RecvTimeoutError(ref err) => write!(f, "Reader Send error {}", err),
+            IBKRApiLibError::ApiError(ref err) => write!(f, "TWS Error: {}", err),
+        }
+    }
+}
+
+impl fmt::Debug for IBKRApiLibError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // Both underlying errors already impl `Display`, so we defer to
@@ -153,7 +168,7 @@ impl From<TwsApiReportableError> for IBKRApiLibError {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TwsApiReportableError {
     pub req_id: i32,
     pub code: String,
@@ -171,16 +186,6 @@ impl TwsApiReportableError {
 }
 
 impl fmt::Display for TwsApiReportableError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "TWS Error: req_id = {}. code = {}. description = {}",
-            self.req_id, self.code, self.description
-        )
-    }
-}
-
-impl fmt::Debug for TwsApiReportableError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,

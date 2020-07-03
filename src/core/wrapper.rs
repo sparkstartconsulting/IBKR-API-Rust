@@ -4,7 +4,7 @@ use std::marker::{Send, Sync};
 
 use bigdecimal::BigDecimal;
 
-use super::common::RealTimeBar;
+use crate::core::common::RealTimeBar;
 use crate::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
@@ -269,9 +269,9 @@ pub trait Wrapper: Send + Sync + 'static {
     ///
     /// # Arguments
     /// * msg_id - the bulletin's identifier
-    /// * msg_type - one of: 
+    /// * msg_type - one of:
     ///     * 1 - Regular news bulletin
-    ///     * 2 - Exchange no longer available for trading 
+    ///     * 2 - Exchange no longer available for trading
     ///     * 3 - Exchange is available for trading
     /// * news_message - the message
     /// * origin_exch -    the exchange where the message comes from.
@@ -451,8 +451,8 @@ pub trait Wrapper: Send + Sync + 'static {
     ///                 none = empty selection
     ///                 contractID@exchange = any non-combination contract.
     ///                
-    ///                 Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
-    ///                 combo = if any combo is selected.
+    ///                 //Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
+    ///                 //combo = if any combo is selected.
     fn display_group_updated(&mut self, req_id: i32, contract_info: &str);
 
     //----------------------------------------------------------------------------------------------

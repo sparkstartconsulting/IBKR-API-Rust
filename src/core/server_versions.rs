@@ -1,4 +1,3 @@
-
 //! The known server versions.
 
 //MIN_SERVER_VER_REAL_TIME_BARS       = 34

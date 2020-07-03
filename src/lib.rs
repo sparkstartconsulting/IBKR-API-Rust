@@ -1,34 +1,29 @@
-/*! Lib for sending requests to and processing responses from Interactive Broker's Trader Workstation or IB Gateway
-
-For usage of this library, please see the example implementation in [src/bin/manual_tests.rs](https://github.com/sparkstartconsulting/IBKR-API-Rust/blob/fix_docs_add_tests/src/bin/manual_tests.rs)
-
-The main structs and traits that clients will use are [**EClient**](https://github.com/sparkstartconsulting/IBKR-API-Rust/blob/fix_docs_add_tests/src/core/client.rs) , a struct that is responsible for 
-connecting to TWS or IB Gateway and sending requests,  and [**Wrapper**](https://github.com/sparkstartconsulting/IBKR-API-Rust/blob/fix_docs_add_tests/src/core/wrapper.rs), a trait that clients will implement that declares callback functions 
-that get called when the application receives messages from the server.
-
-### Example
-
-Upon connecting, TWS will send the next valid order ID which will cause the ***Wrapper*** callback method
-next_valid_id to be called, which will start sending tests requests to TWS (see the
-***start_requests*** function in ***TestWrapper*** which is called by ***next_valid_id***.
-
-    // TestWrapper implements the Wrapper trait and handles messages sent from TWS
-    let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
-    
-    //EClient sends requests to TWS
-    let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
-
-    wrapper.lock().unwrap().client = Option::from(app.clone());
-
-    // Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
-    // next_valid_id to be called, which will start sending tests requests to TWS (see the
-    // start_requests function in TestWrapper which is called by next_valid_id
-    info!("getting connection...");
-    app.lock().unwrap().connect("127.0.0.1", 7497, 0);
-
-    thread::sleep(Duration::new(18600, 0));
-
-    Ok(())
-*/
+//! Lib for sending requests to and processing responses from Interactive Broker's Trader Workstation or IB Gateway
+//!
+//! For usage of this library, please see the example implementation in [src/examples/test_helpers/manual_tests.rs](https://github.com/sparkstartconsulting/IBKR-API-Rust/blob/fix_docs_add_tests/src/examples/test_helpers/manual_tests.rs)
+//!
+//! The main structs and traits that clients will use are [**EClient**](https://github.com/sparkstartconsulting/IBKR-API-Rust/blob/fix_docs_add_tests/src/core/client.rs) , a struct that is responsible for
+//! connecting to TWS or IB Gateway and sending requests,  and [**Wrapper**](https://github.com/sparkstartconsulting/IBKR-API-Rust/blob/fix_docs_add_tests/src/core/wrapper.rs), a trait that clients will implement that declares callback functions
+//! that get called when the application receives messages from the server.
+//!
+//! In the example below, TWS will send the next valid order ID when the sample application connects.  This will cause the ***Wrapper*** callback method
+//! ***next_valid_id*** to be called, which will start sending test requests to TWS (see the
+//! ***start_requests*** method in ***TestWrapper*** which is called by ***next_valid_id***).
+//!
+//! ```no_run        
+//! use twsapi::core::errors::IBKRApiLibError;
+//! use twsapi::core::client::EClient;
+//! use std::time::Duration;
+//! fn main() -> Result<(), IBKRApiLibError> {
+//!     let wrapper = std::sync::Arc::new(std::sync::Mutex::new(twsapi::examples::test_helpers::TestWrapper::new()));
+//!     let app = std::sync::Arc::new(std::sync::Mutex::new(twsapi::core::client::EClient::new(wrapper.clone())));
+//!     wrapper.lock().unwrap().client = Option::from(app.clone());
+//!
+//!     app.lock().unwrap().connect("127.0.0.1", 7497, 0)?;
+//!     std::thread::sleep(std::time::Duration::new(18600, 0));
+//!
+//!     Ok(())
+//! }
+//! ```     
 pub mod core;
 pub mod examples;

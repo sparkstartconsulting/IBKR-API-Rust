@@ -32,7 +32,7 @@ use crate::core::wrapper::Wrapper;
 //==================================================================================================
 /// Connection status
 #[repr(i32)]
-#[derive(FromPrimitive, Copy, Clone)]
+#[derive(FromPrimitive, Copy, Clone, Debug)]
 pub enum ConnStatus {
     DISCONNECTED,
     CONNECTING,
@@ -42,6 +42,7 @@ pub enum ConnStatus {
 
 //==================================================================================================
 /// Struct for sending requests
+#[derive(Debug)]
 pub struct EClient<T: Wrapper + Sync + Send> {
     //decoder: Decoder<'a, T>,
     wrapper: Arc<Mutex<T>>,
@@ -174,7 +175,7 @@ where
     //----------------------------------------------------------------------------------------------
     /// Checks connection status
     pub fn is_connected(&self) -> bool {
-        //info!("checking connected...");
+        //debug!("checking connected...");
         let connected = match *self.conn_state.lock().unwrap().deref() {
             ConnStatus::DISCONNECTED => false,
             ConnStatus::CONNECTED => true,
@@ -182,7 +183,7 @@ where
             ConnStatus::REDIRECT => false,
         };
 
-        //info!("finished checking connected...");
+        //debug!("finished checking connected...");
         connected
     }
 
@@ -499,11 +500,11 @@ where
         frozen market data after the close. Then, before the opening of the next
         trading day, market data will automatically switch back to real-time
         market data.
-        
+
         # Arguments
         * market_data_type
             * 1 for real-time streaming market data
-            * 2 for frozen market data 
+            * 2 for frozen market data
     */
     pub fn req_market_data_type(&mut self, market_data_type: i32) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
@@ -857,7 +858,6 @@ where
         under_price: f64,
         opt_prc_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -951,7 +951,6 @@ where
     /// # Arguments
     /// * req_id - The request id.
     pub fn cancel_calculate_option_price(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -998,7 +997,6 @@ where
         &mut self,
         req_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -1052,7 +1050,7 @@ where
     ///              option is not in-the-money, by natural action the option would not
     ///              exercise. If you have override set to "yes" the natural action would
     ///              be overridden and the out-of-the money option would be exercised.
-    ///              Values are: 
+    ///              Values are:
     ///      * 0 = no
     ///      * 1 = yes.
     pub fn exercise_options(
@@ -1064,8 +1062,6 @@ where
         account: &String,
         over_ride: i32,
     ) -> Result<(), IBKRApiLibError> {
-
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -1132,23 +1128,23 @@ where
     //################## Orders
     //########################################################################
 
+    /// Call this function to place an order. The order status will
+    /// be returned by the Wrapper::order_status event.
+    ///
+    /// # Arguments
+    /// * order_id - The order id. You must specify a unique value. When the
+    /// order START_APItus returns, it will be identified by this tag.
+    ///            This tag is also used when canceling the order.
+    ///        contract:&Contract - This structure contains a description of the
+    ///            contract which is being traded.
+    ///        order:Order - This structure contains the details of tradedhe order.
+    ///            Note: Each core MUST connect with a unique clientId.
     pub fn place_order(
         &mut self,
         order_id: i32,
         contract: &Contract,
         order: &Order,
     ) -> Result<(), IBKRApiLibError> {
-        //        Call this function to place an order. The order status will
-        //        be returned by the orderStatus event.
-        //
-        //        order_id:OrderId - The order id. You must specify a unique value. When the
-        //        order START_APItus returns, it will be identified by this tag.
-        //            This tag is also used when canceling the order.
-        //        contract:&Contract - This structure contains a description of the
-        //            contract which is being traded.
-        //        order:Order - This structure contains the details of tradedhe order.
-        //            Note: Each core MUST connect with a unique clientId.
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,

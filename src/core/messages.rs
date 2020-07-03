@@ -291,3 +291,12 @@ pub fn make_field_handle_empty(val: &dyn Any) -> Result<String, IBKRApiLibError>
     }
     make_field(val)
 }
+
+//////////////////////////////////////////TESTS /////////////////////////////////////////////////
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
+}
