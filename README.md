@@ -18,7 +18,7 @@ In the example below, TWS will send the next valid order ID when the sample appl
 ***next_valid_id*** to be called, which will start sending test requests to TWS (see the
 ***start_requests*** method in ***TestWrapper*** which is called by ***next_valid_id***).
 
-```no_run
+```rust, no_run
 use twsapi::core::errors::IBKRApiLibError;
 use twsapi::core::client::EClient;
 use std::time::Duration;
