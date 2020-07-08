@@ -1,10 +1,8 @@
+//! Types related to orders
 use num_derive::FromPrimitive;
-// 0.2.4 (the derive)
-use num_traits::FromPrimitive;
-use serde::{Deserialize, Serialize};
-// 0.2.6 (the trait)
 use serde::export::fmt::{Display, Error};
 use serde::export::Formatter;
+use serde::{Deserialize, Serialize};
 
 use crate::core::common::{TagValue, UNSET_DOUBLE, UNSET_INTEGER};
 use crate::core::order::AuctionStrategy::AuctionUnset;

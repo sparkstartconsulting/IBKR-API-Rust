@@ -1,6 +1,5 @@
+//! Types related to Contracts
 use num_derive::FromPrimitive;
-// 0.2.4 (the derive)
-use num_traits::FromPrimitive;
 use serde::{Deserialize, Serialize};
 // 0.2.6 (the trait)
 use serde::export::fmt::{Display, Error};

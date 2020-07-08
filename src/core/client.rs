@@ -1,4 +1,4 @@
-use std::borrow::{Borrow, BorrowMut, Cow};
+//! EClient and supporting structs.  Responsible for connecting to Trader Workstation or IB Gatway and sending requests
 use std::io::Write;
 use std::marker::Sync;
 use std::net::Shutdown;
@@ -9,13 +9,10 @@ use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use encoding::Encoding;
 use from_ascii::FromAscii;
 use log::*;
-use log4rs::append::Append;
+
 use num_derive::FromPrimitive;
-// 0.2.4 (the derive)
-use num_traits::FromPrimitive;
 
 use crate::core::common::*;
 use crate::core::contract::Contract;
@@ -32,10 +29,10 @@ use crate::core::scanner::ScannerSubscription;
 use crate::core::server_versions::*;
 use crate::core::wrapper::Wrapper;
 
-// 0.2.6 (the trait)
 //==================================================================================================
+/// Connection status
 #[repr(i32)]
-#[derive(FromPrimitive, Copy, Clone)]
+#[derive(FromPrimitive, Copy, Clone, Debug)]
 pub enum ConnStatus {
     DISCONNECTED,
     CONNECTING,
@@ -44,11 +41,11 @@ pub enum ConnStatus {
 }
 
 //==================================================================================================
+/// Struct for sending requests
+#[derive(Debug)]
 pub struct EClient<T: Wrapper + Sync + Send> {
     //decoder: Decoder<'a, T>,
     wrapper: Arc<Mutex<T>>,
-    done: bool,
-    n_keyb_int_hard: i32,
     stream: Option<TcpStream>,
     host: String,
     port: u32,
@@ -58,7 +55,6 @@ pub struct EClient<T: Wrapper + Sync + Send> {
     conn_time: String,
     pub conn_state: Arc<Mutex<ConnStatus>>,
     opt_capab: String,
-    asynchronous: bool,
     disconnect_requested: Arc<AtomicBool>,
 }
 
@@ -69,9 +65,6 @@ where
     pub fn new(the_wrapper: Arc<Mutex<T>>) -> Self {
         EClient {
             wrapper: the_wrapper,
-            //decoder: Decoder::new(the_wrapper, 0),
-            done: false,
-            n_keyb_int_hard: 0,
             stream: None,
             host: "".to_string(),
             port: 0,
@@ -81,7 +74,6 @@ where
             conn_time: "".to_string(),
             conn_state: Arc::new(Mutex::new(ConnStatus::DISCONNECTED)),
             opt_capab: "".to_string(),
-            asynchronous: false,
             disconnect_requested: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -97,6 +89,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Establishes a connection to TWS or IB Gateway
     pub fn connect(
         &mut self,
         host: &str,
@@ -131,7 +124,7 @@ where
         bytearray.extend_from_slice(v_100_prefix.as_bytes());
         bytearray.extend_from_slice(msg.as_slice());
 
-        self.send_bytes(bytearray.as_slice());
+        self.send_bytes(bytearray.as_slice())?;
         let mut fields: Vec<String> = Vec::new();
 
         //let mut decoder = Decoder::new(self.wrapper.clone(), rx, self.server_version);
@@ -144,7 +137,7 @@ where
         //sometimes I get news before the server version, thus the loop
         while fields.len() != 2 {
             if fields.len() > 0 {
-                decoder.interpret(fields.as_slice());
+                decoder.interpret(fields.as_slice())?;
             }
 
             let buf = reader.recv_packet()?;
@@ -171,15 +164,18 @@ where
         });
 
         thread::spawn(move || {
-            decoder.run();
+            if decoder.run().is_err() {
+                panic!("decoder.run() failed!!");
+            }
         });
-        self.start_api();
+        self.start_api()?;
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Checks connection status
     pub fn is_connected(&self) -> bool {
-        //info!("checking connected...");
+        //debug!("checking connected...");
         let connected = match *self.conn_state.lock().unwrap().deref() {
             ConnStatus::DISCONNECTED => false,
             ConnStatus::CONNECTED => true,
@@ -187,19 +183,18 @@ where
             ConnStatus::REDIRECT => false,
         };
 
-        //info!("finished checking connected...");
+        //debug!("finished checking connected...");
         connected
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Get the server version (important for checking feature flags for different versions)
     pub fn server_version(&self) -> i32 {
-        //        Returns the version of the TWS instance to which the API
-        //        application is connected.
-
         self.server_version
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Sets server logging level
     pub fn set_server_log_level(&self, log_evel: i32) -> Result<(), IBKRApiLibError> {
         //The pub default detail level is ERROR. For more details, see API
         //        Logging.
@@ -231,6 +226,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Gets the connection time
     pub fn tws_connection_time(&mut self) -> String {
         //"""Returns the time the API application made a connection to TWS."""
 
@@ -238,6 +234,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Request the current time according to TWS or IB Gateway
     pub fn req_current_time(&self) -> Result<(), IBKRApiLibError> {
         let version = 2;
 
@@ -251,6 +248,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Disconnect from TWS
     pub fn disconnect(&mut self) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
             info!("Already disconnected...");
@@ -264,10 +262,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Initiates the message exchange between the core application and the TWS/IB Gateway
     fn start_api(&mut self) -> Result<(), IBKRApiLibError> {
-        //Initiates the message exchange between the core application and
-        //the TWS/IB Gateway. """
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -298,7 +294,28 @@ where
     //##############################################################################################
     //################################### Market Data
     //##############################################################################################
-
+    /// Request market data
+    /// Call this function to request market data. The market data
+    /// will be returned by the tickPrice and tickSize events.
+    ///
+    /// # Arguments
+    /// * req_id - The ticker id. Must be a unique value. When the
+    ///            market data returns, it will be identified by this tag. This is
+    ///            also used when canceling the market data.
+    /// * contract - This structure contains a description of the
+    ///              Contract for which market data is being requested.
+    /// * generic_tick_list - A commma delimited list of generic tick types.
+    ///                       Tick types can be found in the Generic Tick Types page.
+    ///                       Prefixing w/ 'mdoff' indicates that top mkt data shouldn't tick.
+    ///                       You can specify the news source by postfixing w/ ':<source>.
+    ///                       Example: "mdoff, 292: FLY + BRF"
+    /// * snapshot - Check to return a single snapshot of Market data and
+    ///                    have the market data subscription cancel. Do not enter any
+    ///                    genericTicklist values if you use snapshots.
+    /// * regulatory_snapshot - With the US Value Snapshot Bundle for stocks,
+    ///                         regulatory snapshots are available for 0.01 USD each.
+    /// * mkt_data_options - For internal use only.
+    ///                    Use pub fnault value XYZ.
     pub fn req_mkt_data(
         &mut self,
         req_id: i32,
@@ -308,27 +325,6 @@ where
         regulatory_snapshot: bool,
         mkt_data_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        //        """Call this function to request market data. The market data
-        //                will be returned by the tickPrice and tickSize events.
-        //
-        //                req_id: TickerId - The ticker id. Must be a unique value. When the
-        //                    market data returns, it will be identified by this tag. This is
-        //                    also used when canceling the market data.
-        //                contract:&Contract - This structure contains a description of the
-        //                    Contractt for which market data is being requested.
-        //                generic_tick_list:&'static str - A commma delimited list of generic tick types.
-        //                    Tick types can be found in the Generic Tick Types page.
-        //                    Prefixing w/ 'mdoff' indicates that top mkt data shouldn't tick.
-        //                    You can specify the news source by postfixing w/ ':<source>.
-        //                    Example: "mdoff, 292: FLY + BRF"
-        //                snapshot:bool - Check to return a single snapshot of Market data and
-        //                    have the market data subscription cancel. Do not enter any
-        //                    genericTicklist values if you use snapshots.
-        //                regulatory_snapshot: bool - With the US Value Snapshot Bundle for stocks,
-        //                    regulatory snapshots are available for 0.01 USD each.
-        //                mktDataOptions:Vec<TagValue> - For internal use only.
-        //                    Use pub fnault value XYZ. """
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -468,13 +464,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn cancel_mkt_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        //        """After calling this function, market data for the specified id
-        //        will stop flowing.
-        //
-        //        reqId: TickerId - The ID that was specified in the call to
-        //            reqMktData(). """
+    /**!
+        After calling this function, market data for the specified id
+        will stop flowing.
 
+        * req_id - The ID that was specified in the call to req_mkt_data()
+    */
+    pub fn cancel_mkt_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -497,20 +493,20 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /** The API can receive frozen market data from Trader
+        Workstation. Frozen market data is the last data recorded in our system.
+        During normal trading hours, the API receives real-time market data. If
+        you use this function, you are telling TWS to automatically switch to
+        frozen market data after the close. Then, before the opening of the next
+        trading day, market data will automatically switch back to real-time
+        market data.
+
+        # Arguments
+        * market_data_type
+            * 1 for real-time streaming market data
+            * 2 for frozen market data
+    */
     pub fn req_market_data_type(&mut self, market_data_type: i32) -> Result<(), IBKRApiLibError> {
-        // The API can receive frozen market data from Trader \
-        // Workstation. Frozen market data is the last data recorded in our system. \
-        // During normal trading hours, the API receives real-time market data. If \
-        // you use this function, you are telling TWS to automatically switch to \
-        // frozen market data after the close. Then, before the opening of the next \
-        // trading day, market data will automatically switch back to real-time \
-        // market data. \
-        //
-        // marketDataType:i32 - 1 for real-time streaming market data || 2 for \
-        // frozen market data"
-
-        //
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -740,6 +736,18 @@ where
     //################## Options
     //##########################################################################
 
+    /** Call this function to calculate volatility for a supplied
+        option price and underlying price. Result will be delivered
+        via Wrapper::tick_option_computation
+
+        # Arguments
+
+        * req_id - The request id.
+        * contract - Describes the contract.
+        * option_price - The price of the option.
+        * under_price - Price of the underlying.
+        * impl_vol_options - Implied volatility options.
+    */
     pub fn calculate_implied_volatility(
         &mut self,
         req_id: i32,
@@ -748,17 +756,6 @@ where
         under_price: f64,
         impl_vol_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        //        Call this function to calculate volatility for a supplied
-        //        option price and underlying price. Result will be delivered
-        //        via EWrapper.tickOptionComputation()
-        //
-        //        reqId:i32 -  The request id.
-        //        contract:&Contract -  Describes the contract.
-        //        optionPrice:double - The price of the option.
-        //        underPrice:double - Price of the underlying.
-
-        //
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -846,6 +843,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to calculate option price and greek values for a supplied volatility and underlying price.
+    ///
+    /// # Arguments
+    /// * req_id The request id.
+    /// * contract - Describes the contract.
+    /// * volatility - The volatility.
+    /// * under_price - Price of the underlying.
     pub fn calculate_option_price(
         &mut self,
         req_id: i32,
@@ -854,14 +858,6 @@ where
         under_price: f64,
         opt_prc_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        //        Call this function to calculate option price and greek values
-        //        for a supplied volatility and underlying price.
-        //
-        //        req_id:i32 -    The ticker ID.
-        //        contract:&Contract - Describes the contract.
-        //        volatility:double - The volatility.
-        //        under_price:double - Price of the underlying.
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -949,12 +945,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to cancel a request to calculate the option
+    /// price and greek values for a supplied volatility and underlying price.
+    ///
+    /// # Arguments
+    /// * req_id - The request id.
     pub fn cancel_calculate_option_price(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        //        Call this function to cancel a request to calculate the option
-        //        price and greek values for a supplied volatility and underlying price.
-        //
-        //        req_id:i32 - The request ID.
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -993,15 +989,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to cancel a request to calculate the option implied volatility.
+    ///
+    /// # Arguments
+    /// * req_id - The request id.
     pub fn cancel_calculate_implied_volatility(
         &mut self,
         req_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-        //        Call this function to cancel a request to calculate the option
-        //        price and greek values for a supplied volatility and underlying price.
-        //
-        //        req_id:i32 - The request ID.
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -1040,6 +1035,24 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to excercise options
+    ///
+    /// # Arguments
+    /// * req_id - The ticker id. multipleust be a unique value.
+    /// * contract - This structure contains a description of the contract to be exercised
+    /// * exercise_action - Specifies whether you want the option to lapse or be exercised. Values are:
+    ///     * 1 = exercise
+    ///     * 2 = lapse.
+    /// * exercise_quantity:i32 - The quantity you want to exercise.
+    /// * account - destination account
+    /// * override - Specifies whether your setting will override the system's
+    ///              natural action. For example, if your action is "exercise" and the
+    ///              option is not in-the-money, by natural action the option would not
+    ///              exercise. If you have override set to "yes" the natural action would
+    ///              be overridden and the out-of-the money option would be exercised.
+    ///              Values are:
+    ///      * 0 = no
+    ///      * 1 = yes.
     pub fn exercise_options(
         &mut self,
         req_id: i32,
@@ -1049,21 +1062,6 @@ where
         account: &String,
         over_ride: i32,
     ) -> Result<(), IBKRApiLibError> {
-        //        req_id:i32 - The ticker id. multipleust be a unique value.
-        //        contract:&Contract - This structure contains a description of the
-        //            contract to be exercised
-        //        exercise_action:i32 - Specifies whether you want the option to lapse
-        //            || be exercised.
-        //            Values are 1 = exercise, 2 = lapse.
-        //        exercise_quantity:i32 - The quantity you want to exercise.
-        //        account:&'static str - destination account
-        //        override:i32 - Specifies whether your setting will override the system's
-        //            natural action. For example, if your action is "exercise" and the
-        //            option is not in-the-money, by natural action the option would not
-        //            exercise. If you have override set to "yes" the natural action would
-        //             be overridden and the out-of-the money option would be exercised.
-        //            Values are: 0 = no, 1 = yes.
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -1130,23 +1128,23 @@ where
     //################## Orders
     //########################################################################
 
+    /// Call this function to place an order. The order status will
+    /// be returned by the Wrapper::order_status event.
+    ///
+    /// # Arguments
+    /// * order_id - The order id. You must specify a unique value. When the
+    /// order START_APItus returns, it will be identified by this tag.
+    ///            This tag is also used when canceling the order.
+    ///        contract:&Contract - This structure contains a description of the
+    ///            contract which is being traded.
+    ///        order:Order - This structure contains the details of tradedhe order.
+    ///            Note: Each core MUST connect with a unique clientId.
     pub fn place_order(
         &mut self,
         order_id: i32,
         contract: &Contract,
         order: &Order,
     ) -> Result<(), IBKRApiLibError> {
-        //        Call this function to place an order. The order status will
-        //        be returned by the orderStatus event.
-        //
-        //        order_id:OrderId - The order id. You must specify a unique value. When the
-        //        order START_APItus returns, it will be identified by this tag.
-        //            This tag is also used when canceling the order.
-        //        contract:&Contract - This structure contains a description of the
-        //            contract which is being traded.
-        //        order:Order - This structure contains the details of tradedhe order.
-        //            Note: Each core MUST connect with a unique clientId.
-
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
@@ -1731,9 +1729,9 @@ where
             let smart_combo_routing_params_count = order.smart_combo_routing_params.len();
             msg.push_str(&make_field(&smart_combo_routing_params_count)?);
             if smart_combo_routing_params_count > 0 {
-                for tagValue in &order.smart_combo_routing_params {
-                    msg.push_str(&make_field(&tagValue.tag)?);
-                    msg.push_str(&make_field(&tagValue.value)?);
+                for tag_value in &order.smart_combo_routing_params {
+                    msg.push_str(&make_field(&tag_value.tag)?);
+                    msg.push_str(&make_field(&tag_value.value)?);
                 }
             }
         }
@@ -1959,7 +1957,7 @@ where
             if order.conditions.len() > 0 {
                 for cond in &order.conditions {
                     msg.push_str(&make_field(&(cond.get_type() as i32))?);
-                    let mut vals = cond.make_fields()?;
+                    let vals = cond.make_fields()?;
                     let vals_string = vals.iter().map(|val| val.clone()).collect::<String>();
                     msg.push_str(vals_string.as_ref());
                 }

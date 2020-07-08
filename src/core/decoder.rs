@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::io::{Error, ErrorKind};
+
 use std::marker::Sync;
 use std::ops::{Deref, DerefMut};
 use std::slice::Iter;
@@ -7,7 +7,6 @@ use std::str::FromStr;
 use std::string::ToString;
 use std::sync::mpsc::Receiver;
 use std::sync::{Arc, Mutex};
-use std::u8;
 
 use bigdecimal::BigDecimal;
 use float_cmp::*;
@@ -40,9 +39,6 @@ use crate::core::server_versions::{
     MIN_SERVER_VER_UNREALIZED_PNL,
 };
 use crate::core::wrapper::Wrapper;
-
-const SEP: u8 = '\0' as u8;
-const EMPTY_LENGTH_HEADER: [u8; 4] = [0; 4];
 
 //==================================================================================================
 pub fn decode_i32(iter: &mut Iter<String>) -> Result<i32, IBKRApiLibError> {
@@ -514,14 +510,14 @@ where
         contract.contract.sec_type = decode_string(&mut fields_itr)?;
         contract.cusip = decode_string(&mut fields_itr)?;
         contract.coupon = decode_f64(&mut fields_itr)?;
-        self.read_last_trade_date(&mut contract, true, fields_itr.next().unwrap());
+        self.read_last_trade_date(&mut contract, true, fields_itr.next().unwrap())?;
         contract.issue_date = decode_string(&mut fields_itr)?;
         contract.ratings = decode_string(&mut fields_itr)?;
         contract.bond_type = decode_string(&mut fields_itr)?;
         contract.coupon_type = decode_string(&mut fields_itr)?;
-        contract.convertible = i32::from_str(fields_itr.next().unwrap().as_ref()).unwrap() != 0;
-        contract.callable = i32::from_str(fields_itr.next().unwrap().as_ref()).unwrap() != 0;
-        contract.putable = i32::from_str(fields_itr.next().unwrap().as_ref()).unwrap() != 0;
+        contract.convertible = i32::from_str(fields_itr.next().unwrap().as_ref())? != 0;
+        contract.callable = i32::from_str(fields_itr.next().unwrap().as_ref())? != 0;
+        contract.putable = i32::from_str(fields_itr.next().unwrap().as_ref())? != 0;
         contract.desc_append = decode_string(&mut fields_itr)?;
         contract.contract.exchange = decode_string(&mut fields_itr)?;
         contract.contract.currency = decode_string(&mut fields_itr)?;
@@ -620,7 +616,7 @@ where
             self.server_version,
         );
 
-        order_decoder.decode_completed(&mut fields_itr);
+        order_decoder.decode_completed(&mut fields_itr)?;
 
         self.wrapper
             .lock()
@@ -662,7 +658,7 @@ where
 
         contract.contract.symbol = decode_string(&mut fields_itr)?;
         contract.contract.sec_type = decode_string(&mut fields_itr)?;
-        self.read_last_trade_date(&mut contract, false, fields_itr.next().unwrap());
+        self.read_last_trade_date(&mut contract, false, fields_itr.next().unwrap())?;
         contract.contract.strike = decode_f64(&mut fields_itr)?;
         contract.contract.right = decode_string(&mut fields_itr)?;
         contract.contract.exchange = decode_string(&mut fields_itr)?;
@@ -1072,7 +1068,7 @@ where
         let start_date = decode_string(&mut fields_itr)?; // ver 2 field
         let end_date = decode_string(&mut fields_itr)?; // ver 2 field
 
-        let peek = *(fields_itr.clone()).peekable().peek().unwrap();
+        let _peek = *(fields_itr.clone()).peekable().peek().unwrap();
 
         let bar_count = decode_i32(&mut fields_itr)?;
 
@@ -1557,7 +1553,7 @@ where
             self.server_version,
         );
 
-        order_decoder.decode_open(&mut fields_itr);
+        order_decoder.decode_open(&mut fields_itr)?;
 
         self.wrapper.lock().unwrap().deref_mut().open_order(
             order.order_id,
@@ -1608,14 +1604,14 @@ where
 
         let status = decode_string(&mut fields_itr)?;
 
-        let mut filled = 0.0;
+        let filled;
         if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
             filled = decode_f64(&mut fields_itr)?;
         } else {
             filled = decode_i32(&mut fields_itr)? as f64;
         }
 
-        let mut remaining = 0.0;
+        let remaining;
 
         if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
             remaining = decode_f64(&mut fields_itr)?;
@@ -1744,7 +1740,7 @@ where
             contract.trading_class = decode_string(&mut fields_itr)?;
         }
 
-        let mut position = 0.0;
+        let position;
         if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
             position = decode_f64(&mut fields_itr)?;
         } else {
@@ -1803,7 +1799,7 @@ where
             contract.trading_class = decode_string(&mut fields_itr)?;
         }
 
-        let mut position = 0.0;
+        let position;
         if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
             position = decode_f64(&mut fields_itr)?;
         } else {
@@ -1903,7 +1899,7 @@ where
         let req_id = decode_i32(&mut fields_itr)?;
 
         let mut bar = RealTimeBar::default();
-        bar.time = decode_string(&mut fields_itr)?;
+        bar.date_time = decode_string(&mut fields_itr)?;
         bar.open = decode_f64(&mut fields_itr)?;
         bar.high = decode_f64(&mut fields_itr)?;
         bar.low = decode_f64(&mut fields_itr)?;
@@ -1912,17 +1908,11 @@ where
         bar.wap = decode_f64(&mut fields_itr)?;
         bar.count = decode_i32(&mut fields_itr)?;
 
-        self.wrapper.lock().unwrap().deref_mut().realtime_bar(
-            req_id,
-            bar.time.parse().unwrap(),
-            bar.open,
-            bar.high,
-            bar.low,
-            bar.close,
-            bar.volume,
-            bar.wap,
-            bar.count,
-        );
+        self.wrapper
+            .lock()
+            .unwrap()
+            .deref_mut()
+            .realtime_bar(req_id, bar);
         Ok(())
     }
 
@@ -2294,6 +2284,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    #[allow(dead_code)]
     fn process_tick_efp(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
@@ -2584,6 +2575,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    #[allow(dead_code)]
     fn process_verify_message_api(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
         //throw away message_id
@@ -2629,7 +2621,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<(), IBKRApiLibError> {
         //This is the function that has the message loop.
 
         info!("Starting run...");
@@ -2655,11 +2647,11 @@ where
                             .connection_closed();
                         *self.conn_state.try_lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
                         error!("Error receiving message.  Invalid size.  Disconnected.");
-                        return;
+                        return Ok(());
                     } else {
                         let fields = read_fields((&val).as_ref());
 
-                        self.interpret(fields.as_slice());
+                        self.interpret(fields.as_slice())?;
                     }
                 }
                 Result::Err(err) => {
@@ -2674,10 +2666,10 @@ where
                             .connection_closed();
                         *self.conn_state.try_lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
 
-                        return;
+                        return Ok(());
                     } else {
                         error!("Disconnected...");
-                        return;
+                        return Ok(());
                     }
                 }
             }

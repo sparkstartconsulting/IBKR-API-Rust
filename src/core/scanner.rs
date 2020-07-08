@@ -1,3 +1,4 @@
+//! Types for dealing with scanner data and scanner subscriptions
 use std::fmt::Display;
 
 use serde::export::fmt::Error;

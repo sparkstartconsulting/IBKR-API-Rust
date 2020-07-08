@@ -1,3 +1,4 @@
+//! Account summary tags
 use std::fmt::Display;
 
 use serde::export::fmt::Error;
@@ -41,7 +42,7 @@ pub enum AccountSummaryTags {
 
 impl AccountSummaryTags {
     fn display(&self) -> &str {
-        match (self) {
+        match self {
             AccountType => "AccountType",
             NetLiquidation => "NetLiquidation",
             TotalCashValue => "TotalCashValue",

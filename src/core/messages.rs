@@ -1,23 +1,19 @@
-// 0.2.6 (the trait)
+//! Functions for processing messages
 use std::any::Any;
 use std::convert::TryInto;
 use std::io::Write;
 use std::string::String;
-use std::sync::mpsc::RecvError;
-use std::sync::{Arc, RwLock};
+
 use std::vec::Vec;
 
 use ascii;
 use ascii::AsAsciiStr;
-use bytebuffer::ByteBuffer;
+
 use log::*;
 use num_derive::FromPrimitive;
-// 0.2.4 (the derive)
-use num_traits::FromPrimitive;
 
 use crate::core::common::{UNSET_DOUBLE, UNSET_INTEGER};
 use crate::core::errors::IBKRApiLibError;
-use crate::core::wrapper::Wrapper;
 
 //==================================================================================================
 trait EClientMsgSink {
@@ -26,15 +22,15 @@ trait EClientMsgSink {
 }
 
 //==================================================================================================
+/// FA msg data types
 pub enum FAMessageDataTypes {
-    // FA msg data types
     Groups = 1,
     Profiles = 2,
     Aliases = 3,
 }
 
 //==================================================================================================
-// incoming msg id's
+/// incoming msg id's
 #[derive(FromPrimitive)]
 #[repr(i32)]
 pub enum IncomingMessageIds {
@@ -118,7 +114,7 @@ pub enum IncomingMessageIds {
 }
 
 //==================================================================================================
-// Outgoing msg id's
+/// Outgoing msg id's
 #[derive(FromPrimitive)]
 #[repr(i32)]
 pub enum OutgoingMessageIds {
@@ -219,7 +215,7 @@ pub fn make_message(msg: &str) -> Result<Vec<u8>, IBKRApiLibError> {
 //==================================================================================================
 pub fn read_msg<'a>(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibError> {
     // first the size prefix and then the corresponding msg payload ""
-    let mut text = String::new();
+
     if buf.len() < 4 {
         debug!("read_msg:  buffer too small!! {:?}", buf.len());
         return Ok((0, String::new(), buf.to_vec()));
@@ -229,7 +225,7 @@ pub fn read_msg<'a>(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibEr
     //debug!("read_msg: Message size: {:?}", size);
 
     if buf.len() - 4 >= size {
-        text = String::from_utf8(buf[4..4 + size].to_vec()).unwrap();
+        let text = String::from_utf8(buf[4..4 + size].to_vec()).unwrap();
         //debug!("read_msg: text in read message: {:?}", text);
         Ok((size, text, buf[4 + size..].to_vec()))
     } else {
@@ -239,7 +235,7 @@ pub fn read_msg<'a>(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibEr
 
 //==================================================================================================
 pub fn read_fields(buf: &str) -> Vec<String> {
-    //msg payload is made of fields terminated/separated by NULL chars """
+    //msg payload is made of fields terminated/separated by NULL chars
     let a = '\u{0}';
     let mut fields: Vec<&str> = buf.split(a).collect::<Vec<&str>>();
     //debug!("fields.len() in read_fields: {}", fields.len());
@@ -294,4 +290,13 @@ pub fn make_field_handle_empty(val: &dyn Any) -> Result<String, IBKRApiLibError>
         }
     }
     make_field(val)
+}
+
+//////////////////////////////////////////TESTS /////////////////////////////////////////////////
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
 }

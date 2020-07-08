@@ -1,7 +1,7 @@
 [package]
 name = "IBKR-API-Rust"
 version = "0.1.0"
-authors = ["bmiller3230"]
+authors = ["brett.miller@sparkstart.com"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -16,19 +16,17 @@ path = "src/bin/manual_tests.rs"
 
 [dependencies]
 bzip2 = "0.3.3"
-log = "0.4.6"
-log4rs = "0.8.1"
+log = "0.4.8"
+log4rs = "0.12.0"
 bytebuffer = "0.2.1"
 encoding = "0.2"
-# error-chain = "0.12.1"
-num = "0.2"
+num = "0.3.0"
 num-derive = "0.3"
-num-traits = "0.2"
-
-byteorder = "1.3.2"
+num-traits = "0.2.12"
+byteorder = "1.3.4"
 ascii = "1.0.0"
 from-ascii = "0.0.1"
 serde = { version = "1.0", features = ["derive"] }
-bigdecimal = "0.1.0"
-float-cmp = "0.6.0"
-chrono = "0.4.10"
+bigdecimal = "0.1.2"
+float-cmp = "0.8.0"
+chrono = "0.4.11"

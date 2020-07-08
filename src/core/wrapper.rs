@@ -1,8 +1,10 @@
+//! Clients implement the Wrapper trait in this module to receive data and notifications from Trader WorkStation or IB Gateway
 use std::collections::HashSet;
 use std::marker::{Send, Sync};
 
 use bigdecimal::BigDecimal;
 
+use crate::core::common::RealTimeBar;
 use crate::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
@@ -12,6 +14,7 @@ use crate::core::contract::{Contract, ContractDescription, ContractDetails, Delt
 use crate::core::execution::Execution;
 use crate::core::order::{Order, OrderState, SoftDollarTier};
 
+/// A trait that clients will implement that declares callback functions that get called when the application receives messages from the Trader WorkStation or IB Gateway
 pub trait Wrapper: Send + Sync + 'static {
     //----------------------------------------------------------------------------------------------
     /// This event is called when there is an error with the
@@ -29,7 +32,7 @@ pub trait Wrapper: Send + Sync + 'static {
     /// type is set to Frozen or RealTime, to announce that market data has been
     /// switched between frozen and real-time. This notification occurs only
     /// when market data switches between real-time and frozen. The
-    ///  market_data_type( ) callback accepts a req_id parameter and is sent per
+    /// market_data_type() callback accepts a req_id parameter and is sent per
     /// every subscription because different contracts can generally trade on a
     /// different schedule.
     fn market_data_type(&mut self, req_id: i32, market_data_type: i32);
@@ -54,27 +57,29 @@ pub trait Wrapper: Send + Sync + 'static {
     fn tick_string(&mut self, req_id: i32, tick_type: TickType, value: &str);
 
     //----------------------------------------------------------------------------------------------
-    ///market data call back for Exchange for Physical
-    ///        tickerId -      The request's identifier.
-    ///        tick_type -      The type of tick being received.
-    ///        basis_points -   Annualized basis points, which is representative of
-    ///            the financing rate that can be directly compared to broker rates.
-    ///        formatted_basis_points -  Annualized basis points as a formatted string
-    ///            that depicts them in percentage form.
-    ///        impliedFuture - The implied Futures price.
-    ///        hold_days -  The number of hold days until the lastTradeDate of the EFP.
-    ///        future_last_trade_date -   The expiration date of the single stock future.
-    ///        dividend_impact - The dividend impact upon the annualized basis points
-    ///            interest rate.
-    ///        dividends_to_last_trade_date - The dividends expected until the expiration
-    ///            of the single stock future.
+    /// market data call back for Exchange for Physical
+    ///
+    /// # Arguments
+    /// * req_id - The request's identifier.
+    /// * tick_type - The type of tick being received.
+    /// * basis_points - Annualized basis points, which is representative of
+    ///                the financing rate that can be directly compared to broker rates.
+    /// * formatted_basis_points - Annualized basis points as a formatted string
+    ///                          that depicts them in percentage form.
+    /// * implied_future - The implied Futures price.
+    /// * hold_days -  The number of hold days until the lastTradeDate of the EFP.
+    /// * future_last_trade_date -   The expiration date of the single stock future.
+    /// * dividend_impact - The dividend impact upon the annualized basis points
+    ///                     interest rate.
+    /// * dividends_to_last_trade_date - The dividends expected until the expiration
+    ///                                  of the single stock future.
     fn tick_efp(
         &mut self,
         req_id: i32,
         tick_type: TickType,
         basis_points: f64,
         formatted_basis_points: &str,
-        total_dividends: f64,
+        implied_future: f64,
         hold_days: i32,
         future_last_trade_date: &str,
         dividend_impact: f64,
@@ -82,28 +87,29 @@ pub trait Wrapper: Send + Sync + 'static {
     );
 
     //----------------------------------------------------------------------------------------------
-    ///        This event is called whenever the status of an order changes. It is
-    //        also fired after reconnecting to TWS if the core has any open orders.
-    //
-    //        order_id: i32 - The order ID that was specified previously in the
-    //            call to placeOrder()
-    //        status:&str - The order status. Possible values include:
-    //            PendingSubmit - indicates that you have transmitted the order, but have not  yet received confirmation that it has been accepted by the order destination. NOTE: This order status is not sent by TWS and should be explicitly set by the API developer when an order is submitted.
-    //            PendingCancel - indicates that you have sent a request to cancel the order but have not yet received cancel confirmation from the order destination. At this point, your order is not confirmed canceled. You may still receive an execution while your cancellation request is pending. NOTE: This order status is not sent by TWS and should be explicitly set by the API developer when an order is canceled.
-    //            PreSubmitted - indicates that a simulated order type has been accepted by the IB system and that this order has yet to be elected. The order is held in the IB system until the election criteria are met. At that time the order is transmitted to the order destination as specified.
-    //            Submitted - indicates that your order has been accepted at the order destination and is working.
-    //            Cancelled - indicates that the balance of your order has been confirmed canceled by the IB system. This could occur unexpectedly when IB or the destination has rejected your order.
-    //            Filled - indicates that the order has been completely filled.
-    //            Inactive - indicates that the order has been accepted by the system (simulated orders) or an exchange (native orders) but that currently the order is inactive due to system, exchange or other issues.
-    //        filled:i32 - Specifies the number of shares that have been executed.
-    //            For more information about partial fills, see Order Status for Partial Fills.
-    //        remaining:i32 -   Specifies the number of shares still outstanding.
-    //        avg_fill_price:f64 - The average price of the shares that have been executed. This parameter is valid only if the filled parameter value is greater than zero. Otherwise, the price parameter will be zero.
-    //        perm_id:i32 -  The TWS id used to identify orders. Remains the same over TWS sessions.
-    //        parent_id:i32 - The order ID of the parent order, used for bracket and auto trailing stop orders.
-    //        lastFilledPrice:f64 - The last price of the shares that have been executed. This parameter is valid only if the filled parameter value is greater than zero. Otherwise, the price parameter will be zero.
-    //        client_id:i32 - The ID of the core (or TWS) that placed the order. Note that TWS orders have a fixed client_id and order_id of 0 that distinguishes them from API orders.
-    //        why_held:&str - This field is used to identify an order held when TWS is trying to locate shares for a short sell. The value used to indicate this is 'locate'.
+    /// This event is called whenever the status of an order changes. It is
+    /// also fired after reconnecting to TWS if the core has any open orders.
+    ///
+    /// # Arguments
+    /// * order_id - The order ID that was specified previously in the
+    ///            call to placeOrder()
+    /// * status - The order status. Possible values include:
+    ///     * PendingSubmit - indicates that you have transmitted the order, but have not  yet received confirmation that it has been accepted by the order destination. NOTE: This order status is not sent by TWS and should be explicitly set by the API developer when an order is submitted.
+    ///     * PendingCancel - indicates that you have sent a request to cancel the order but have not yet received cancel confirmation from the order destination. At this point, your order is not confirmed canceled. You may still receive an execution while your cancellation request is pending. NOTE: This order status is not sent by TWS and should be explicitly set by the API developer when an order is canceled.
+    ///     * PreSubmitted - indicates that a simulated order type has been accepted by the IB system and that this order has yet to be elected. The order is held in the IB system until the election criteria are met. At that time the order is transmitted to the order destination as specified.
+    ///     * Submitted - indicates that your order has been accepted at the order destination and is working.
+    ///     * Cancelled - indicates that the balance of your order has been confirmed canceled by the IB system. This could occur unexpectedly when IB or the destination has rejected your order.
+    ///     * Filled - indicates that the order has been completely filled.
+    ///     * Inactive - indicates that the order has been accepted by the system (simulated orders) or an exchange (native orders) but that currently the order is inactive due to system, exchange or other issues.
+    /// * filled - Specifies the number of shares that have been executed.
+    ///          For more information about partial fills, see Order Status for Partial Fills.
+    /// * remaining -   Specifies the number of shares still outstanding.
+    /// * avg_fill_price - The average price of the shares that have been executed. This parameter is valid only if the filled parameter value is greater than zero. Otherwise, the price parameter will be zero.
+    /// * perm_id -  The TWS id used to identify orders. Remains the same over TWS sessions.
+    /// * parent_id - The order ID of the parent order, used for bracket and auto trailing stop orders.
+    /// * lastFilledPrice - The last price of the shares that have been executed. This parameter is valid only if the filled parameter value is greater than zero. Otherwise, the price parameter will be zero.
+    /// * client_id - The ID of the core (or TWS) that placed the order. Note that TWS orders have a fixed client_id and order_id of 0 that distinguishes them from API orders.
+    /// * why_held - This field is used to identify an order held when TWS is trying to locate shares for a short sell. The value used to indicate this is 'locate'.
     fn order_status(
         &mut self,
         order_id: i32,
@@ -121,13 +127,14 @@ pub trait Wrapper: Send + Sync + 'static {
 
     //----------------------------------------------------------------------------------------------
     /// This function is called to feed in open orders.
-    //
-    //        orderID: i32 - The order ID assigned by TWS. Use to cancel or
-    //            update TWS order.
-    //        contract: Contract - The Contract class attributes describe the contract.
-    //        order: Order - The Order class gives the details of the open order.
-    //        orderState: OrderState - The orderState class includes attributes Used
-    //            for both pre and post trade margin and commission data.
+    ///
+    /// # Arguments
+    /// * order_id - The order ID assigned by TWS. Use to cancel or
+    ///           update TWS order.
+    /// * contract - The Contract class attributes describe the contract.
+    /// * order - The Order class gives the details of the open order.
+    /// * order_state - The orderState class includes attributes Used
+    ///               for both pre and post trade margin and commission data.
     fn open_order(
         &mut self,
         order_id: i32,
@@ -146,13 +153,13 @@ pub trait Wrapper: Send + Sync + 'static {
     fn connection_closed(&mut self);
 
     //----------------------------------------------------------------------------------------------
-    ///  This function is called only when ReqAccountUpdates on
-    //        EEClientSocket object has been called.
+    /// This function is called only when req_account_updates on
+    /// EClient object has been called.
     fn update_account_value(&mut self, key: &str, val: &str, currency: &str, account_name: &str);
 
     //----------------------------------------------------------------------------------------------
     /// This function is called only when req_account_updates on
-    //        EEClientSocket object has been called.
+    /// EClient object has been called.
     fn update_portfolio(
         &mut self,
         contract: Contract,
@@ -170,7 +177,7 @@ pub trait Wrapper: Send + Sync + 'static {
 
     //----------------------------------------------------------------------------------------------
     /// This is called after a batch update_account_value() and
-    //        update_portfolio() is sent.
+    /// update_portfolio() is sent.
     fn account_download_end(&mut self, account_name: &str);
 
     //----------------------------------------------------------------------------------------------
@@ -179,8 +186,8 @@ pub trait Wrapper: Send + Sync + 'static {
 
     //----------------------------------------------------------------------------------------------
     /// Receives the full contract's definitions. This method will return all
-    //        contracts matching the requested via EEClientSocket::req_contract_details.
-    //        For example, one can obtain the whole option chain with it.
+    /// contracts matching the requested via req_contract_details.
+    /// For example, one can obtain the whole option chain with it.
     fn contract_details(&mut self, req_id: i32, contract_details: ContractDetails);
 
     //----------------------------------------------------------------------------------------------
@@ -190,7 +197,7 @@ pub trait Wrapper: Send + Sync + 'static {
 
     //----------------------------------------------------------------------------------------------
     /// This function is called once all contract details for a given
-    //  request are received. This helps to define the end of an option chain.
+    /// request are received. This helps to define the end of an option chain.
     fn contract_details_end(&mut self, req_id: i32);
 
     //----------------------------------------------------------------------------------------------
@@ -206,15 +213,18 @@ pub trait Wrapper: Send + Sync + 'static {
     //----------------------------------------------------------------------------------------------
     /// Returns the order book.
     ///
-    ///        tickerId -  the request's identifier
-    ///        position -  the order book's row being updated
-    ///        operation - how to refresh the row:
-    ///            0 = insert (insert this new order into the row identified by 'position')
-    ///            1 = update (update the existing order in the row identified by 'position')
-    ///            2 = delete (delete the existing order at the row identified by 'position').
-    ///        side -  0 for ask, 1 for bid
-    ///        price - the order's price
-    ///        size -  the order's size
+    /// # Arguments       
+    /// * req_id -  the request id
+    /// * position -  the order book's row being updated
+    /// * operation - how to refresh the row:
+    ///     * 0 = insert (insert this new order into the row identified by 'position')
+    ///     * 1 = update (update the existing order in the row identified by 'position')
+    ///     * 2 = delete (delete the existing order at the row identified by 'position').
+    /// * side
+    ///     * 0 for ask
+    ///     * 1 for bid
+    /// * price - the order's price
+    /// * size -  the order's size
     fn update_mkt_depth(
         &mut self,
         req_id: i32,
@@ -228,17 +238,20 @@ pub trait Wrapper: Send + Sync + 'static {
     //----------------------------------------------------------------------------------------------
     /// Returns the order book.
     ///
-    ///        tickerId -  the request's identifier
-    ///        position -  the order book's row being updated
-    ///        marketMaker - the exchange holding the order
-    ///        operation - how to refresh the row:
-    ///            0 = insert (insert this new order into the row identified by 'position')
-    ///            1 = update (update the existing order in the row identified by 'position')
-    ///            2 = delete (delete the existing order at the row identified by 'position').
-    ///        side -  0 for ask, 1 for bid
-    ///        price - the order's price
-    ///        size -  the order's size
-    ///        isSmartDepth - is SMART Depth request
+    /// # Arguments
+    /// * req_id -  the request id
+    /// * position -  the order book's row being updated
+    /// * market_maker - the exchange holding the order
+    /// * operation - how to refresh the row:
+    ///       0 = insert (insert this new order into the row identified by 'position')
+    ///       1 = update (update the existing order in the row identified by 'position')
+    ///       2 = delete (delete the existing order at the row identified by 'position').
+    /// * side
+    ///     * 0 for ask
+    ///     * 1 for bid
+    /// * price - the order's price
+    /// * size -  the order's size
+    /// * is_smart_depth - is SMART Depth request
     fn update_mkt_depth_l2(
         &mut self,
         req_id: i32,
@@ -253,11 +266,15 @@ pub trait Wrapper: Send + Sync + 'static {
 
     //----------------------------------------------------------------------------------------------
     /// provides IB's bulletins
-    ///        msgId - the bulletin's identifier
-    ///        msgType - one of: 1 - Regular news bulletin 2 - Exchange no longer
-    ///            available for trading 3 - Exchange is available for trading
-    ///        message - the message
-    ///        origExchange -    the exchange where the message comes from.
+    ///
+    /// # Arguments
+    /// * msg_id - the bulletin's identifier
+    /// * msg_type - one of:
+    ///     * 1 - Regular news bulletin
+    ///     * 2 - Exchange no longer available for trading
+    ///     * 3 - Exchange is available for trading
+    /// * news_message - the message
+    /// * origin_exch -    the exchange where the message comes from.
     fn update_news_bulletin(
         &mut self,
         msg_id: i32,
@@ -273,31 +290,23 @@ pub trait Wrapper: Send + Sync + 'static {
     //----------------------------------------------------------------------------------------------
     ///  receives the Financial Advisor's configuration available in the TWS
     ///
-    ///        faDataType - one of:
-    ///            Groups: offer traders a way to create a group of accounts and apply
-    ///                 a single allocation method to all accounts in the group.
-    ///            Profiles: let you allocate shares on an account-by-account basis
-    ///                using a predefined calculation value.
-    ///            Account Aliases: let you easily identify the accounts by meaningful
-    ///                 names rather than account numbers.
-    ///        faXmlData -  the xml-formatted configuration
+    /// # Arguments
+    /// * fa_data - one of:
+    ///     * Groups: offer traders a way to create a group of accounts and apply
+    ///              a single allocation method to all accounts in the group.
+    ///     * Profiles: let you allocate shares on an account-by-account basis
+    ///               using a predefined calculation value.
+    ///     * Account Aliases: let you easily identify the accounts by meaningful
+    ///               names rather than account numbers.
+    ///     * faXmlData -  the xml-formatted configuration
     fn receive_fa(&mut self, fa_data: FaDataType, cxml: &str);
 
     //----------------------------------------------------------------------------------------------
     ///  returns the requested historical data bars
     ///
-    ///        req_id - the request's identifier
-    ///        date  - the bar's date and time (either as a yyyymmss hh:mm:ssformatted
-    ///             string or as system time according to the request)
-    ///        open  - the bar's open point
-    ///        high  - the bar's high point
-    ///        low   - the bar's low point
-    ///        close - the bar's closing point
-    ///        volume - the bar's traded volume if available
-    ///        count - the number of trades during the bar's timespan (only available
-    ///            for TRADES).
-    ///        WAP -   the bar's Weighted Average Price
-    ///        hasGaps  -indicates if the data has gaps or not.
+    /// # Arguments
+    /// * req_id - the request's identifier
+    /// * bar - BarData struct containing historical bar data information
     fn historical_data(&mut self, req_id: i32, bar: BarData);
 
     //----------------------------------------------------------------------------------------------
@@ -305,22 +314,23 @@ pub trait Wrapper: Send + Sync + 'static {
     fn historical_data_end(&mut self, req_id: i32, start: &str, end: &str);
 
     //----------------------------------------------------------------------------------------------
-    ///  Provides the xml-formatted parameters available to create a market
-    ///        scanner.
+    /// Provides the xml-formatted parameters available to create a market scanner.
     ///
-    ///        xml -   the xml-formatted string with the available parameters.
+    /// # Arguments
+    /// * xml -   the xml-formatted string with the available parameters.
     fn scanner_parameters(&mut self, xml: &str);
 
     //----------------------------------------------------------------------------------------------
     ///  Provides the data resulting from the market scanner request.
     ///
-    ///        reqid - the request's identifier.
-    ///        rank -  the ranking within the response of this bar.
-    ///        contract_details - the data's ContractDetails
-    ///        distance -      according to query.
-    ///        benchmark -     according to query.
-    ///        projection -    according to query.
-    ///        legStr - describes the combo legs when the scanner is returning EFP
+    /// # Arguments
+    /// * req_id - the request's identifier.
+    /// * rank -  the ranking within the response of this bar.
+    /// * contract_details - the data's ContractDetails
+    /// * distance - according to query.
+    /// * benchmark - according to query.
+    /// * projection - according to query.
+    /// * legs_str - describes the combo legs when the scanner is returning EFP
     fn scanner_data(
         &mut self,
         req_id: i32,
@@ -333,41 +343,20 @@ pub trait Wrapper: Send + Sync + 'static {
     );
 
     //----------------------------------------------------------------------------------------------
-    ///  Indicates the scanner data reception has terminated.
-    ///
-    ///        req_id - the request's identifier
+    /// Indicates the scanner data reception has terminated.
     fn scanner_data_end(&mut self, req_id: i32);
 
     //----------------------------------------------------------------------------------------------
-    ///  Updates the real time 5 seconds bars
+    /// Updates the real time 5 seconds bars
     ///
-    ///        req_id - the request's identifier
-    ///        bar.time  - start of bar in unix (or 'epoch') time
-    ///        bar.EndTime - for synthetic bars, the end time (requires TWS v964). Otherwise -1.
-    ///        bar.open_  - the bar's open value
-    ///        bar.high  - the bar's high value
-    ///        bar.low   - the bar's low value
-    ///        bar.close - the bar's closing value
-    ///        bar.volume - the bar's traded volume if available
-    ///        bar.WAP   - the bar's Weighted Average Price
-    ///        bar.count - the number of trades during the bar's timespan (only available
-    ///            for TRADES).
-    fn realtime_bar(
-        &mut self,
-        req_id: i32,
-        time: i32,
-        open_: f64,
-        high: f64,
-        low: f64,
-        close: f64,
-        volume: i64,
-        wap: f64,
-        count: i32,
-    );
+    /// # Arguments
+    /// * req_id - the request's identifier
+    /// * bar - RealTimeBar data
+    fn realtime_bar(&mut self, req_id: i32, bar: RealTimeBar);
 
     //----------------------------------------------------------------------------------------------
-    ///  Server's current time. This method will receive IB server's system
-    ///  time resulting after the invokation of reqCurrentTime.
+    /// Server's current time. This method will receive IB server's system
+    /// time resulting after the invokation of req_current_time.
     fn current_time(&mut self, time: i64);
 
     //----------------------------------------------------------------------------------------------
@@ -402,7 +391,7 @@ pub trait Wrapper: Send + Sync + 'static {
 
     //----------------------------------------------------------------------------------------------
     /// This is called once all position data for a given request are
-    //  received and functions as an end marker for the position() data.
+    /// received and functions as an end marker for the position data.
     fn position_end(&mut self);
 
     //----------------------------------------------------------------------------------------------
@@ -419,7 +408,7 @@ pub trait Wrapper: Send + Sync + 'static {
 
     //----------------------------------------------------------------------------------------------
     /// This method is called once all account summary data for a
-    //  given request are received.
+    /// given request are received.
     fn account_summary_end(&mut self, req_id: i32);
 
     //----------------------------------------------------------------------------------------------
@@ -427,42 +416,47 @@ pub trait Wrapper: Send + Sync + 'static {
     fn verify_message_api(&mut self, api_data: &str);
 
     //----------------------------------------------------------------------------------------------
+    /// Deprecated Function
     fn verify_completed(&mut self, is_successful: bool, error_text: &str);
 
     //----------------------------------------------------------------------------------------------
+    /// Deprecated Function
     fn verify_and_auth_message_api(&mut self, api_data: &str, xyz_challange: &str);
 
     //----------------------------------------------------------------------------------------------
+    /// Deprecated Function
     fn verify_and_auth_completed(&mut self, is_successful: bool, error_text: &str);
 
     //----------------------------------------------------------------------------------------------
     /// This callback is a one-time response to query_display_groups().
     ///
-    ///        req_id - The requestId specified in query_display_groups().
-    ///        groups - A list of integers representing visible group ID separated by
+    /// # Arguments
+    /// * req_id - The requestId specified in query_display_groups().
+    /// * groups - A list of integers representing visible group ID's separated by
     ///            the | character, and sorted by most used group first. This list will
-    ///             not change during TWS session (in other words, user cannot add a
+    ///            not change during TWS session (in other words, user cannot add a
     ///            new group; sorting can change though).
     fn display_group_list(&mut self, req_id: i32, groups: &str);
 
     //----------------------------------------------------------------------------------------------
     /// This is sent by TWS to the API core once after receiving
-    ///        the subscription request subscribe_to_group_events(), and will be sent
-    ///        again if the selected contract in the subscribed display group has
-    ///        changed.
+    /// the subscription request subscribe_to_group_events(), and will be sent
+    /// again if the selected contract in the subscribed display group has
+    /// changed.
     ///
-    ///        requestId - The requestId specified in subscribe_to_group_events().
-    ///        contractInfo - The encoded value that uniquely represents the contract
-    ///            in IB. Possible values include:
-    ///            none = empty selection
-    ///            contractID@exchange = any non-combination contract.
-    ///                Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
-    ///            combo = if any combo is selected.
+    /// # Arguments
+    /// * req_id - The requestId specified in subscribe_to_group_events().
+    /// * contract_info - The encoded value that uniquely represents the contract
+    ///                 in IB. Possible values include:
+    ///                 none = empty selection
+    ///                 contractID@exchange = any non-combination contract.
+    ///                
+    ///                 //Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
+    ///                 //combo = if any combo is selected.
     fn display_group_updated(&mut self, req_id: i32, contract_info: &str);
 
     //----------------------------------------------------------------------------------------------
-    /// same as position() except it can be for a certain
-    /// account/model
+    /// same as position() except it can be for a certain account/model
     fn position_multi(
         &mut self,
         req_id: i32,
@@ -493,14 +487,14 @@ pub trait Wrapper: Send + Sync + 'static {
 
     //----------------------------------------------------------------------------------------------
     /// same as account_download_end() except it can be for a certain
-    ///  account/model
+    /// account/model
     fn account_update_multi_end(&mut self, req_id: i32);
 
     //----------------------------------------------------------------------------------------------
     /// This function is called when the market in an option or its
-    ///        underlier moves. TWS's option model volatilities, prices, and
-    ///        deltas, along with the present value of dividends expected on that
-    ///        options underlier are received.
+    /// underlier moves. TWS's option model volatilities, prices, and
+    /// deltas, along with the present value of dividends expected on that
+    /// options underlier are received.
     fn tick_option_computation(
         &mut self,
         req_id: i32,
@@ -517,16 +511,17 @@ pub trait Wrapper: Send + Sync + 'static {
 
     //----------------------------------------------------------------------------------------------
     /// Returns the option chain for an underlying on an exchange
-    //  specified in req_sec_def_opt_params There will be multiple callbacks to
-    //  security_definition_option_parameter if multiple exchanges are specified
-    //  in req_sec_def_opt_params
+    /// specified in req_sec_def_opt_params There will be multiple callbacks to
+    /// security_definition_option_parameter if multiple exchanges are specified
+    /// in req_sec_def_opt_params
     //
-    //  req_id - ID of the request initiating the callback
-    //  underlyingConId - The conID of the underlying security
-    //  tradingClass -  the option trading class
-    //  multiplier -    the option multiplier
-    //  expirations - a list of the expiries for the options of this underlying on this exchange
-    //  strikes - a list of the possible strikes for options of this underlying on this exchange
+    /// # Arguments
+    /// * req_id - ID of the request initiating the callback
+    /// * underlying_con_id - The conID of the underlying security
+    /// * trading_class -  the option trading class
+    /// * multiplier -    the option multiplier
+    /// * expirations - a list of the expiries for the options of this underlying on this exchange
+    /// * strikes - a list of the possible strikes for options of this underlying on this exchange
     ///
     fn security_definition_option_parameter(
         &mut self,
@@ -542,15 +537,15 @@ pub trait Wrapper: Send + Sync + 'static {
     //----------------------------------------------------------------------------------------------
     /// Called when all callbacks to security_definition_option_parameter are complete
     ///
-    /// req_id - the ID used in the call to security_definition_option_parameter
+    /// * req_id - the ID used in the call to security_definition_option_parameter
     fn security_definition_option_parameter_end(&mut self, req_id: i32);
 
     //----------------------------------------------------------------------------------------------
     /// Called when receives Soft Dollar Tier configuration information
     ///
-    ///        req_id - The request ID used in the call to EEClient::req_soft_dollar_tiers
-    ///        tiers - Stores a list of SoftDollarTier that contains all Soft Dollar
-    ///            Tiers information
+    /// * req_id - The request ID used in the call to EEClient::req_soft_dollar_tiers
+    /// * tiers - Stores a list of SoftDollarTier that contains all Soft Dollar
+    ///          Tiers information
     fn soft_dollar_tiers(&mut self, req_id: i32, tiers: Vec<SoftDollarTier>);
 
     //----------------------------------------------------------------------------------------------
@@ -655,11 +650,11 @@ pub trait Wrapper: Send + Sync + 'static {
     );
 
     //----------------------------------------------------------------------------------------------
-    /// returns historical tick data when whatToShow=MIDPOINT
+    /// returns historical tick data when what_to_how=MIDPOINT
     fn historical_ticks(&mut self, req_id: i32, ticks: Vec<HistoricalTick>, done: bool);
 
     //----------------------------------------------------------------------------------------------
-    /// returns historical tick data when whatToShow=BID_ASK
+    /// returns historical tick data when what_to_how=BID_ASK
     fn historical_ticks_bid_ask(
         &mut self,
         req_id: i32,
@@ -668,7 +663,7 @@ pub trait Wrapper: Send + Sync + 'static {
     );
 
     //----------------------------------------------------------------------------------------------
-    /// returns historical tick data when whatToShow=TRADES
+    /// returns historical tick data when what_to_how=TRADES
     fn historical_ticks_last(&mut self, req_id: i32, ticks: Vec<HistoricalTickLast>, done: bool);
 
     //----------------------------------------------------------------------------------------------
@@ -686,7 +681,7 @@ pub trait Wrapper: Send + Sync + 'static {
     );
 
     //----------------------------------------------------------------------------------------------
-    /// returns tick-by-tick data for tickType = "BidAsk"
+    /// returns tick-by-tick data for TickAttribBidAsk
     fn tick_by_tick_bid_ask(
         &mut self,
         req_id: i32,
@@ -709,9 +704,10 @@ pub trait Wrapper: Send + Sync + 'static {
     //----------------------------------------------------------------------------------------------
     /// This function is called to feed in completed orders.
     ///
-    ///        contract: Contract - The Contract class attributes describe the contract.
-    ///       order: Order - The Order class gives the details of the completed order.
-    ///        orderState: OrderState - The orderState class includes completed order status details.
+    /// # Arguments
+    /// * contract - The Contract class attributes describe the contract.
+    /// * order - The Order class gives the details of the completed order.
+    /// * orderState: OrderState - The orderState class includes completed order status details.
     ///
     fn completed_order(&mut self, contract: Contract, order: Order, order_state: OrderState);
 
