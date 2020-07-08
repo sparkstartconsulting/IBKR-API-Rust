@@ -2,7 +2,7 @@
 
 Port of Interactive Broker's trading API written in Rust (API_Version=9.76.01)
 
-Please see the latest IB Tws Api documentation here: <http://interactivebrokers.github.io/tws-api/introduction.html.>
+Please see the latest IB Tws Api documentation here: <http://interactivebrokers.github.io/tws-api/introduction.html>.
 
 The documentation has information regarding configuring Trader WorkStation and IB Gateway to enable API access.
 
