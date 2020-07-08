@@ -467,7 +467,8 @@ where
     /**!
         After calling this function, market data for the specified id
         will stop flowing.
-
+        
+        # Arguments
         * req_id - The ID that was specified in the call to req_mkt_data()
     */
     pub fn cancel_mkt_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
@@ -543,6 +544,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Request smart components
     pub fn req_smart_components(
         &mut self,
         req_id: i32,
@@ -584,6 +586,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Request market rule
     pub fn req_market_rule(&mut self, market_rule_id: i32) -> Result<(), IBKRApiLibError> {
         if !self.is_connected() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -620,6 +623,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Request tick by tick data
+    ///
+    /// # Arguments
+    /// * req_id: The request id
+    /// * contract:  The contract
+    /// * tick_type: The tick type
+    /// * number_of_ticks: i32,
+    /// * ignore_size: Whether to ignore size ticks
     pub fn req_tick_by_tick_data(
         &mut self,
         req_id: i32,
@@ -4943,5 +4954,15 @@ where
 
         self.send_request(msg.as_str())?;
         Ok(())
+    }
+}
+
+
+//////////////////////////////////////////TESTS /////////////////////////////////////////////////
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works_from_eclient() {
+        assert_eq!(2 + 2, 4);
     }
 }
