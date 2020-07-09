@@ -201,14 +201,7 @@ where
         //TODO Make log_level an enum
         debug!("set_server_log_level -- log_evel: {}", log_evel);
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let _log_level = log_evel;
@@ -264,14 +257,7 @@ where
     //----------------------------------------------------------------------------------------------
     /// Initiates the message exchange between the core application and the TWS/IB Gateway
     fn start_api(&mut self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
         let mut opt_capab = "".to_string();
@@ -325,14 +311,7 @@ where
         regulatory_snapshot: bool,
         mkt_data_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
             if let Some(_value) = &contract.delta_neutral_contract {
@@ -467,19 +446,12 @@ where
     /**!
         After calling this function, market data for the specified id
         will stop flowing.
-        
+
         # Arguments
         * req_id - The ID that was specified in the call to req_mkt_data()
     */
     pub fn cancel_mkt_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         let version = 2;
 
@@ -508,14 +480,7 @@ where
             * 2 for frozen market data
     */
     pub fn req_market_data_type(&mut self, market_data_type: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_MARKET_DATA_TYPE {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -550,14 +515,7 @@ where
         req_id: i32,
         bbo_exchange: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_SMART_COMPONENTS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -588,14 +546,7 @@ where
     //----------------------------------------------------------------------------------------------
     /// Request market rule
     pub fn req_market_rule(&mut self, market_rule_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_MARKET_RULES {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -639,14 +590,7 @@ where
         number_of_ticks: i32,
         ignore_size: bool,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -709,14 +653,7 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn cancel_tick_by_tick_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -767,14 +704,7 @@ where
         under_price: f64,
         impl_vol_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -869,14 +799,7 @@ where
         under_price: f64,
         opt_prc_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -962,14 +885,7 @@ where
     /// # Arguments
     /// * req_id - The request id.
     pub fn cancel_calculate_option_price(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -1008,14 +924,7 @@ where
         &mut self,
         req_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -1073,14 +982,7 @@ where
         account: &String,
         over_ride: i32,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if !contract.trading_class.is_empty() {
@@ -1156,14 +1058,7 @@ where
         contract: &Contract,
         order: &Order,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
             if contract.delta_neutral_contract.is_some() {
@@ -2037,14 +1932,7 @@ where
         //orderId:OrderId - The order ID that was specified previously in the call
         //to placeOrder()"""
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
 
@@ -2071,14 +1959,7 @@ where
         //        orderId will be generated. This association will persist over multiple
         //        API and TWS sessions
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -2106,14 +1987,7 @@ where
         //        associated with the core.If set to FALSE, no association will be
         //        made.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -2139,14 +2013,7 @@ where
         //        Note:  No association is made between the returned orders and the
         //        requesting core.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -2170,14 +2037,7 @@ where
         //        If the order was created in TWS, it also gets canceled. If the order
         //        was initiated in the API, it also gets canceled.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -2203,14 +2063,7 @@ where
         //
         //        numIds:i32 - deprecated
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
         info!("req_ids is connected...");
         let version = 1;
 
@@ -2250,14 +2103,7 @@ where
             subscribe, acct_code
         );
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
 
@@ -2336,14 +2182,7 @@ where
             $LEDGER:ALL - Single flag to relay all cash balance tags* in all
             currencies.*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
 
@@ -2366,14 +2205,7 @@ where
         //
         //        reqId:i32 - The ID of the data request being canceled."""
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::CancelAccountSummary as i32;
@@ -2391,14 +2223,7 @@ where
     pub fn req_positions(&mut self) -> Result<(), IBKRApiLibError> {
         //"""Requests real-time position data for all accounts."""
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2430,14 +2255,7 @@ where
     pub fn cancel_positions(&mut self) -> Result<(), IBKRApiLibError> {
         //"""Cancels real-time position updates."""
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2475,14 +2293,7 @@ where
         //                Results are delivered via EWrapper.positionMulti() and
         //                EWrapper.positionMultiEnd() """
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2519,14 +2330,7 @@ where
     pub fn cancel_positions_multi(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         //// self.logRequest(current_fn_name()?); vars())
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2564,14 +2368,7 @@ where
     ) -> Result<(), IBKRApiLibError> {
         //"""Requests account updates for account and/or model."""
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2611,14 +2408,7 @@ where
     pub fn cancel_account_updates_multi(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         //// self.logRequest(current_fn_name()?); vars())
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2655,14 +2445,7 @@ where
         account: &str,
         model_code: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_PNL {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2690,14 +2473,7 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn cancel_pnl(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_PNL {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2729,14 +2505,7 @@ where
         model_code: &str,
         con_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_PNL {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2765,14 +2534,7 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn cancel_pnl_single(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_PNL {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2821,14 +2583,7 @@ where
 
         //
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         let version = 3;
         let message_id: i32 = OutgoingMessageIds::ReqExecutions as i32;
@@ -2866,14 +2621,7 @@ where
         //    make_fieldatched to requests if several requests are in process.
         //    contract:&Contract - The summary description of the contract being looked up.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE {
             if contract.sec_id_type != "" || contract.sec_id != "" {
@@ -2981,14 +2729,7 @@ where
     //#########################################################################
 
     pub fn req_mkt_depth_exchanges(&mut self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_MKT_DEPTH_EXCHANGES {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3041,14 +2782,7 @@ where
         //    mkt_depth_options:Vec<TagValue> - For internal use only. Use pub fnault value
         //        XYZ.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if &contract.trading_class != "" || *&contract.con_id > 0 {
@@ -3168,14 +2902,7 @@ where
 
         //
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_SMART_DEPTH && is_smart_depth {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3218,14 +2945,7 @@ where
         //    the currencyent day and any new ones. If set to FALSE, will only
         //    return new bulletins.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -3242,14 +2962,7 @@ where
     //----------------------------------------------------------------------------------------------
     ///Call this function to stop receiving news bulletins.
     pub fn cancel_news_bulletins(&self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -3271,14 +2984,7 @@ where
         //
         //    Note:  This request can only be made when connected to a FA managed account.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReqManagedAccts as i32;
@@ -3299,14 +3005,7 @@ where
         //        2 = PROFILE
         //        3 = ACCOUNT ALIASES
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReqFa as i32;
@@ -3332,14 +3031,7 @@ where
         //    cxml: str - The XML string containing the new FA configuration
         //        information.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReplaceFa as i32;
@@ -3424,14 +3116,7 @@ where
         //            1/1/1970 GMT.
         //    chart_options: - For internal use only. Use pub fnault value XYZ.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if &contract.trading_class != "" || contract.con_id > 0 {
@@ -3522,14 +3207,7 @@ where
 
         req_id:i32 - The ticker ID. Must be a unique value*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -3556,14 +3234,7 @@ where
         use_rth: i32,
         format_date: i32,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_HEAD_TIMESTAMP {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3607,14 +3278,7 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn cancel_head_time_stamp(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_CANCEL_HEADTIMESTAMP {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3648,14 +3312,7 @@ where
         use_rth: bool,
         time_period: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTOGRAM {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3698,14 +3355,7 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn cancel_histogram_data(&mut self, ticker_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTOGRAM {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3743,14 +3393,7 @@ where
         ignore_size: bool,
         misc_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_HISTORICAL_TICKS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3809,14 +3452,7 @@ where
     pub fn req_scanner_parameters(&mut self) -> Result<(), IBKRApiLibError> {
         /*Requests an XML string that describes all possible scanner queries*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReqScannerParameters as i32;
@@ -3842,14 +3478,7 @@ where
         scanner_subscription_options: - For internal use only.
             Use pub fnault value XYZ*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         error!("Server version: {}", self.server_version());
         if self.server_version() < MIN_SERVER_VER_SCANNER_GENERIC_OPTS
@@ -3930,14 +3559,7 @@ where
     pub fn cancel_scanner_subscription(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The ticker ID. Must be a unique value*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -3990,14 +3612,7 @@ where
                 partially or completely outside.
         realTimeBarOptions: - For internal use only. Use pub fnault value XYZ*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if !contract.trading_class.is_empty() {
@@ -4065,14 +3680,7 @@ where
 
         reqId:i32 - The Id that was specified in the call to req_real_time_bars(). */
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -4121,14 +3729,7 @@ where
             RESC (analyst estimates)
             CalendarReport (company calendar)*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
 
@@ -4200,14 +3801,7 @@ where
 
         reqId:i32 - The ID of the data request*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_FUNDAMENTAL_DATA {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4241,14 +3835,7 @@ where
     //#########################################################################
 
     pub fn req_news_providers(&mut self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_NEWS_PROVIDERS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4280,14 +3867,7 @@ where
         article_id: &str,
         news_article_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_NEWS_ARTICLE {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4335,14 +3915,7 @@ where
         total_results: i32,
         historical_news_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTORICAL_NEWS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4393,14 +3966,7 @@ where
         reqId:i32 - The unique number that will be associated with the
             response */
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4438,14 +4004,7 @@ where
         group_id:i32 - The ID of the group, currently it is a number from 1 to 7.
             This is the display group subscription request sent by the API to TWS*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4490,14 +4049,7 @@ where
                 Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
             combo = if any combo is selected*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4531,14 +4083,7 @@ where
     pub fn unsubscribe_from_group_events(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The requestId specified in subscribe_to_group_events()*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4578,14 +4123,7 @@ where
 
         // self.logRequest(current_fn_name()?); vars())
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4634,14 +4172,7 @@ where
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4680,14 +4211,7 @@ where
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4741,14 +4265,7 @@ where
         /*For IB's internal purpose. Allows to provide means of verification
         between the TWS and third party programs*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4795,14 +4312,7 @@ where
         i.e. STK underlying_con_id the contract ID of the underlying security.
         Response comes via EWrapper.securityDefinitionOptionParameter()*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_SEC_DEF_OPT_PARAMS_REQ {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4838,14 +4348,7 @@ where
         registered professional advisors and hedge and mutual funds who have
         configured Soft Dollar Tiers in Account Management*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let message_id: i32 = OutgoingMessageIds::ReqSoftDollarTiers as i32;
         let mut msg = "".to_string();
@@ -4859,14 +4362,7 @@ where
 
     //----------------------------------------------------------------------------------------------
     pub fn req_family_codes(&mut self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_FAMILY_CODES {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4896,14 +4392,7 @@ where
         req_id: i32,
         pattern: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_MATCHING_SYMBOLS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4937,14 +4426,7 @@ where
         Each completed order will be fed back through the
         completedOrder() function on the EWrapper*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let message_id: i32 = OutgoingMessageIds::ReqCompletedOrders as i32;
         let mut msg = "".to_string();
@@ -4955,8 +4437,22 @@ where
         self.send_request(msg.as_str())?;
         Ok(())
     }
-}
 
+    //------------------------------------------------------------------------------------------------
+    fn check_connected(&self, req_id: i32) -> Result<(), IBKRApiLibError> {
+        match self.is_connected() {
+            false => {
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                    req_id,
+                    TwsError::NotConnected.code().to_string(),
+                    TwsError::NotConnected.message().to_string(),
+                ));
+                Err(err)
+            }
+            true => Ok(()),
+        }
+    }
+}
 
 //////////////////////////////////////////TESTS /////////////////////////////////////////////////
 #[cfg(test)]
