@@ -3,12 +3,10 @@ use std::fmt::{Debug, Display};
 use std::slice::Iter;
 
 use num_derive::FromPrimitive;
-// 0.2.4 (the derive)
 use num_traits::FromPrimitive;
-use serde::{Deserialize, Serialize};
-// 0.2.6 (the trait)
 use serde::export::fmt::Error;
 use serde::export::Formatter;
+use serde::{Deserialize, Serialize};
 
 use crate::core::decoder::{decode_bool, decode_f64, decode_i32, decode_string};
 use crate::core::errors::IBKRApiLibError;
@@ -505,10 +503,6 @@ impl From<OrderConditionEnum> for ContractCondition {
         ContractCondition::default()
     }
 }
-//pub fn  __str__(self):
-//return "%s on %s is %s " % (self.conId, self.exchange,
-//OperatorCondition.__str__(self))
-
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct TimeCondition {
