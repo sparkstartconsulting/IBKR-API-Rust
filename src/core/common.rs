@@ -16,6 +16,7 @@ pub const UNSET_DOUBLE: f64 = 1.7976931348623157E308_f64;
 pub const UNSET_LONG: i64 = std::i64::MAX;
 
 //==================================================================================================
+/// Tick types
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]
 pub enum TickType {
@@ -211,6 +212,7 @@ impl fmt::Display for TickType {
 }
 
 //==================================================================================================
+/// Financial advisor data types
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum FaDataType {
@@ -227,6 +229,7 @@ impl fmt::Display for FaDataType {
 }
 
 //==================================================================================================
+/// Tick by tick types
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum TickByTickType {

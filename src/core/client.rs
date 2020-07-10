@@ -201,14 +201,7 @@ where
         //TODO Make log_level an enum
         debug!("set_server_log_level -- log_evel: {}", log_evel);
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let _log_level = log_evel;
@@ -228,7 +221,7 @@ where
     //----------------------------------------------------------------------------------------------
     /// Gets the connection time
     pub fn tws_connection_time(&mut self) -> String {
-        //"""Returns the time the API application made a connection to TWS."""
+        //"""Returns the time the API client made a connection to TWS."""
 
         self.conn_time.clone()
     }
@@ -262,16 +255,9 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Initiates the message exchange between the core application and the TWS/IB Gateway
+    /// Initiates the message exchange between the client application and the TWS/IB Gateway
     fn start_api(&mut self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
         let mut opt_capab = "".to_string();
@@ -294,12 +280,11 @@ where
     //##############################################################################################
     //################################### Market Data
     //##############################################################################################
-    /// Request market data
     /// Call this function to request market data. The market data
-    /// will be returned by the tickPrice and tickSize events.
+    /// will be returned by the tick_price and tick_size wrapper events.
     ///
     /// # Arguments
-    /// * req_id - The ticker id. Must be a unique value. When the
+    /// * req_id - The request id. Must be a unique value. When the
     ///            market data returns, it will be identified by this tag. This is
     ///            also used when canceling the market data.
     /// * contract - This structure contains a description of the
@@ -311,11 +296,10 @@ where
     ///                       Example: "mdoff, 292: FLY + BRF"
     /// * snapshot - Check to return a single snapshot of Market data and
     ///                    have the market data subscription cancel. Do not enter any
-    ///                    genericTicklist values if you use snapshots.
+    ///                    generic_tick_list values if you use snapshots.
     /// * regulatory_snapshot - With the US Value Snapshot Bundle for stocks,
     ///                         regulatory snapshots are available for 0.01 USD each.
-    /// * mkt_data_options - For internal use only.
-    ///                    Use pub fnault value XYZ.
+    /// * mkt_data_options - For internal use only. Use default value XYZ.
     pub fn req_mkt_data(
         &mut self,
         req_id: i32,
@@ -325,14 +309,7 @@ where
         regulatory_snapshot: bool,
         mkt_data_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
             if let Some(_value) = &contract.delta_neutral_contract {
@@ -464,21 +441,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /**!
-        After calling this function, market data for the specified id
-        will stop flowing.
-
-        * req_id - The ID that was specified in the call to req_mkt_data()
-    */
+    /// After calling this function, market data for the specified id will stop flowing.
+    ///
+    /// # Arguments
+    /// * req_id - The ID that was specified in the call to req_mkt_data()
     pub fn cancel_mkt_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         let version = 2;
 
@@ -493,28 +461,20 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /** The API can receive frozen market data from Trader
-        Workstation. Frozen market data is the last data recorded in our system.
-        During normal trading hours, the API receives real-time market data. If
-        you use this function, you are telling TWS to automatically switch to
-        frozen market data after the close. Then, before the opening of the next
-        trading day, market data will automatically switch back to real-time
-        market data.
-
-        # Arguments
-        * market_data_type
-            * 1 for real-time streaming market data
-            * 2 for frozen market data
-    */
+    /// The API can receive frozen market data from Trader
+    /// Workstation. Frozen market data is the last data recorded in our system.
+    /// During normal trading hours, the API receives real-time market data. If
+    /// you use this function, you are telling TWS to automatically switch to
+    /// frozen market data after the close. Then, before the opening of the next
+    /// trading day, market data will automatically switch back to real-time
+    /// market data.
+    ///
+    /// # Arguments
+    /// * market_data_type
+    /// * 1 for real-time streaming market data
+    /// * 2 for frozen market data
     pub fn req_market_data_type(&mut self, market_data_type: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_MARKET_DATA_TYPE {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -543,19 +503,18 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Returns the mapping of single letter codes to exchange names given the mapping identifier.
+    /// # Arguments
+    /// * req_id - The request id. Must be a unique value. When the
+    ///            market data returns, it will be identified by this tag. This is
+    ///            also used when canceling the market data.
+    /// * bbo_exchange - mapping identifier received from Wrapper::tick_req_params
     pub fn req_smart_components(
         &mut self,
         req_id: i32,
         bbo_exchange: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_SMART_COMPONENTS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -584,15 +543,16 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests details about a given market rule
+    /// The market rule for an instrument on a particular exchange provides details about how the
+    /// minimum price increment changes with price
+    ///
+    /// A list of market rule ids can be obtained by invoking req_contract_details on a particular contract.
+    /// The returned market rule ID list will provide the market rule ID for the instrument in the correspond valid exchange list in contractDetails.
+    /// # Arguments
+    /// * market_rule_id -  the id of market rule
     pub fn req_market_rule(&mut self, market_rule_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_MARKET_RULES {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -620,6 +580,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Request tick by tick data
+    ///
+    /// # Arguments
+    /// * req_id	- unique identifier of the request.
+    /// * contract	- the contract for which tick-by-tick data is requested.
+    /// * tick_type	- TickByTickType data type: "Last", "AllLast", "BidAsk" or "MidPoint".
+    /// * number_of_ticks	- number of ticks.
+    /// * ignore_size	- ignore size flag.
     pub fn req_tick_by_tick_data(
         &mut self,
         req_id: i32,
@@ -628,14 +596,7 @@ where
         number_of_ticks: i32,
         ignore_size: bool,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -697,15 +658,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancel tick by tick data
+    ///
+    /// # Arguments
+    /// * req_id	- The identifier of the original request.
     pub fn cancel_tick_by_tick_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_TICK_BY_TICK {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -736,18 +694,16 @@ where
     //################## Options
     //##########################################################################
 
-    /** Call this function to calculate volatility for a supplied
-        option price and underlying price. Result will be delivered
-        via Wrapper::tick_option_computation
-
-        # Arguments
-
-        * req_id - The request id.
-        * contract - Describes the contract.
-        * option_price - The price of the option.
-        * under_price - Price of the underlying.
-        * impl_vol_options - Implied volatility options.
-    */
+    /// Call this function to calculate volatility for a supplied
+    /// option price and underlying price. Result will be delivered
+    /// via Wrapper::tick_option_computation
+    ///
+    /// # Arguments
+    /// * req_id - The request id.
+    /// * contract - Describes the contract.
+    /// * option_price - The price of the option.
+    /// * under_price - Price of the underlying.
+    /// * impl_vol_options - Implied volatility options.
     pub fn calculate_implied_volatility(
         &mut self,
         req_id: i32,
@@ -756,14 +712,7 @@ where
         under_price: f64,
         impl_vol_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -846,7 +795,7 @@ where
     /// Call this function to calculate option price and greek values for a supplied volatility and underlying price.
     ///
     /// # Arguments
-    /// * req_id The request id.
+    /// * req_id - The request id.
     /// * contract - Describes the contract.
     /// * volatility - The volatility.
     /// * under_price - Price of the underlying.
@@ -858,14 +807,7 @@ where
         under_price: f64,
         opt_prc_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -949,16 +891,9 @@ where
     /// price and greek values for a supplied volatility and underlying price.
     ///
     /// # Arguments
-    /// * req_id - The request id.
+    /// * req_id - The original request id.
     pub fn cancel_calculate_option_price(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -992,19 +927,12 @@ where
     /// Call this function to cancel a request to calculate the option implied volatility.
     ///
     /// # Arguments
-    /// * req_id - The request id.
+    /// * req_id - The original request id.
     pub fn cancel_calculate_implied_volatility(
         &mut self,
         req_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_CALC_IMPLIED_VOLAT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -1043,7 +971,7 @@ where
     /// * exercise_action - Specifies whether you want the option to lapse or be exercised. Values are:
     ///     * 1 = exercise
     ///     * 2 = lapse.
-    /// * exercise_quantity:i32 - The quantity you want to exercise.
+    /// * exercise_quantity - The quantity you want to exercise.
     /// * account - destination account
     /// * override - Specifies whether your setting will override the system's
     ///              natural action. For example, if your action is "exercise" and the
@@ -1062,14 +990,7 @@ where
         account: &String,
         over_ride: i32,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if !contract.trading_class.is_empty() {
@@ -1133,26 +1054,20 @@ where
     ///
     /// # Arguments
     /// * order_id - The order id. You must specify a unique value. When the
-    /// order START_APItus returns, it will be identified by this tag.
-    ///            This tag is also used when canceling the order.
-    ///        contract:&Contract - This structure contains a description of the
-    ///            contract which is being traded.
-    ///        order:Order - This structure contains the details of tradedhe order.
-    ///            Note: Each core MUST connect with a unique clientId.
+    ///              order status returns, it will be identified by this tag.
+    ///              This tag is also used when canceling the order.
+    /// * contract - This structure contains a description of the
+    ///              contract which is being traded.
+    /// * order - This structure contains the details of the order.
+    ///
+    /// Note: Each client MUST connect with a unique client_id.
     pub fn place_order(
         &mut self,
         order_id: i32,
         contract: &Contract,
         order: &Order,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
             if contract.delta_neutral_contract.is_some() {
@@ -1737,16 +1652,16 @@ where
         }
 
         //    ######################################################################
-        //    // Send the shares allocation.
+        //    # Send the shares allocation.
         //    #
         //    # This specifies the number of order shares allocated to each Financial
         //    # Advisor managed account. The format of the allocation string is as
         //    # follows:
-        //    #                      <account_code1>/<number_shares1>,<account_code2>/<number_shares2>,...N
+        //    # <account_code1>/<number_shares1>,<account_code2>/<number_shares2>,...N
         //    # E.g.
-        //    #              To allocate 20 shares of a 100 share order to account 'U101' && the
+        //    #      To allocate 20 shares of a 100 share order to account 'U101' && the
         //    #      residual 80 to account 'U203' enter the following share allocation string:
-        //    #          U101/20,U203/80
+        //    #      U101/20,U203/80
         //    #####################################################################
 
         // send deprecated sharesAllocation field
@@ -2020,20 +1935,11 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to cancel an order.
+    /// # Arguments
+    /// * order_id - The order ID that was specified previously when placing the order
     pub fn cancel_order(&mut self, order_id: i32) -> Result<(), IBKRApiLibError> {
-        //"""Call this function to cancel an order.
-
-        //orderId:OrderId - The order ID that was specified previously in the call
-        //to placeOrder()"""
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
 
@@ -2050,24 +1956,16 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to request the open orders that were
+    /// placed from this client. Each open order will be fed back through the
+    /// open_order() and order_status() functions on the Wrapper.
+    ///
+    /// Note:  The client with a client_id of 0 will also receive the TWS-owned
+    ///        open orders. These orders will be associated with the client and a new
+    ///        order_id will be generated. This association will persist over multiple
+    ///        API and TWS sessions
     pub fn req_open_orders(&mut self) -> Result<(), IBKRApiLibError> {
-        //        Call this function to request the open orders that were
-        //        placed from this core. Each open order will be fed back through the
-        //        openOrder() and orderStatus() functions on the EWrapper.
-        //
-        //        Note:  The core with a clientId of 0 will also receive the TWS-owned
-        //        open orders. These orders will be associated with the core and a new
-        //        orderId will be generated. This association will persist over multiple
-        //        API and TWS sessions
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -2083,26 +1981,19 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to request that newly created TWS orders
+    /// be implicitly associated with the client.When a new TWS order is
+    /// created, the order will be associated with the client, and fed back
+    /// through the openOrder() and orderStatus() functions on the EWrapper.
+    ///
+    /// Note: This request can only be made from a client with client_id of 0.
+    ///
+    /// # Arguments
+    /// * b_auto_bind - If set to TRUE, newly created TWS orders will be implicitly
+    ///                 associated with the client.If set to FALSE, no association will be
+    ///                 made.
     pub fn req_auto_open_orders(&mut self, b_auto_bind: bool) -> Result<(), IBKRApiLibError> {
-        //        Call this function to request that newly created TWS orders
-        //        be implicitly associated with the core.When a new TWS order is
-        //        created, the order will be associated with the core, and fed back
-        //        through the openOrder() and orderStatus() functions on the EWrapper.
-        //
-        //            Note: This request can only be made from a core with clientId of 0.
-        //
-        //        b_auto_bind: If set to TRUE, newly created TWS orders will be implicitly
-        //        associated with the core.If set to FALSE, no association will be
-        //        made.
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -2120,22 +2011,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to request the open orders placed from all
+    /// clients and also from TWS. Each open order will be fed back through the
+    /// open_order() and order_status() functions on the EWrapper.
+    /// Note:  No association is made between the returned orders and the
+    /// requesting client.
     pub fn req_all_open_orders(&mut self) -> Result<(), IBKRApiLibError> {
-        //        Call this function to request the open orders placed from all
-        //        clients and also from TWS. Each open order will be fed back through the
-        //        openOrder() and orderStatus() functions on the EWrapper.
-        //
-        //        Note:  No association is made between the returned orders and the
-        //        requesting core.
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -2152,21 +2034,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Use this function to cancel all open orders globally. It
+    /// cancels both API and TWS open orders.
+    /// If the order was created in TWS, it also gets canceled. If the order
+    /// was initiated in the API client, it also gets canceled.
     pub fn req_global_cancel(&mut self) -> Result<(), IBKRApiLibError> {
-        //        Use this function to cancel all open orders globally. It
-        //        cancels both API and TWS open orders.
-        //
-        //        If the order was created in TWS, it also gets canceled. If the order
-        //        was initiated in the API, it also gets canceled.
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -2183,23 +2056,16 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to request from TWS the next valid ID that
+    /// can be used when placing an order.  After calling this function, the
+    /// next_valid_id() Wrapper event will be triggered, and the id returned is the next
+    /// valid ID. That ID will reflect any autobinding that has occurred (which
+    /// generates new IDs and increments the next valid ID therein).
+    ///
+    /// # Arguments
+    /// * num_ids - deprecated
     pub fn req_ids(&self, num_ids: i32) -> Result<(), IBKRApiLibError> {
-        //        Call this function to request from TWS the next valid ID that
-        //        can be used when placing an order.  After calling this function, the
-        //        nextValidId() event will be triggered, and the id returned is that next
-        //        valid ID. That ID will reflect any autobinding that has occurred (which
-        //        generates new IDs and increments the next valid ID therein).
-        //
-        //        numIds:i32 - deprecated
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
         info!("req_ids is connected...");
         let version = 1;
 
@@ -2217,36 +2083,29 @@ where
 
     //#########################################################################
     //################## Account and Portfolio
-    //########################################################################
+    //#########################################################################
+    /// Call this function to start getting account values, portfolio,
+    /// and last update time information via Wrapper.update_account_value());
+    /// Wrapper.update_portfolio() and Wrapper.update_account_time().
+    ///
+    ///
+    /// # Arguments
+    /// * subscribe - If set to TRUE, the client will start receiving account
+    ///               and Portfoliolio updates. If set to FALSE, the client will stop
+    ///               receiving this information.
+    /// * acct_code - The account code for which to receive account and portfolio updates.
     pub fn req_account_updates(
         &mut self,
         subscribe: bool,
         acct_code: &str,
     ) -> Result<(), IBKRApiLibError> {
-        /*Call this function to start getting account values, portfolio,
-        and last update time information via EWrapper.updateAccountValue());
-        EWrapperi.updatePortfolio() and Wrapper.updateAccountTime().
-
-        subscribe:bool - If set to TRUE, the core will start receiving account
-            and Portfoliolio updates. If set to FALSE, the core will stop
-            receiving this information.
-        acctCode:&'static str -The account code for which to receive account and
-            portfolio updates.*/
-
         info!("subscribe: {}, acct_code: {}", subscribe, acct_code);
         debug!(
             "req_account_updates: subscribe: {}, acct_code: {}",
             subscribe, acct_code
         );
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
 
@@ -2265,74 +2124,27 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests a specific account's summary.
+    /// This method will subscribe to the account summary as presented in the TWS' Account Summary tab.
+    /// The data is returned at Wrapper::account_summary
+    /// https://www.interactivebrokers.com/en/software/tws/accountwindowtop.htm.
+    /// Note:   This request is designed for an FA managed account but can be
+    ///         used for any multi-account structure.
+    ///
+    /// # Arguments
+    /// * req_id - The ID of the data request. Ensures that responses are matched
+    ///            to requests If several requests are in process.
+    /// * group_name - Set to All to return account summary data for all
+    ///                accounts, or set to a specific Advisor Account Group name that has
+    ///                already been created in TWS Global Configuration.
+    /// * tags- A comma-separated list of account tags.  See the AccountSummaryTags enum for valid values
     pub fn req_account_summary(
         &self,
         req_id: i32,
         group_name: &str,
         tags: &str,
     ) -> Result<(), IBKRApiLibError> {
-        /* Call this method to request and keep up to date the data that appears
-        on the TWS Account Window Summary tab. The data is returned by
-        accountSummary().
-
-        Note:   This request is designed for an FA managed account but can be
-        used for any multi-account structure.
-
-        req_id:i32 - The ID of the data request. Ensures that responses are matched
-            to requests If several requests are in process.
-        group_name:&'static str - Set to All to returnrn account summary data for all
-            accounts, || set to a specific Advisor Account Group name that has
-            already been created in TWS Global Configuration.
-        tags:&'static str - A comma-separated list of account tags.  Available tags are:
-            accountountType
-            NetLiquidation,
-            TotalCashValue - Total cash including futures pnl
-            SettledCash - For cash accounts, this is the same as
-            TotalCashValue
-            AccruedCash - Net accrued interest
-            BuyingPower - The maximum amount of marginable US stocks the
-                account can buy
-            EquityWithLoanValue - Cash + stocks + bonds + mutual funds
-            PreviousDayEquityWithLoanValue,
-            GrossPositionValue - The sum of the absolute value of all stock
-                and equity option positions
-            RegTEquity,
-            RegTMargin,
-            SMA - Special Memorandum Account
-            InitMarginReq,
-            MaintMarginReq,
-            AvailableFunds,
-            ExcessLiquidity,
-            Cushion - Excess liquidity as a percentage of net liquidation value
-            FullInitMarginReq,
-            FullMaintMarginReq,
-            FullAvailableFunds,
-            FullExcessLiquidity,
-            LookAheadNextChange - Time when look-ahead values take effect
-            LookAheadInitMarginReq,
-            LookAheadMaintMarginReq,
-            LookAheadAvailableFunds,
-            LookAheadExcessLiquidity,
-            HighestSeverity - A measure of how close the account is to liquidation
-            DayTradesRemaining - The Number of Open/Close trades a user
-                could put on before Pattern Day Trading is detected. A value of " - 1"
-                means that the user can put on unlimited day trades.
-            Leverage - GrossPositionValue / NetLiquidation
-            $LEDGER - Single flag to relay all cash balance tags*, only in base
-                currency.
-            $LEDGER:CURRENCY - Single flag to relay all cash balance tags*, only in
-                the specified currency.
-            $LEDGER:ALL - Single flag to relay all cash balance tags* in all
-            currencies.*/
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
 
@@ -2350,19 +2162,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancels the request for Account Window Summary tab data.
+    ///
+    /// # Arguments
+    /// * req_id - The ID of the data request being canceled.
     pub fn cancel_account_summary(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        //        """Cancels the request for Account Window Summary tab data.
-        //
-        //        reqId:i32 - The ID of the data request being canceled."""
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
         let version = 1;
 
         let message_id: i32 = OutgoingMessageIds::CancelAccountSummary as i32;
@@ -2377,17 +2183,10 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests real-time position data for all accounts.
     pub fn req_positions(&mut self) -> Result<(), IBKRApiLibError> {
-        //"""Requests real-time position data for all accounts."""
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2416,17 +2215,10 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancels real-time position updates.
     pub fn cancel_positions(&mut self) -> Result<(), IBKRApiLibError> {
-        //"""Cancels real-time position updates."""
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2454,24 +2246,22 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests position subscription for account and/or model Initially all positions are returned, 
+    /// and then updates are returned for any position changes in real time. 
+    ///
+    /// # Arguments
+    /// * req_id - Request's identifier
+    /// * account - If an account Id is provided, only the account's positions belonging to the 
+    ///             specified model will be delivered
+    /// * modelCode	- The code of the model's positions we are interested in. 
     pub fn req_positions_multi(
         &mut self,
         req_id: i32,
         account: &str,
         model_code: &str,
     ) -> Result<(), IBKRApiLibError> {
-        //        """Requests positions for account and/or model.
-        //                Results are delivered via EWrapper.positionMulti() and
-        //                EWrapper.positionMultiEnd() """
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2505,17 +2295,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancels positions request for account and/or model. 
+    /// 
+    /// # Arguments
+    /// * req_id - The id of the original request
     pub fn cancel_positions_multi(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        //// self.logRequest(current_fn_name()?); vars())
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2544,6 +2330,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests account updates for account and/or model.
+    ///
+    /// # Arguments
+    /// * req_id - identifier to tag the request
+    /// * account - account values can be requested for a particular account
+    /// * model_code - values can also be requested for a model
+    /// * ledger_and_nvl - returns light-weight request; only currency positions as opposed to 
+    ///                    account values and currency positions 
     pub fn req_account_updates_multi(
         &mut self,
         req_id: i32,
@@ -2551,16 +2345,8 @@ where
         model_code: &str,
         ledger_and_nlv: bool,
     ) -> Result<(), IBKRApiLibError> {
-        //"""Requests account updates for account and/or model."""
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2597,17 +2383,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancels account update request for account and/or model. 
+    /// 
+    /// # Arguments
+    /// * req_id - The id of the original request
     pub fn cancel_account_updates_multi(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        //// self.logRequest(current_fn_name()?); vars())
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2637,21 +2419,19 @@ where
     //#########################################################################
     //################## Daily PnL
     //#########################################################################
-
+    /// Requests profit and loss for account and/or model.
+    ///
+    /// # Arguments
+    /// * req_id - identifier to tag the request
+    /// * account - account values can be requested for a particular account
+    /// * model_code - values can also be requested for a model
     pub fn req_pnl(
         &mut self,
         req_id: i32,
         account: &str,
         model_code: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_PNL {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2678,15 +2458,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancels profit and loss update request for account and/or model. 
+    /// 
+    /// # Arguments
+    /// * req_id - The id of the original request
     pub fn cancel_pnl(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_PNL {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2711,6 +2488,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests profit and loss for account and/or model for a specific contract.
+    ///
+    /// # Arguments
+    /// * req_id - identifier to tag the request
+    /// * account - account values can be requested for a particular account
+    /// * model_code - values can also be requested for a model
+    /// * con_id - contract id of the specific contact of interest
     pub fn req_pnl_single(
         &mut self,
         req_id: i32,
@@ -2718,14 +2502,7 @@ where
         model_code: &str,
         con_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_PNL {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2753,15 +2530,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancels profit and loss update request for account and/or model. 
+    /// 
+    /// # Arguments
+    /// * req_id - The id of the original request
     pub fn cancel_pnl_single(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_PNL {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -2789,35 +2563,27 @@ where
     //################## Executions
     //#########################################################################
 
+    /// When this function is called, the execution reports that meet the
+    /// filter criteria are downloaded to the client via the execDetails()
+    /// function. To view executions beyond the past 24 hours, open the
+    /// Trade Log in TWS and, while the Trade Log is displayed, request
+    /// the executions again from the API.
+    ///
+    /// # Arguments
+    /// * req_id - The ID of the data request. Ensures that responses are
+    ///            matched to requests if several requests are in process.
+    /// * exec_filter - This object contains attributes that
+    ///                 describe the filter criteria used to determine which execution
+    ///                 reports are returned.
+    ///
+    /// NOTE: Time format must be 'yyyymmdd-hh:mm:ss' Eg: '20030702-14:55'
     pub fn req_executions(
         &mut self,
         req_id: i32,
         exec_filter: &ExecutionFilter,
     ) -> Result<(), IBKRApiLibError> {
-        //    When this function is called, the execution reports that meet the
-        //    filter criteria are downloaded to the core via the execDetails()
-        //    function. To view executions beyond the past 24 hours, open the
-        //    Trade Log in TWS and, while the Trade Log is displayed, request
-        //    the executions again from the API.
-        //
-        //    req_id:i32 - The ID of the data request. Ensures that responses are
-        //        matched to requests if several requests are in process.
-        //    exec_filter:ExecutionFilter - This object contains attributes that
-        //        describe the filter criteria used to determine which execution
-        //        reports are returned.
-        //
-        //    NOTE: Time format must be 'yyyymmdd-hh:mm:ss' Eg: '20030702-14:55'
 
-        //
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         let version = 3;
         let message_id: i32 = OutgoingMessageIds::ReqExecutions as i32;
@@ -2841,28 +2607,22 @@ where
     //#########################################################################
     //################## Contract Details
     //#########################################################################
-
+    /// Call this function to download all details for a particular
+    /// underlying. The contract details will be received via the contractDetails()
+    /// function on the EWrapper.
+    ///
+    ///    
+    /// # Arguments
+    /// * req_id - The ID of the data request. Ensures that responses are
+    ///            matched to requests if several requests are in process.
+    /// * contract - The summary description of the contract being looked up.
     pub fn req_contract_details(
         &mut self,
         req_id: i32,
         contract: &Contract,
     ) -> Result<(), IBKRApiLibError> {
-        //    Call this function to download all details for a particular
-        //    underlying. The contract details will be received via the contractDetails()
-        //    function on the EWrapper.
-        //
-        //    req_id:i32 - The ID of the data request. Ensures that responses are
-        //    make_fieldatched to requests if several requests are in process.
-        //    contract:&Contract - The summary description of the contract being looked up.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE {
             if contract.sec_id_type != "" || contract.sec_id != "" {
@@ -2968,16 +2728,9 @@ where
     //#########################################################################
     //################## Market Depth
     //#########################################################################
-
+    /// Requests venues for which market data is returned to update_mkt_depth_l2 (those with market makers) 
     pub fn req_mkt_depth_exchanges(&mut self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_MKT_DEPTH_EXCHANGES {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3001,6 +2754,26 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to request market depth for a specific
+    /// contract. The market depth will be returned by the update_mkt_depth() and
+    /// update_mkt_depth_l2() events.
+    ///
+    /// Requests the contract's market depth (order book). Note this request must be
+    /// direct-routed to an exchange and not smart-routed. The number of simultaneous
+    /// market depth requests allowed in an account is calculated based on a formula
+    /// that looks at an accounts equity, commissions, and quote booster packs.
+    ///
+    /// # Arguments
+    /// * req_id - The request id. Must be a unique value. When the market
+    ///            depth data returns, it will be identified by this tag. This is
+    ///            also used when canceling the market depth
+    /// * contract - This structure contains a description of the contract
+    ///              for which market depth data is being requested.
+    /// * num_rows - Specifies the number of rows of market depth rows to display.
+    /// * is_smart_depth - specifies SMART depth request  NOTE: ALWAYS SET TO FALSE!!!!!
+    ///                    THERE SEEMS TO BE A BUG ON IB's SIDE AND THEY WILL STOP STREAMING
+    ///                    DATA IF THIS IS SET TO TRUE
+    /// * mkt_depth_options - For internal use only. Use default value XYZ.
     pub fn req_mkt_depth(
         &mut self,
         req_id: i32,
@@ -3009,35 +2782,8 @@ where
         is_smart_depth: bool,
         mkt_depth_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        //    Call this function to request market depth for a specific
-        //    contract. The market depth will be returned by the updateMktDepth() and
-        //    updateMktDepthL2() events.
-        //
-        //    Requests the contract's market depth (order book). Note this request must be
-        //    direct-routed to an exchange and not smart-routed. The number of simultaneous
-        //    market depth requests allowed in an account is calculated based on a formula
-        //    that looks at an accounts equity, commissions, and quote booster packs.
-        //
-        //    req_id:i32 - The ticker id. Must be a unique value. When the market
-        //        depth data returns, it will be identified by this tag. This is
-        //        also used when canceling the market depth
-        //    contract:Contact - This structure contains a description of the contract
-        //        for which market depth data is being requested.
-        //    num_rows:i32 - Specifies the numRowsumber of market depth rows to display.
-        //    is_smart_depth:bool - specifies SMART depth request  NOTE: ALWAYS SET TO FALSE!!!!!
-        //                          THERE SEEMS TO BE A BUG ON IB's SIDE AND THEY WILL STOP STREAMING
-        //                          DATA IF THIS IS SET TO true
-        //    mkt_depth_options:Vec<TagValue> - For internal use only. Use pub fnault value
-        //        XYZ.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if &contract.trading_class != "" || *&contract.con_id > 0 {
@@ -3144,27 +2890,20 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// After calling this function, market depth data for the specified id
+    /// will stop flowing.
+    ///
+    /// # Arguments
+    /// * req_id - The ID that was specified in the call to req_mkt_depth().
+    //  * is_smart_depth - specifies SMART depth request
+    //
     pub fn cancel_mkt_depth(
         &mut self,
         req_id: i32,
         is_smart_depth: bool,
     ) -> Result<(), IBKRApiLibError> {
-        //    After calling this function, market depth data for the specified id
-        //    will stop flowing.
-        //
-        //    req_id:i32 - The ID that was specified in the call to reqMktDepth().
-        //    is_smart_depth:bool - specifies SMART depth request
 
-        //
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_SMART_DEPTH && is_smart_depth {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3198,23 +2937,16 @@ where
     //#########################################################################
     //################## News Bulletins
     //#########################################################################
-
+    /// Call this function to start receiving news bulletins. Each bulletin
+    /// will be returned by the update_news_bulletin() event.
+    //
+    /// # Arguments
+    /// * all_msgs - If set to TRUE, returns all the existing bulletins for
+    //               the current day and any new ones. If set to FALSE, will only
+    //               return new bulletins.
     pub fn req_news_bulletins(&mut self, all_msgs: bool) -> Result<(), IBKRApiLibError> {
-        //    Call this function to start receiving news bulletins. Each bulletin
-        //    will be returned by the updateNewsBulletin() event.
-        //
-        //    all_msgs:bool - If set to TRUE, returns all the existing bulletins for
-        //    the currencyent day and any new ones. If set to FALSE, will only
-        //    return new bulletins.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -3231,14 +2963,7 @@ where
     //----------------------------------------------------------------------------------------------
     ///Call this function to stop receiving news bulletins.
     pub fn cancel_news_bulletins(&self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -3253,21 +2978,13 @@ where
     //#########################################################################
     //################## Financial Advisors
     //#########################################################################
-
+    /// Call this function to request the list of managed accounts. The list
+    /// will be returned by the managed_accounts() function on the Wrapper.
+    ///
+    /// Note:  This request can only be made when connected to a FA managed account.
     pub fn req_managed_accts(&mut self) -> Result<(), IBKRApiLibError> {
-        //    Call this function to request the list of managed accounts. The list
-        //    will be returned by the managedAccounts() function on the EWrapper.
-        //
-        //    Note:  This request can only be made when connected to a FA managed account.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReqManagedAccts as i32;
@@ -3278,24 +2995,17 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to request FA configuration information from TWS.
+    /// The data returns in an XML string via a "receiveFA" ActiveX event.
+    ///
+    /// # Arguments
+    /// * fa_data - See the FaDataType enum. Specifies the type of Financial Advisor configuration data beingingg requested. Valid values include:
+    ///     * 1 = GROUPS
+    ///     * 2 = PROFILE
+    ///     * 3 = ACCOUNT ALIASES
     pub fn request_fa(&mut self, fa_data: FaDataType) -> Result<(), IBKRApiLibError> {
-        //    Call this function to request FA configuration information from TWS.
-        //    The data returns in an XML string via a "receiveFA" ActiveX event.
-        //
-        //    fa_data:FaDataType - Specifies the type of Financial Advisor
-        //        configuration data beingingg requested. Valid values include:
-        //        1 = GROUPS
-        //        2 = PROFILE
-        //        3 = ACCOUNT ALIASES
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReqFa as i32;
@@ -3309,26 +3019,19 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to modify FA configuration information from the
+    /// API. Note that this can also be done manually in TWS itself.
+    ///
+    /// * fa_data - See the FaDataType enum. Specifies the type of Financial Advisor
+    ///             configuration data beingingg requested. Valid values include:
+    ///     * 1 = GROUPS
+    ///     * 2 = PROFILE
+    ///     * 3 = ACCOUNT ALIASES
+    /// *cxml - The XML string containing the new FA configuration
+    ///         information.
     pub fn replace_fa(&mut self, fa_data: FaDataType, cxml: &str) -> Result<(), IBKRApiLibError> {
-        //    Call this function to modify FA configuration information from the
-        //    API. Note that this can also be done manually in TWS itself.
-        //
-        //    fa_data:FaDataType - Specifies the type of Financial Advisor
-        //        configuration data beingingg requested. Valid values include:
-        //        1 = GROUPS
-        //        2 = PROFILE
-        //        3 = ACCOUNT ALIASES
-        //    cxml: str - The XML string containing the new FA configuration
-        //        information.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReplaceFa as i32;
@@ -3345,7 +3048,57 @@ where
     //#########################################################################
     //################## Historical Data
     //#########################################################################
-
+    /// Requests contracts' historical data. When requesting historical data, a
+    /// finishing time and date is required along with a duration string. The
+    /// resulting bars will be returned in EWrapper.historicalData()
+    ///
+    /// # Arguments
+    /// * req_id - The id of the request. Must be a unique value. When the
+    ///            market data returns, it whatToShowill be identified by this tag. This is also
+    ///            used when canceling the market data.
+    /// * contract - This object contains a description of the contract for which
+    ///              market data is being requested.
+    /// * end_date_time - Defines a query end date and time at any point during the past 6 mos.
+    ///                   Valid values include any date/time within the past six months in the format:
+    ///                   yyyymmdd HH:mm:ss ttt where "ttt" is the optional time zone.
+    /// * duration_str - Set the query duration up to one week, using a time unit
+    ///                  of seconds, days or weeks. Valid values include any integer followed by a space
+    ///                  and then S (seconds)); D (days) or W (week). If no unit is specified, seconds is used.
+    /// * bar_size_setting - See the BarSize enum for valid values. Specifies the size of the bars that will be returned (within IB/TWS listimits).
+    ///                      Valid values include:
+    ///     * 1 sec
+    ///     * 5 secs
+    ///     * 15 secs
+    ///     * 30 secs
+    ///     * 1 min
+    ///     * 2 mins
+    ///     * 3 mins
+    ///     * 5 mins
+    ///     * 15 mins
+    ///     * 30 mins
+    ///     * 1 hour
+    ///     * 1 day
+    /// * what_to_show - See the WhatToShow enum for valid values.  Determines the nature of data beinging extracted. Valid values include:
+    ///
+    ///     * TRADES
+    ///     * MIDPOINT
+    ///     * BID
+    ///     * ASK
+    ///     * BID_ASK
+    ///     * HISTORICAL_VOLATILITY
+    ///     * OPTION_IMPLIED_VOLATILITY
+    /// * use_rth - Determines whether to return all data available during the requested time span,
+    ///             or only data that falls within regular trading hours. Valid values include:
+    ///
+    ///     * 0 - all data is returned even where the market in question was outside of its
+    ///                       regular trading hours.
+    ///     * 1 - only data within the regular trading hours is returned, even if the
+    ///                       requested time span falls partially or completely outside of the RTH.
+    /// * format_date - Determines the date format applied to returned bars. validd values include:
+    ///
+    ///     * 1 - dates applying to bars returned in the format: yyyymmdd{space}{space}hh:mm:dd
+    ///     * 2 - dates are returned as a long integer specifying the number of seconds since 1/1/1970 GMT.
+    /// *chart_options: - For internal use only. Use default value XYZ.
     pub fn req_historical_data(
         &mut self,
         req_id: i32,
@@ -3359,68 +3112,9 @@ where
         keep_up_to_date: bool,
         chart_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        //    Requests contracts' historical data. When requesting historical data, a
-        //    finishing time and date is required along with a duration string. The
-        //    resulting bars will be returned in EWrapper.historicalData()
-        //
-        //    req_id:i32 - The id of the request. Must be a unique value. When the
-        //        market data returns, it whatToShowill be identified by this tag. This is also
-        //        used when canceling the market data.
-        //    contract:&Contract - This object contains a description of the contract for which
-        //        market data is being requested.
-        //    end_date_time:&'static str - Defines a query end date and time at any point during the past 6 mos.
-        //        Valid values include any date/time within the past six months in the format:
-        //        yyyymmdd HH:mm:ss ttt
-        //
-        //        where "ttt" is the optional time zone.
-        //    duration_str:&'static str - Set the query duration up to one week, using a time unit
-        //        of seconds, days or weeks. Valid values include any integer followed by a space
-        //        and then S (seconds)); D (days) or W (week). If no unit is specified, seconds is used.
-        //    bar_size_setting:&'static str - Specifies the size of the bars that will be returned (within IB/TWS listimits).
-        //        Valid values include:
-        //        1 sec
-        //        5 secs
-        //        15 secs
-        //        30 secs
-        //        1 min
-        //        2 mins
-        //        3 mins
-        //        5 mins
-        //        15 mins
-        //        30 mins
-        //        1 hour
-        //        1 day
-        //    what_to_show:&'static str - Determines the nature of data beinging extracted. Valid values include:
-        //
-        //        TRADES
-        //        MIDPOINT
-        //        BID
-        //        ASK
-        //        BID_ASK
-        //        HISTORICAL_VOLATILITY
-        //        OPTION_IMPLIED_VOLATILITY
-        //    use_rth:i32 - Determines whether to return all data available during the requested time span,
-        //        or only data that falls within regular trading hours. Valid values include:
-        //
-        //        0 - all data is returned even where the market in question was outside of its
-        //        regular trading hours.
-        //        1 - only data within the regular trading hours is returned, even if the
-        //        requested time span falls partially or completely outside of the RTH.
-        //    format_date: int - Determines the date format applied to returned bars. validd values include:
-        //
-        //        1 - dates applying to bars returned in the format: yyyymmdd{space}{space}hh:mm:dd
-        //        2 - dates are returned as a long integer specifying the number of seconds since
-        //            1/1/1970 GMT.
-        //    chart_options: - For internal use only. Use pub fnault value XYZ.
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if &contract.trading_class != "" || contract.con_id > 0 {
@@ -3504,21 +3198,15 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Used if an internet disconnect has occurred or the results of a query
+    /// are otherwise delayed and the client is no longer interested in receiving
+    /// the data.
+    ///
+    /// # Arguments
+    /// * req_id - the id of the original request
     pub fn cancel_historical_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        /*Used if an internet disconnect has occurred or the results of a query
-        are otherwise delayed and the application is no longer interested in receiving
-        the data.
-
-        req_id:i32 - The ticker ID. Must be a unique value*/
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -3534,9 +3222,18 @@ where
         Ok(())
     }
 
-    // Note that formatData parameter affects intraday bars only
-    // 1-day bars always return with date in YYYYMMDD format
     //----------------------------------------------------------------------------------------------
+    /// Returns the timestamp of earliest available historical data for a contract and data type.
+    ///
+    /// # Arguments
+    /// * req_id	- an identifier for the request
+    /// * contract	- contract object for which head timestamp is being requested
+    /// * what_to_show	- type of data for head timestamp - "BID", "ASK", "TRADES", etc
+    /// * use_rth	- use regular trading hours only, 1 for yes or 0 for no
+    /// * format_date	set to 1 to obtain the bars' time as yyyyMMdd HH:mm:ss, set to 2 to obtain it like system time format in seconds 
+    ///
+    /// Note that formatData parameter affects intraday bars only
+    /// 1-day bars always return with date in YYYYMMDD format
     pub fn req_head_time_stamp(
         &mut self,
         req_id: i32,
@@ -3545,14 +3242,7 @@ where
         use_rth: i32,
         format_date: i32,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_HEAD_TIMESTAMP {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3595,15 +3285,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancel the request
+    ///
+    /// # Arguments
+    /// * req_id - the id of the original request
     pub fn cancel_head_time_stamp(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_CANCEL_HEADTIMESTAMP {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3630,6 +3317,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Returns data histogram of specified contract
+    ///
+    /// # Arguments
+    /// * ticker_id - an identifier for the request
+    /// * contract - Contract object for which histogram is being requested
+    /// * use_rth - use regular trading hours only, 1 for yes or 0 for no
+    /// * time_period - period of which data is being requested, e.g. "3 days"
     pub fn req_histogram_data(
         &mut self,
         ticker_id: i32,
@@ -3637,14 +3331,7 @@ where
         use_rth: bool,
         time_period: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTOGRAM {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3686,15 +3373,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancel the request
+    ///
+    /// # Arguments
+    /// * req_id - the id of the original request
     pub fn cancel_histogram_data(&mut self, ticker_id: i32) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTOGRAM {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3720,6 +3404,18 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests historical Time&Sales data for an instrument. 
+    ///
+    /// # Arguments
+    /// * req_id - id of the request
+    /// * contract - Contract object that is subject of query
+    /// * start_date_time,i.e.	"20170701 12:01:00". Uses TWS timezone specified at login.
+    /// * end_date_time,i.e.	"20170701 13:01:00". In TWS timezone. Exactly one of start time and end time has to be defined.
+    /// * number_of_ticks - Number of distinct data points. Max currently 1000 per request.
+    /// * what_to_show - (Bid_Ask, Midpoint, Trades) Type of data requested.
+    /// * use_rth - Data from regular trading hours (1), or all available hours (0)
+    /// * ignore_size - A filter only used when the source price is Bid_Ask
+    /// * misc_options - should be defined as null, reserved for internal use 
     pub fn req_historical_ticks(
         &mut self,
         req_id: i32,
@@ -3732,14 +3428,7 @@ where
         ignore_size: bool,
         misc_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_HISTORICAL_TICKS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -3794,18 +3483,12 @@ where
     //#########################################################################
     //################## Market Scanners
     //#########################################################################
-
+    /// Requests an XML list of scanner parameters valid in TWS.
+    /// Not all parameters are valid from API scanner. 
     pub fn req_scanner_parameters(&mut self) -> Result<(), IBKRApiLibError> {
         /*Requests an XML string that describes all possible scanner queries*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
         let message_id: i32 = OutgoingMessageIds::ReqScannerParameters as i32;
@@ -3818,6 +3501,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Starts a subscription to market scan results based on the provided parameters. 
+    ///
+    /// # Arguments
+    /// * req_id - The ticker ID. Must be a unique value.
+    /// * subscription - This structure contains possible parameters used to filter results.
+    /// * scanner_subscription_options -  For internal use only. Use default value XYZ
     pub fn req_scanner_subscription(
         &mut self,
         req_id: i32,
@@ -3825,24 +3514,11 @@ where
         scanner_subscription_options: Vec<TagValue>,
         scanner_subscription_filter_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        /*reqId:i32 - The ticker ID. Must be a unique value.
-        scannerSubscription:ScannerSubscription - This structure contains
-            possible parameters used to filter results.
-        scanner_subscription_options: - For internal use only.
-            Use pub fnault value XYZ*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                req_id,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(req_id)?;
 
         error!("Server version: {}", self.server_version());
         if self.server_version() < MIN_SERVER_VER_SCANNER_GENERIC_OPTS
-        //&& scanner_subscription_filter_options.len() > 0
         {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -3916,17 +3592,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancel the request
+    ///
+    /// # Arguments
+    /// * req_id - the id of the original request
     pub fn cancel_scanner_subscription(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         /*reqId:i32 - The ticker ID. Must be a unique value*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -3944,7 +3617,31 @@ where
     //#########################################################################
     //################## Real Time Bars
     //#########################################################################
-
+    /// Call the req_real_time_bars() function to start receiving real time bar
+    /// results through the realtimeBar() EWrapper function.
+    ///
+    /// # Arguments
+    /// * req_id - The Id for the request. Must be a unique value. When the
+    ///            data is received, it will be identified by this Id. This is also
+    ///            used when canceling the request.
+    /// * contract - This object contains a description of the contract
+    ///              for which real time bars are being requested
+    /// * bar_size - Currently only 5 second bars are supported, if any other
+    ///              value is used, an exception will be thrown.
+    /// * what_to_show - Determines the nature of the data extracted. Valid
+    ///                  values include:
+    ///                  * TRADES
+    ///                  * BID
+    ///                  * ASK
+    ///                  * MIDPOINT
+    /// * use_rth:bool - Regular Trading Hours only. Valid values include:
+    ///                  * 0 = all data available during the time span requested is returned,
+    ///                        including time intervals when the market in question was
+    ///                        outside of regular trading hours.
+    ///                  * 1 = only data within the regular trading hours for the product
+    ///                        requested is returned, even if the time time span falls
+    ///                        partially or completely outside.
+    /// * real_time_bars_options: - For internal use only. Use pub fnault value XYZ
     pub fn req_real_time_bars(
         &mut self,
         req_id: i32,
@@ -3954,39 +3651,8 @@ where
         use_rth: bool,
         real_time_bars_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        /*Call the req_real_time_bars() function to start receiving real time bar
-        results through the realtimeBar() EWrapper function.
 
-        reqId:i32 - The Id for the request. Must be a unique value. When the
-            data is received, it will be identified by this Id. This is also
-            used when canceling the request.
-        contract:&Contract - This object contains a description of the contract
-            for which real time bars are being requested
-        bar_size:i32 - Currently only 5 second bars are supported, if any other
-            value is used, an exception will be thrown.
-        what_to_show:&'static str - Determines the nature of the data extracted. Valid
-            values include:
-            TRADES
-            BID
-            ASK
-            MIDPOINT
-        use_rth:bool - Regular Trading Hours only. Valid values include:
-            0 = all data available during the time span requested is returned,
-                including time intervals when the market in question was
-                outside of regular trading hours.
-            1 = only data within the regular trading hours for the product
-                requested is returned, even if the time time span falls
-                partially or completely outside.
-        realTimeBarOptions: - For internal use only. Use pub fnault value XYZ*/
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
             if !contract.trading_class.is_empty() {
@@ -4049,19 +3715,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this to stop receiving real time bars.
+    ///
+    /// # Arguments
+    /// * req_id - The Id that was specified in the call to req_real_time_bars().
     pub fn cancel_real_time_bars(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        /*Call the cancel_real_time_bars() function to stop receiving real time bar results.
 
-        reqId:i32 - The Id that was specified in the call to req_real_time_bars(). */
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
 
@@ -4080,7 +3740,28 @@ where
     //#########################################################################
     //################## Fundamental Data
     //#########################################################################
-
+    /// Call this function to receive fundamental data for
+    /// stocks. The appropriate market data subscription must be set up in
+    /// Account Management before you can receive this data.
+    /// Fundamental data will be returned at EWrapper.fundamentalData().
+    ///
+    /// req_fundamental_data() can handle conid specified in the Contract object,
+    /// but not trading_class or multiplier. This is because req_fundamental_data()
+    /// is used only for stocks and stocks do not have a multiplier and
+    /// trading class.
+    ///
+    /// # Arguments
+    /// * req_id - The ID of the data request. Ensures that responses are
+    ///            matched to requests if several requests are in process.
+    /// * contract - This structure contains a description of the
+    ///              contract for which fundamental data is being requested.
+    /// * report_type - One of the following XML reports:
+    ///     * ReportSnapshot (company overview)
+    ///     * ReportsFinSummary (financial summary)
+    ///     * ReportRatios (financial ratios)
+    ///     * ReportsFinStatements (financial statements)
+    ///     * RESC (analyst estimates)
+    ///     * CalendarReport (company calendar)
     pub fn req_fundamental_data(
         &mut self,
         req_id: i32,
@@ -4088,36 +3769,8 @@ where
         report_type: &str,
         fundamental_data_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        /*Call this function to receive fundamental data for
-        stocks. The appropriate market data subscription must be set up in
-        Account Management before you can receive this data.
-        Fundamental data will be returned at EWrapper.fundamentalData().
 
-        req_fundamental_data() can handle conid specified in the Contract object,
-        but not trading_class or multiplier. This is because req_fundamental_data()
-        is used only for stocks and stocks do not have a multiplier and
-        trading class.
-
-        reqId:ticker_id - The ID of the data request. Ensures that responses are
-             matched to requests if several requests are in process.
-        contract:&Contract - This structure contains a description of the
-            contract for which fundamental data is being requested.
-        report_type:&'static str - One of the following XML reports:
-            ReportSnapshot (company overview)
-            ReportsFinSummary (financial summary)
-            ReportRatios (financial ratios)
-            ReportsFinStatements (financial statements)
-            RESC (analyst estimates)
-            CalendarReport (company calendar)*/
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
 
@@ -4184,19 +3837,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Call this function to stop receiving fundamental data.
+    ///
+    /// # Arguments
+    /// * req_id - The ID of the data request
     pub fn cancel_fundamental_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        /*Call this function to stop receiving fundamental data.
 
-        reqId:i32 - The ID of the data request*/
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_FUNDAMENTAL_DATA {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4228,16 +3875,10 @@ where
     //########################################################################
     //################## News
     //#########################################################################
-
+    /// Requests all open orders places by this specific API client (identified by the API client id). 
+    /// For client ID 0, this will bind previous manual TWS orders. 
     pub fn req_news_providers(&mut self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_NEWS_PROVIDERS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4262,6 +3903,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests news article body given articleId. 
+    ///
+    /// # Arguments
+    ///
+    /// * req_id - id of the request
+    /// * provider_code - short code indicating news provider, e.g. FLY
+    /// * article_id - id of the specific article
+    /// * news_article_options - reserved for internal use. Should be defined as null. 
     pub fn req_news_article(
         &mut self,
         req_id: i32,
@@ -4269,14 +3918,7 @@ where
         article_id: &str,
         news_article_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_NEWS_ARTICLE {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4314,6 +3956,17 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests historical news headlines. 
+    ///
+    /// # Arguments
+    ///
+    /// * req_id - id of the request
+    /// * con_id - contract id
+    /// * provider_codes - a '+'-separated list of provider codes
+    /// * start_date_time	- marks the (exclusive) start of the date range. The format is yyyy-MM-dd HH:mm:ss.0
+    /// * end_date_time	- marks the (inclusive) end of the date range. The format is yyyy-MM-dd HH:mm:ss.0
+    /// * total_results	- the maximum number of headlines to fetch (1 - 300)
+    /// * historical_news_options	reserved for internal use. Should be defined as null. 
     pub fn req_historical_news(
         &mut self,
         req_id: i32,
@@ -4324,14 +3977,7 @@ where
         total_results: i32,
         historical_news_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_HISTORICAL_NEWS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4374,22 +4020,17 @@ where
     //#########################################################################
     //################## Display Groups
     //#########################################################################
-
+    /// Replaces Financial Advisor's settings A Financial Advisor can define three different configurations:
+    /// 1. Groups - offer traders a way to create a group of accounts and apply a single allocation method to all accounts in the group.
+    /// 2. Profiles - let you allocate shares on an account-by-account basis using a predefined calculation value.
+    /// 3. Account Aliases - let you easily identify the accounts by meaningful names rather than account numbers. 
+    ///                     More information at <https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fpdfhighlights%2FPDF-AdvisorAllocations.php%3Fib_entity%3Dllc>
+    ///
+    /// # Arguments
+    /// * req_id - The unique number that will be associated with the response
     pub fn query_display_groups(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        /*API requests used to integrate with TWS color-grouped windows (display groups).
-        TWS color-grouped windows are identified by an integer number. Currently that number ranges from 1 to 7 and are mapped to specific colors, as indicated in TWS.
 
-        reqId:i32 - The unique number that will be associated with the
-            response */
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4418,23 +4059,18 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Integrates API client and TWS window grouping. 
+    ///
+    /// # Arguments
+    /// * req_id - The unique number that will be associated with the response
+    /// * group_id - is the display group for integration 
     pub fn subscribe_to_group_events(
         &mut self,
         req_id: i32,
         group_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-        /*reqId:i32 - The unique number associated with the notification.
-        group_id:i32 - The ID of the group, currently it is a number from 1 to 7.
-            This is the display group subscription request sent by the API to TWS*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4465,28 +4101,22 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Updates the contract displayed in a TWS Window Group. 
+    ///
+    /// # Arguments
+    /// * req_id - The requestId specified in subscribe_to_group_events().
+    /// * contract_info	is an encoded value designating a unique IB contract. Possible values include:
+    /// 1. none - empty selection
+    /// 2. contract_id - any non-combination contract. Examples 8314 for IBM SMART; 8314 for IBM ARCA
+    /// 3. combo - if any combo is selected Note: This request from the API does not get a TWS response unless an error occurs.
+
     pub fn update_display_group(
         &mut self,
         req_id: i32,
         contract_info: &str,
     ) -> Result<(), IBKRApiLibError> {
-        /*reqId:i32 - The requestId specified in subscribe_to_group_events().
-        contract_info:&'static str - The encoded value that uniquely represents the
-            contract in IB. Possible values include:
 
-            none = empty selection
-            contractID@exchange - any non-combination contract.
-                Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
-            combo = if any combo is selected*/
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4517,17 +4147,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Cancel subscription
+    ///
+    /// # Arguments
+    /// * req_id - The request Id specified in subscribe_to_group_events()
     pub fn unsubscribe_from_group_events(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        /*reqId:i32 - The requestId specified in subscribe_to_group_events()*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4557,24 +4183,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs. 
     pub fn verify_request(
         &mut self,
         api_name: &str,
         api_version: &str,
     ) -> Result<(), IBKRApiLibError> {
-        /*For IB's internal purpose. Allows to provide means of verification
-        between the TWS and third party programs*/
 
-        // self.logRequest(current_fn_name()?); vars())
-
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4619,18 +4235,10 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs. 
     pub fn verify_message(&mut self, api_data: &'static str) -> Result<(), IBKRApiLibError> {
-        /*For IB's internal purpose. Allows to provide means of verification
-        between the TWS and third party programs*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4660,23 +4268,15 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs. 
     pub fn verify_and_auth_request(
         &mut self,
         api_name: &str,
         api_version: &str,
         opaque_isv_key: &str,
     ) -> Result<(), IBKRApiLibError> {
-        /*For IB's internal purpose. Allows to provide means of verification
-        between the TWS and third party programs*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4722,22 +4322,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs
     pub fn verify_and_auth_message(
         &mut self,
         api_data: &str,
         xyz_response: &str,
     ) -> Result<(), IBKRApiLibError> {
-        /*For IB's internal purpose. Allows to provide means of verification
-        between the TWS and third party programs*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4768,6 +4360,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests security definition option parameters for viewing a contract's option chain. 
+    ///
+    /// # Arguments
+    /// * req_id - the ID chosen for the request
+    /// * underlying_symbol	
+    /// * fut_fop_exchange - The exchange on which the returned options are trading. Can be set to the empty string "" for all exchanges.
+    /// * underlying_sec_type - The type of the underlying security, i.e. STK
+    /// * underlying_con_id - the contract ID of the underlying security 
     pub fn req_sec_def_opt_params(
         &mut self,
         req_id: i32,
@@ -4776,22 +4376,8 @@ where
         underlying_sec_type: &str,
         underlying_con_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-        /*Requests security pub fninition option parameters for viewing a
-        contract's option chain reqId the ID chosen for the request
-        underlying_symbol fut_fop_exchange The exchange on which the returned
-        options are trading. Can be set to the empty string "" for all
-        exchanges. underlying_sec_type The type of the underlying security,
-        i.e. STK underlying_con_id the contract ID of the underlying security.
-        Response comes via EWrapper.securityDefinitionOptionParameter()*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_SEC_DEF_OPT_PARAMS_REQ {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4822,19 +4408,15 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests pre-defined Soft Dollar Tiers. This is only supported for registered professional 
+    /// advisors and hedge and mutual funds who have configured Soft Dollar Tiers in Account Management. 
+    /// Refer to: <https://www.interactivebrokers.com/en/software/am/am/manageaccount/requestsoftdollars.htm?Highlight=soft%20dollar%20tier>. 
+    ///
+    /// # Arguments
+    /// * req_id - the identifier for this request
     pub fn req_soft_dollar_tiers(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        /*Requests pre-pub fnined Soft Dollar Tiers. This is only supported for
-        registered professional advisors and hedge and mutual funds who have
-        configured Soft Dollar Tiers in Account Management*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let message_id: i32 = OutgoingMessageIds::ReqSoftDollarTiers as i32;
         let mut msg = "".to_string();
@@ -4847,15 +4429,9 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests family codes for an account, for instance if it is a FA, IBroker, or associated account. 
     pub fn req_family_codes(&mut self) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_FAMILY_CODES {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4880,19 +4456,17 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests matching stock symbols. 
+    ///
+    /// # Arguments
+    /// * req_id - the identifier for this request
+    /// * pattern - either start of ticker symbol or (for larger strings) company name 
     pub fn req_matching_symbols(
         &mut self,
         req_id: i32,
         pattern: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_REQ_MATCHING_SYMBOLS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -4920,20 +4494,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
+    /// Requests completed orders.
+    ///
+    /// # Arguments
+    /// * api_only - If api_only parameter is true, then only completed orders placed from API are requested.
+    ///              Each completed order will be fed back through the completed_order() function on the Wrapper
     pub fn req_completed_orders(&mut self, api_only: bool) -> Result<(), IBKRApiLibError> {
-        /*Call this function to request the completed orders. If api_only parameter
-        is true, then only completed orders placed from API are requested.
-        Each completed order will be fed back through the
-        completedOrder() function on the EWrapper*/
 
-        if !self.is_connected() {
-            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                NO_VALID_ID,
-                TwsError::NotConnected.code().to_string(),
-                TwsError::NotConnected.message().to_string(),
-            ));
-            return Err(err);
-        }
+        self.check_connected(NO_VALID_ID)?;
 
         let message_id: i32 = OutgoingMessageIds::ReqCompletedOrders as i32;
         let mut msg = "".to_string();
@@ -4943,5 +4511,30 @@ where
 
         self.send_request(msg.as_str())?;
         Ok(())
+    }
+
+    //------------------------------------------------------------------------------------------------
+    /// check if client is connected to TWS
+    fn check_connected(&self, req_id: i32) -> Result<(), IBKRApiLibError> {
+        match self.is_connected() {
+            false => {
+                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                    req_id,
+                    TwsError::NotConnected.code().to_string(),
+                    TwsError::NotConnected.message().to_string(),
+                ));
+                Err(err)
+            }
+            true => Ok(()),
+        }
+    }
+}
+
+//////////////////////////////////////////TESTS /////////////////////////////////////////////////
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works_from_eclient() {
+        assert_eq!(2 + 2, 4);
     }
 }
