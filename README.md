@@ -10,7 +10,7 @@ For usage of this library, please see the example implementation in [src/example
 
 The main structs and traits that clients will use are [**EClient**](src/core/client.rs) , a struct that is responsible for
 connecting to TWS or IB Gateway and sending requests,  and [**Wrapper**](src/core/wrapper.rs), a trait that clients will implement that declares callback functions
-that get called when the application receives messages from the server.
+that get called when the application receives messages from TWS/IB Gateway.
 
 ## Example
 
@@ -40,9 +40,10 @@ fn main() -> Result<(), IBKRApiLibError> {
 
 ## TODO
 
-* Expand documentation
-* Write automated tests
-* Write an async function in TestWrapper that checks when next_valid_id has been populated by the callback
+- [ ] Expand documentation - In progress
+- [ ] Write automated tests
+- [ ] Write an async function in TestWrapper that checks when next_valid_id has been populated by the callback
+- [ ] Publish to crates.io
 
 If you find a bug or would like to suggest changes, please contact me at brett.miller@sparkstart.com or submit a pull 
 request.
