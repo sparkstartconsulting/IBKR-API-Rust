@@ -2167,7 +2167,6 @@ where
     /// # Arguments
     /// * req_id - The ID of the data request being canceled.
     pub fn cancel_account_summary(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(req_id)?;
         let version = 1;
 
@@ -2185,7 +2184,6 @@ where
     //----------------------------------------------------------------------------------------------
     /// Requests real-time position data for all accounts.
     pub fn req_positions(&mut self) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
@@ -2217,7 +2215,6 @@ where
     //----------------------------------------------------------------------------------------------
     /// Cancels real-time position updates.
     pub fn cancel_positions(&mut self) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
@@ -2246,21 +2243,20 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests position subscription for account and/or model Initially all positions are returned, 
-    /// and then updates are returned for any position changes in real time. 
+    /// Requests position subscription for account and/or model Initially all positions are returned,
+    /// and then updates are returned for any position changes in real time.
     ///
     /// # Arguments
     /// * req_id - Request's identifier
-    /// * account - If an account Id is provided, only the account's positions belonging to the 
+    /// * account - If an account Id is provided, only the account's positions belonging to the
     ///             specified model will be delivered
-    /// * modelCode	- The code of the model's positions we are interested in. 
+    /// * modelCode	- The code of the model's positions we are interested in.
     pub fn req_positions_multi(
         &mut self,
         req_id: i32,
         account: &str,
         model_code: &str,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
@@ -2295,12 +2291,11 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Cancels positions request for account and/or model. 
-    /// 
+    /// Cancels positions request for account and/or model.
+    ///
     /// # Arguments
     /// * req_id - The id of the original request
     pub fn cancel_positions_multi(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_POSITIONS {
@@ -2336,8 +2331,8 @@ where
     /// * req_id - identifier to tag the request
     /// * account - account values can be requested for a particular account
     /// * model_code - values can also be requested for a model
-    /// * ledger_and_nvl - returns light-weight request; only currency positions as opposed to 
-    ///                    account values and currency positions 
+    /// * ledger_and_nvl - returns light-weight request; only currency positions as opposed to
+    ///                    account values and currency positions
     pub fn req_account_updates_multi(
         &mut self,
         req_id: i32,
@@ -2345,7 +2340,6 @@ where
         model_code: &str,
         ledger_and_nlv: bool,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
@@ -2383,12 +2377,11 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Cancels account update request for account and/or model. 
-    /// 
+    /// Cancels account update request for account and/or model.
+    ///
     /// # Arguments
     /// * req_id - The id of the original request
     pub fn cancel_account_updates_multi(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_MODELS_SUPPORT {
@@ -2458,8 +2451,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Cancels profit and loss update request for account and/or model. 
-    /// 
+    /// Cancels profit and loss update request for account and/or model.
+    ///
     /// # Arguments
     /// * req_id - The id of the original request
     pub fn cancel_pnl(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
@@ -2530,8 +2523,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Cancels profit and loss update request for account and/or model. 
-    /// 
+    /// Cancels profit and loss update request for account and/or model.
+    ///
     /// # Arguments
     /// * req_id - The id of the original request
     pub fn cancel_pnl_single(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
@@ -2582,7 +2575,6 @@ where
         req_id: i32,
         exec_filter: &ExecutionFilter,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(req_id)?;
 
         let version = 3;
@@ -2621,7 +2613,6 @@ where
         req_id: i32,
         contract: &Contract,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(req_id)?;
 
         if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE {
@@ -2728,7 +2719,7 @@ where
     //#########################################################################
     //################## Market Depth
     //#########################################################################
-    /// Requests venues for which market data is returned to update_mkt_depth_l2 (those with market makers) 
+    /// Requests venues for which market data is returned to update_mkt_depth_l2 (those with market makers)
     pub fn req_mkt_depth_exchanges(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -2782,7 +2773,6 @@ where
         is_smart_depth: bool,
         mkt_depth_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
@@ -2902,7 +2892,6 @@ where
         req_id: i32,
         is_smart_depth: bool,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_SMART_DEPTH && is_smart_depth {
@@ -2945,7 +2934,6 @@ where
     //               the current day and any new ones. If set to FALSE, will only
     //               return new bulletins.
     pub fn req_news_bulletins(&mut self, all_msgs: bool) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
@@ -2983,7 +2971,6 @@ where
     ///
     /// Note:  This request can only be made when connected to a FA managed account.
     pub fn req_managed_accts(&mut self) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
@@ -3004,7 +2991,6 @@ where
     ///     * 2 = PROFILE
     ///     * 3 = ACCOUNT ALIASES
     pub fn request_fa(&mut self, fa_data: FaDataType) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
@@ -3030,7 +3016,6 @@ where
     /// *cxml - The XML string containing the new FA configuration
     ///         information.
     pub fn replace_fa(&mut self, fa_data: FaDataType, cxml: &str) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
@@ -3112,8 +3097,6 @@ where
         keep_up_to_date: bool,
         chart_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
@@ -3205,7 +3188,6 @@ where
     /// # Arguments
     /// * req_id - the id of the original request
     pub fn cancel_historical_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        
         self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
@@ -3230,7 +3212,7 @@ where
     /// * contract	- contract object for which head timestamp is being requested
     /// * what_to_show	- type of data for head timestamp - "BID", "ASK", "TRADES", etc
     /// * use_rth	- use regular trading hours only, 1 for yes or 0 for no
-    /// * format_date	set to 1 to obtain the bars' time as yyyyMMdd HH:mm:ss, set to 2 to obtain it like system time format in seconds 
+    /// * format_date	set to 1 to obtain the bars' time as yyyyMMdd HH:mm:ss, set to 2 to obtain it like system time format in seconds
     ///
     /// Note that formatData parameter affects intraday bars only
     /// 1-day bars always return with date in YYYYMMDD format
@@ -3404,7 +3386,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests historical Time&Sales data for an instrument. 
+    /// Requests historical Time&Sales data for an instrument.
     ///
     /// # Arguments
     /// * req_id - id of the request
@@ -3415,7 +3397,7 @@ where
     /// * what_to_show - (Bid_Ask, Midpoint, Trades) Type of data requested.
     /// * use_rth - Data from regular trading hours (1), or all available hours (0)
     /// * ignore_size - A filter only used when the source price is Bid_Ask
-    /// * misc_options - should be defined as null, reserved for internal use 
+    /// * misc_options - should be defined as null, reserved for internal use
     pub fn req_historical_ticks(
         &mut self,
         req_id: i32,
@@ -3484,7 +3466,7 @@ where
     //################## Market Scanners
     //#########################################################################
     /// Requests an XML list of scanner parameters valid in TWS.
-    /// Not all parameters are valid from API scanner. 
+    /// Not all parameters are valid from API scanner.
     pub fn req_scanner_parameters(&mut self) -> Result<(), IBKRApiLibError> {
         /*Requests an XML string that describes all possible scanner queries*/
 
@@ -3501,7 +3483,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Starts a subscription to market scan results based on the provided parameters. 
+    /// Starts a subscription to market scan results based on the provided parameters.
     ///
     /// # Arguments
     /// * req_id - The ticker ID. Must be a unique value.
@@ -3514,12 +3496,10 @@ where
         scanner_subscription_options: Vec<TagValue>,
         scanner_subscription_filter_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(req_id)?;
 
         error!("Server version: {}", self.server_version());
-        if self.server_version() < MIN_SERVER_VER_SCANNER_GENERIC_OPTS
-        {
+        if self.server_version() < MIN_SERVER_VER_SCANNER_GENERIC_OPTS {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -3651,7 +3631,6 @@ where
         use_rth: bool,
         real_time_bars_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
@@ -3720,7 +3699,6 @@ where
     /// # Arguments
     /// * req_id - The Id that was specified in the call to req_real_time_bars().
     pub fn cancel_real_time_bars(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
@@ -3769,7 +3747,6 @@ where
         report_type: &str,
         fundamental_data_options: Vec<TagValue>,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         let version = 2;
@@ -3842,7 +3819,6 @@ where
     /// # Arguments
     /// * req_id - The ID of the data request
     pub fn cancel_fundamental_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_FUNDAMENTAL_DATA {
@@ -3875,8 +3851,8 @@ where
     //########################################################################
     //################## News
     //#########################################################################
-    /// Requests all open orders places by this specific API client (identified by the API client id). 
-    /// For client ID 0, this will bind previous manual TWS orders. 
+    /// Requests all open orders places by this specific API client (identified by the API client id).
+    /// For client ID 0, this will bind previous manual TWS orders.
     pub fn req_news_providers(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -3903,14 +3879,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests news article body given articleId. 
+    /// Requests news article body given articleId.
     ///
     /// # Arguments
     ///
     /// * req_id - id of the request
     /// * provider_code - short code indicating news provider, e.g. FLY
     /// * article_id - id of the specific article
-    /// * news_article_options - reserved for internal use. Should be defined as null. 
+    /// * news_article_options - reserved for internal use. Should be defined as null.
     pub fn req_news_article(
         &mut self,
         req_id: i32,
@@ -3956,7 +3932,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests historical news headlines. 
+    /// Requests historical news headlines.
     ///
     /// # Arguments
     ///
@@ -3966,7 +3942,7 @@ where
     /// * start_date_time	- marks the (exclusive) start of the date range. The format is yyyy-MM-dd HH:mm:ss.0
     /// * end_date_time	- marks the (inclusive) end of the date range. The format is yyyy-MM-dd HH:mm:ss.0
     /// * total_results	- the maximum number of headlines to fetch (1 - 300)
-    /// * historical_news_options	reserved for internal use. Should be defined as null. 
+    /// * historical_news_options	reserved for internal use. Should be defined as null.
     pub fn req_historical_news(
         &mut self,
         req_id: i32,
@@ -4023,13 +3999,12 @@ where
     /// Replaces Financial Advisor's settings A Financial Advisor can define three different configurations:
     /// 1. Groups - offer traders a way to create a group of accounts and apply a single allocation method to all accounts in the group.
     /// 2. Profiles - let you allocate shares on an account-by-account basis using a predefined calculation value.
-    /// 3. Account Aliases - let you easily identify the accounts by meaningful names rather than account numbers. 
+    /// 3. Account Aliases - let you easily identify the accounts by meaningful names rather than account numbers.
     ///                     More information at <https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fpdfhighlights%2FPDF-AdvisorAllocations.php%3Fib_entity%3Dllc>
     ///
     /// # Arguments
     /// * req_id - The unique number that will be associated with the response
     pub fn query_display_groups(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
@@ -4059,17 +4034,16 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Integrates API client and TWS window grouping. 
+    /// Integrates API client and TWS window grouping.
     ///
     /// # Arguments
     /// * req_id - The unique number that will be associated with the response
-    /// * group_id - is the display group for integration 
+    /// * group_id - is the display group for integration
     pub fn subscribe_to_group_events(
         &mut self,
         req_id: i32,
         group_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
@@ -4101,7 +4075,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Updates the contract displayed in a TWS Window Group. 
+    /// Updates the contract displayed in a TWS Window Group.
     ///
     /// # Arguments
     /// * req_id - The requestId specified in subscribe_to_group_events().
@@ -4115,7 +4089,6 @@ where
         req_id: i32,
         contract_info: &str,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
@@ -4152,7 +4125,6 @@ where
     /// # Arguments
     /// * req_id - The request Id specified in subscribe_to_group_events()
     pub fn unsubscribe_from_group_events(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
@@ -4183,13 +4155,12 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs. 
+    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs.
     pub fn verify_request(
         &mut self,
         api_name: &str,
         api_version: &str,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
@@ -4235,9 +4206,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs. 
+    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs.
     pub fn verify_message(&mut self, api_data: &'static str) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
@@ -4268,14 +4238,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs. 
+    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs.
     pub fn verify_and_auth_request(
         &mut self,
         api_name: &str,
         api_version: &str,
         opaque_isv_key: &str,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
@@ -4328,7 +4297,6 @@ where
         api_data: &str,
         xyz_response: &str,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_LINKING {
@@ -4360,14 +4328,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests security definition option parameters for viewing a contract's option chain. 
+    /// Requests security definition option parameters for viewing a contract's option chain.
     ///
     /// # Arguments
     /// * req_id - the ID chosen for the request
-    /// * underlying_symbol	
+    /// * underlying_symbol
     /// * fut_fop_exchange - The exchange on which the returned options are trading. Can be set to the empty string "" for all exchanges.
     /// * underlying_sec_type - The type of the underlying security, i.e. STK
-    /// * underlying_con_id - the contract ID of the underlying security 
+    /// * underlying_con_id - the contract ID of the underlying security
     pub fn req_sec_def_opt_params(
         &mut self,
         req_id: i32,
@@ -4376,7 +4344,6 @@ where
         underlying_sec_type: &str,
         underlying_con_id: i32,
     ) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         if self.server_version() < MIN_SERVER_VER_SEC_DEF_OPT_PARAMS_REQ {
@@ -4408,14 +4375,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests pre-defined Soft Dollar Tiers. This is only supported for registered professional 
-    /// advisors and hedge and mutual funds who have configured Soft Dollar Tiers in Account Management. 
-    /// Refer to: <https://www.interactivebrokers.com/en/software/am/am/manageaccount/requestsoftdollars.htm?Highlight=soft%20dollar%20tier>. 
+    /// Requests pre-defined Soft Dollar Tiers. This is only supported for registered professional
+    /// advisors and hedge and mutual funds who have configured Soft Dollar Tiers in Account Management.
+    /// Refer to: <https://www.interactivebrokers.com/en/software/am/am/manageaccount/requestsoftdollars.htm?Highlight=soft%20dollar%20tier>.
     ///
     /// # Arguments
     /// * req_id - the identifier for this request
     pub fn req_soft_dollar_tiers(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         let message_id: i32 = OutgoingMessageIds::ReqSoftDollarTiers as i32;
@@ -4429,7 +4395,7 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests family codes for an account, for instance if it is a FA, IBroker, or associated account. 
+    /// Requests family codes for an account, for instance if it is a FA, IBroker, or associated account.
     pub fn req_family_codes(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -4456,11 +4422,11 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests matching stock symbols. 
+    /// Requests matching stock symbols.
     ///
     /// # Arguments
     /// * req_id - the identifier for this request
-    /// * pattern - either start of ticker symbol or (for larger strings) company name 
+    /// * pattern - either start of ticker symbol or (for larger strings) company name
     pub fn req_matching_symbols(
         &mut self,
         req_id: i32,
@@ -4500,7 +4466,6 @@ where
     /// * api_only - If api_only parameter is true, then only completed orders placed from API are requested.
     ///              Each completed order will be fed back through the completed_order() function on the Wrapper
     pub fn req_completed_orders(&mut self, api_only: bool) -> Result<(), IBKRApiLibError> {
-
         self.check_connected(NO_VALID_ID)?;
 
         let message_id: i32 = OutgoingMessageIds::ReqCompletedOrders as i32;

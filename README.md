@@ -45,7 +45,7 @@ fn main() -> Result<(), IBKRApiLibError> {
 - [ ] Write an async function in TestWrapper that checks when next_valid_id has been populated by the callback
 - [ ] Publish to crates.io
 
-If you find a bug or would like to suggest changes, please contact me at brett.miller@sparkstart.com or submit a pull 
+If you find a bug or would like to suggest changes, please contact me at brett.miller@sparkstart.com or submit a pull
 request.
 
 ## DISCLAIMER

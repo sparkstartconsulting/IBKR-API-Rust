@@ -105,19 +105,6 @@ pub enum OrderConditionEnum {
     PercentChange(PercentChangeCondition),
 }
 
-//impl OrderConditionEnum {
-//    pub fn as_condition(&self) -> Box<dyn Condition> {
-//        match (self) {
-//            OrderConditionEnum::Execution(s) => Box::new(s),
-//            OrderConditionEnum::Price(p) => Box::new(p),
-//            OrderConditionEnum::Margin(m) => Box::new(m),
-//            OrderConditionEnum::Time(t) => Box::new(t),
-//            OrderConditionEnum::Volume(v) => Box::new(v),
-//            OrderConditionEnum::PercentChange(pch) => Box::new(pch),
-//        }
-//    }
-//}
-
 impl Condition for OrderConditionEnum {
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
         match self {
@@ -262,9 +249,6 @@ impl OrderCondition {
         Ok(flds)
     }
 }
-
-//pub fn  __str__(self):
-//return "<AND>" if self.is_conjunction_connection else "<OR>"
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ExecutionCondition {
@@ -344,9 +328,6 @@ impl From<OrderConditionEnum> for ExecutionCondition {
     }
 }
 
-//pub fn  __str__(self):
-//return "trade occurs for " + self.symbol + " symbol on " + \
-//self.exchange + " exchange for " + self.secType + " security type"
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Default)]
 pub struct OperatorCondition {
@@ -385,11 +366,6 @@ impl OperatorCondition {
         flds.push(make_field(&self.is_more)?);
         Ok(flds)
     }
-
-    //pub fn  __str__(self):
-    //sb = ">= " if self.isMore else "<= "
-    //return " %s %s" % (sb, self.value_to_string())
-    //}
 }
 
 //==================================================================================================
@@ -604,8 +580,6 @@ impl From<OrderConditionEnum> for TimeCondition {
     }
 }
 
-//pub fn  __str__(self):
-//return "time is %s " % (OperatorCondition.__str__(self))
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PriceCondition {
@@ -700,10 +674,6 @@ impl From<OrderConditionEnum> for PriceCondition {
         PriceCondition::default()
     }
 }
-//pub fn  __str__(self):
-//return "%s price of %s " % (
-//price_condition.TriggerMethodEnum.to_str(self.triggerMethod),
-//ContractCondition.__str__(self))
 
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -790,9 +760,6 @@ impl From<OrderConditionEnum> for PercentChangeCondition {
         PercentChangeCondition::default()
     }
 }
-//pub fn  __str__(self):
-//return "percent change of %s " % (
-//ContractCondition.__str__(self))
 
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -880,9 +847,7 @@ impl From<OrderConditionEnum> for VolumeCondition {
         VolumeCondition::default()
     }
 }
-//pub fn  __str__(self):
-//return "volume of %s " % (
-//ContractCondition.__str__(self))
+
 //----------------------------------------------------------------------------------------------
 pub fn create_condition<'a>(cond_type: ConditionType) -> OrderConditionEnum {
     match cond_type {
