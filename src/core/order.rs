@@ -9,7 +9,6 @@ use crate::core::order::AuctionStrategy::AuctionUnset;
 use crate::core::order::Origin::Customer;
 use crate::core::order_condition::{Condition, OrderConditionEnum};
 
-// enum Origin
 //==================================================================================================
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]

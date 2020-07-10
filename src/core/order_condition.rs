@@ -3,12 +3,10 @@ use std::fmt::{Debug, Display};
 use std::slice::Iter;
 
 use num_derive::FromPrimitive;
-// 0.2.4 (the derive)
 use num_traits::FromPrimitive;
-use serde::{Deserialize, Serialize};
-// 0.2.6 (the trait)
 use serde::export::fmt::Error;
 use serde::export::Formatter;
+use serde::{Deserialize, Serialize};
 
 use crate::core::decoder::{decode_bool, decode_f64, decode_i32, decode_string};
 use crate::core::errors::IBKRApiLibError;
@@ -104,19 +102,6 @@ pub enum OrderConditionEnum {
     Volume(VolumeCondition),
     PercentChange(PercentChangeCondition),
 }
-
-//impl OrderConditionEnum {
-//    pub fn as_condition(&self) -> Box<dyn Condition> {
-//        match (self) {
-//            OrderConditionEnum::Execution(s) => Box::new(s),
-//            OrderConditionEnum::Price(p) => Box::new(p),
-//            OrderConditionEnum::Margin(m) => Box::new(m),
-//            OrderConditionEnum::Time(t) => Box::new(t),
-//            OrderConditionEnum::Volume(v) => Box::new(v),
-//            OrderConditionEnum::PercentChange(pch) => Box::new(pch),
-//        }
-//    }
-//}
 
 impl Condition for OrderConditionEnum {
     fn decode(&mut self, fields_iter: &mut Iter<String>) -> Result<(), IBKRApiLibError> {
@@ -262,9 +247,6 @@ impl OrderCondition {
         Ok(flds)
     }
 }
-
-//pub fn  __str__(self):
-//return "<AND>" if self.is_conjunction_connection else "<OR>"
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct ExecutionCondition {
@@ -344,9 +326,6 @@ impl From<OrderConditionEnum> for ExecutionCondition {
     }
 }
 
-//pub fn  __str__(self):
-//return "trade occurs for " + self.symbol + " symbol on " + \
-//self.exchange + " exchange for " + self.secType + " security type"
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Default)]
 pub struct OperatorCondition {
@@ -385,11 +364,6 @@ impl OperatorCondition {
         flds.push(make_field(&self.is_more)?);
         Ok(flds)
     }
-
-    //pub fn  __str__(self):
-    //sb = ">= " if self.isMore else "<= "
-    //return " %s %s" % (sb, self.value_to_string())
-    //}
 }
 
 //==================================================================================================
@@ -529,10 +503,6 @@ impl From<OrderConditionEnum> for ContractCondition {
         ContractCondition::default()
     }
 }
-//pub fn  __str__(self):
-//return "%s on %s is %s " % (self.conId, self.exchange,
-//OperatorCondition.__str__(self))
-
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct TimeCondition {
@@ -604,8 +574,6 @@ impl From<OrderConditionEnum> for TimeCondition {
     }
 }
 
-//pub fn  __str__(self):
-//return "time is %s " % (OperatorCondition.__str__(self))
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PriceCondition {
@@ -700,10 +668,6 @@ impl From<OrderConditionEnum> for PriceCondition {
         PriceCondition::default()
     }
 }
-//pub fn  __str__(self):
-//return "%s price of %s " % (
-//price_condition.TriggerMethodEnum.to_str(self.triggerMethod),
-//ContractCondition.__str__(self))
 
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -790,9 +754,6 @@ impl From<OrderConditionEnum> for PercentChangeCondition {
         PercentChangeCondition::default()
     }
 }
-//pub fn  __str__(self):
-//return "percent change of %s " % (
-//ContractCondition.__str__(self))
 
 //==================================================================================================
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -880,9 +841,7 @@ impl From<OrderConditionEnum> for VolumeCondition {
         VolumeCondition::default()
     }
 }
-//pub fn  __str__(self):
-//return "volume of %s " % (
-//ContractCondition.__str__(self))
+
 //----------------------------------------------------------------------------------------------
 pub fn create_condition<'a>(cond_type: ConditionType) -> OrderConditionEnum {
     match cond_type {

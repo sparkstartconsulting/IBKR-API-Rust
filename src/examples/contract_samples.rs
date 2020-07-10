@@ -339,10 +339,10 @@ pub fn by_con_id() -> Contract {
 
 //==================================================================================================
 // Ambiguous contracts are great to use with
-//use crate::core::contract::Contract; reqContractDetails. This way
-//    you can query the whole option chain for an underlying. Bear in mind that
-//    there are pacing mechanisms in place which will delay any further responses
-//    from the TWS to prevent abuse.
+// use crate::core::contract::Contract; reqContractDetails. This way
+// you can query the whole option chain for an underlying. Bear in mind that
+// there are pacing mechanisms in place which will delay any further responses
+// from the TWS to prevent abuse.
 pub fn option_for_query() -> Contract {
     //optionforquery]
     let mut contract = Contract::default();
@@ -356,7 +356,6 @@ pub fn option_for_query() -> Contract {
 
 //==================================================================================================
 pub fn option_combo_contract() -> Contract {
-    //bagoptcontract]
     let mut contract = Contract::default();
     contract.symbol = "DBK".to_string();
     contract.sec_type = "BAG".to_string();
@@ -444,7 +443,6 @@ pub fn future_combo_contract() -> Contract {
 
 //==================================================================================================
 pub fn smart_future_combo_contract() -> Contract {
-    //smartfuturespread]
     let mut contract = Contract::default();
     contract.symbol = "WTI".to_string(); // WTI,COIL spread. Symbol can be pub fnined as first leg symbol ("WTI") or currency ("USD")
     contract.sec_type = "BAG".to_string();
@@ -466,13 +464,12 @@ pub fn smart_future_combo_contract() -> Contract {
     contract.combo_legs = vec![];
     contract.combo_legs.push(leg1);
     contract.combo_legs.push(leg2);
-    //smartfuturespread]
+
     contract
 }
 
 //==================================================================================================
 pub fn inter_cmdty_futures_contract() -> Contract {
-    //intcmdfutcontract]
     let mut contract = Contract::default();
     contract.symbol = "CL.BZ".to_string(); //symbol is 'local symbol' of intercommodity spread.
     contract.sec_type = "BAG".to_string();
@@ -494,155 +491,142 @@ pub fn inter_cmdty_futures_contract() -> Contract {
     contract.combo_legs = vec![];
     contract.combo_legs.push(leg1);
     contract.combo_legs.push(leg2);
-    //intcmdfutcontract]
+
     contract
 }
 
 //==================================================================================================
 pub fn news_feed_for_query() -> Contract {
-    //newsfeedforquery]
     let mut contract = Contract::default();
     contract.sec_type = "NEWS".to_string();
     contract.exchange = "BRFG".to_string(); //Briefing Trader
-                                            //newsfeedforquery]
+
     contract
 }
 
 //==================================================================================================
 pub fn brfgbroadtape_news_feed() -> Contract {
-    //newscontractbt]
     let mut contract = Contract::default();
     contract.symbol = "BRFG:BRFG_ALL".to_string();
     contract.sec_type = "NEWS".to_string();
     contract.exchange = "BRFG".to_string();
-    //newscontractbt]
+
     contract
 }
 
 //==================================================================================================
 pub fn djnlbroadtape_news_feed() -> Contract {
-    //newscontractbz]
     let mut contract = Contract::default();
     contract.symbol = "DJNL:DJNL_ALL".to_string();
     contract.sec_type = "NEWS".to_string();
     contract.exchange = "DJNL".to_string();
-    //newscontractbz]
+
     contract
 }
 
 //==================================================================================================
 pub fn djtopbroadtape_news_feed() -> Contract {
-    //newscontractfly]
     let mut contract = Contract::default();
     contract.symbol = "DJTOP:ASIAPAC".to_string();
     contract.sec_type = "NEWS".to_string();
     contract.exchange = "DJTOP".to_string();
-    //newscontractfly]
+
     contract
 }
 
 //==================================================================================================
 pub fn brfupdnbroadtape_news_feed() -> Contract {
-    //newscontractmt]
     let mut contract = Contract::default();
     contract.symbol = "BRFUPDN:BRF_ALL".to_string();
     contract.sec_type = "NEWS".to_string();
     contract.exchange = "BRFUPDN".to_string();
-    //newscontractmt]
+
     contract
 }
 
 //==================================================================================================
 pub fn cont_fut() -> Contract {
-    //continuousfuturescontract]
     let mut contract = Contract::default();
     contract.symbol = "ES".to_string();
     contract.sec_type = "CONTFUT".to_string();
     contract.exchange = "GLOBEX".to_string();
-    //continuousfuturescontract]
+
     contract
 }
 
 //==================================================================================================
 pub fn cont_and_expiring_fut() -> Contract {
-    //contandexpiringfut]
     let mut contract = Contract::default();
     contract.symbol = "ES".to_string();
     contract.sec_type = "FUT+CONTFUT".to_string();
     contract.exchange = "GLOBEX".to_string();
-    //contandexpiringfut]
+
     contract
 }
 
 //==================================================================================================
 pub fn jefferies_contract() -> Contract {
-    //jefferies_contract]
     let mut contract = Contract::default();
     contract.symbol = "AAPL".to_string();
     contract.sec_type = "STK".to_string();
     contract.exchange = "JEFFALGO".to_string();
     contract.currency = "USD".to_string();
-    //jefferies_contract]
+
     contract
 }
 
 //==================================================================================================
 pub fn csfbcontract() -> Contract {
-    //csfb_contract]
     let mut contract = Contract::default();
     contract.symbol = "IBKR".to_string();
     contract.sec_type = "STK".to_string();
     contract.exchange = "CSFBALGO".to_string();
     contract.currency = "USD".to_string();
-    //csfb_contract]
+
     contract
 }
 
 //==================================================================================================
 pub fn usstock_cfd() -> Contract {
-    // ! [usstockcfd_conract]
     let mut contract = Contract::default();
     contract.symbol = "IBM".to_string();
     contract.sec_type = "cfd".to_string();
     contract.currency = "USD".to_string();
     contract.exchange = "SMART".to_string();
-    // ! [usstockcfd_conract]
+
     contract
 }
 
 //==================================================================================================
 pub fn european_stock_cfd() -> Contract {
-    // ! [europeanstockcfd_contract]
     let mut contract = Contract::default();
     contract.symbol = "BMW".to_string();
     contract.sec_type = "cfd".to_string();
     contract.currency = "EUR".to_string();
     contract.exchange = "SMART".to_string();
-    // ! [europeanstockcfd_contract]
+
     contract
 }
 
 //==================================================================================================
 pub fn cash_cfd() -> Contract {
-    // ! [cashcfd_contract]
     let mut contract = Contract::default();
     contract.symbol = "EUR".to_string();
     contract.sec_type = "cfd".to_string();
     contract.currency = "USD".to_string();
     contract.exchange = "SMART".to_string();
-    // ! [cashcfd_contract]
+
     contract
 }
 
 //==================================================================================================
 pub fn qbalgo_contract() -> Contract {
-    // ! [qbalgo_contract]
     let mut contract = Contract::default();
     contract.symbol = "ES".to_string();
     contract.sec_type = "FUT".to_string();
     contract.exchange = "QBALGO".to_string();
     contract.currency = "USD".to_string();
     contract.last_trade_date_or_contract_month = "202003".to_string();
-    // ! [qbalgo_contract]
+
     contract
 }

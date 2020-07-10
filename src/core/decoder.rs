@@ -1,3 +1,4 @@
+//! Receives messages from Reader, decodes messages, and feeds them to Wrapper
 use std::collections::HashSet;
 
 use std::marker::Sync;
