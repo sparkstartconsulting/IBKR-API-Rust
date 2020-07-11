@@ -9,6 +9,7 @@ use twsapi::core::errors::*;
 use twsapi::examples::test_helpers::TestWrapper;
 
 /// Example of using client and wrapper.
+/// Requuires a running instance of TWS or IB Gateway connected to the port in main.
 /// Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
 /// next_valid_id to be called, which will start sending tests requests to TWS (see the
 /// start_requests function inn TestWrapper which is called by next_valid_id

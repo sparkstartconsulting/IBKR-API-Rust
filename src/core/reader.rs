@@ -1,3 +1,4 @@
+//! Reads and processes messages from the TCP socket
 use std::io::Read;
 use std::net::{Shutdown, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -87,7 +88,7 @@ impl Reader {
 
             // clear the Vec that holds the bytes from the packet
             // and reload with the bytes that haven't been read.
-            // The variable remaining_messages only holds the unread messages left in the packet
+            // The variable remaining_messages only holds the unread messagesleft in the packet
             message_packet.clear();
             message_packet.extend_from_slice(remaining_messages.as_slice());
 

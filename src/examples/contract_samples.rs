@@ -73,7 +73,6 @@ pub fn option_at_ise() -> Contract {
 
 //==================================================================================================
 pub fn bond_with_cusip() -> Contract {
-    //bondwithcusip
     let mut contract = Contract::default();
     // enter CUSIP as symbol
     contract.symbol = "912828C57".to_string();
@@ -86,7 +85,6 @@ pub fn bond_with_cusip() -> Contract {
 
 //==================================================================================================
 pub fn bond() -> Contract {
-    //bond
     let mut contract = Contract::default();
     contract.con_id = 15960357;
     contract.exchange = "SMART".to_string();
@@ -96,7 +94,6 @@ pub fn bond() -> Contract {
 
 //==================================================================================================
 pub fn mutual_fund() -> Contract {
-    //fundcontract
     let mut contract = Contract::default();
     contract.symbol = "VINIX".to_string();
     contract.sec_type = "FUND".to_string();
@@ -108,7 +105,6 @@ pub fn mutual_fund() -> Contract {
 
 //==================================================================================================
 pub fn commodity() -> Contract {
-    //commoditycontract
     let mut contract = Contract::default();
     contract.symbol = "XAUUSD".to_string();
     contract.sec_type = "CMDTY".to_string();
@@ -120,12 +116,11 @@ pub fn commodity() -> Contract {
 
 //==================================================================================================
 pub fn usstock() -> Contract {
-    //stkcontract]
     let mut contract = Contract::default();
     contract.symbol = "AMZN".to_string();
     contract.sec_type = "STK".to_string();
     contract.currency = "USD".to_string();
-    //In the API side, NASDAQ is always pub fnined as ISLAND in the exchange field
+    //In the API side, NASDAQ is always defined as ISLAND in the exchange field
     contract.exchange = "ISLAND".to_string();
     //stkcontract]
     contract
@@ -133,7 +128,6 @@ pub fn usstock() -> Contract {
 
 //==================================================================================================
 pub fn usstock_with_primary_exch() -> Contract {
-    //stkcontractwithprimary]
     let mut contract = Contract::default();
     contract.symbol = "MSFT".to_string();
     contract.sec_type = "STK".to_string();
@@ -158,7 +152,6 @@ pub fn us_stock_at_smart() -> Contract {
 
 //==================================================================================================
 pub fn us_option_contract() -> Contract {
-    //optcontract_us]
     let mut contract = Contract::default();
     contract.symbol = "GOOG".to_string();
     contract.sec_type = "OPT".to_string();
@@ -168,13 +161,12 @@ pub fn us_option_contract() -> Contract {
     contract.strike = 1180.0;
     contract.right = "C".to_string();
     contract.multiplier = "100".to_string();
-    //optcontract_us]
+
     contract
 }
 
 //==================================================================================================
 pub fn option_at_box() -> Contract {
-    //optcontract]
     let mut contract = Contract::default();
     contract.symbol = "GOOG".to_string();
     contract.sec_type = "OPT".to_string();
@@ -189,12 +181,11 @@ pub fn option_at_box() -> Contract {
 }
 
 //==================================================================================================
-// Option contracts require far more information since there are many
-//    contracts having the exact same attributes such as symbol, currency,
-//    strike, etc. This can be overcome by adding more details such as the
-//    trading class
+/// Option contracts require far more information since there are many
+/// contracts having the exact same attributes such as symbol, currency,
+/// strike, etc. This can be overcome by adding more details such as the
+//' trading class
 pub fn option_with_trading_class() -> Contract {
-    //optcontract_tradingclass]
     let mut contract = Contract::default();
     contract.symbol = "SANT".to_string();
     contract.sec_type = "OPT".to_string();
@@ -205,70 +196,65 @@ pub fn option_with_trading_class() -> Contract {
     contract.right = "C".to_string();
     contract.multiplier = "100".to_string();
     contract.trading_class = "SANEU".to_string();
-    //optcontract_tradingclass]
+
     contract
 }
 
 //==================================================================================================
-// Using the contract's own symbol (local_symbol) can greatly simplify a
-//    contract description
+/// Using the contract's own symbol (local_symbol) can greatly simplify a
+/// contract description. Watch out for the spaces within the local symbol!
 pub fn option_with_local_symbol() -> Contract {
-    //optcontract_localsymbol]
     let mut contract = Contract::default();
     //Watch out for the spaces within the local symbol!
     contract.local_symbol = "C DBK  DEC 20  1600".to_string();
     contract.sec_type = "OPT".to_string();
     contract.exchange = "DTB".to_string();
     contract.currency = "EUR".to_string();
-    //optcontract_localsymbol]
+
     contract
 }
 
 //==================================================================================================
-// Dutch Warrants (IOPTs) can be pub fnined using the local symbol or conid
+/// Dutch Warrants (IOPTs) can be defined using the local symbol or conid
 pub fn dutch_warrant() -> Contract {
-    //ioptcontract]
     let mut contract = Contract::default();
     contract.local_symbol = "B881G".to_string();
     contract.sec_type = "IOPT".to_string();
     contract.exchange = "SBF".to_string();
     contract.currency = "EUR".to_string();
-    //ioptcontract]
+
     contract
 }
 
 //==================================================================================================
-// Future contracts also require an expiration date but are less
-//    complicated than options.
+/// Future contracts also require an expiration date but are less
+/// complicated than options.
 pub fn simple_future() -> Contract {
-    //futcontract]
     let mut contract = Contract::default();
     contract.symbol = "ES".to_string();
     contract.sec_type = "FUT".to_string();
     contract.exchange = "GLOBEX".to_string();
     contract.currency = "USD".to_string();
     contract.last_trade_date_or_contract_month = "202003".to_string();
-    //futcontract]
+
     contract
 }
 
 //==================================================================================================
-//Rather than giving expiration dates we can also provide the local symbol
-//    attributes such as symbol, currency, strike, etc.
+/// Rather than giving expiration dates we can also provide the local symbol
+/// attributes such as symbol, currency, strike, etc.
 pub fn future_with_local_symbol() -> Contract {
-    //futcontract_local_symbol]
     let mut contract = Contract::default();
     contract.sec_type = "FUT".to_string();
     contract.exchange = "GLOBEX".to_string();
     contract.currency = "USD".to_string();
     contract.local_symbol = "ESU6".to_string();
-    //futcontract_local_symbol]
+
     contract
 }
 
 //==================================================================================================
 pub fn future_with_multiplier() -> Contract {
-    //futcontract_multiplier]
     let mut contract = Contract::default();
     contract.symbol = "DAX".to_string();
     contract.sec_type = "FUT".to_string();
@@ -276,12 +262,12 @@ pub fn future_with_multiplier() -> Contract {
     contract.currency = "EUR".to_string();
     contract.last_trade_date_or_contract_month = "201903".to_string();
     contract.multiplier = "5".to_string();
-    //futcontract_multiplier]
+
     contract
 }
 
 //==================================================================================================
-// Note the space in the symbol!
+/// Note the space in the symbol!
 pub fn wrong_contract() -> Contract {
     let mut contract = Contract::default();
     contract.symbol = " IJR ".to_string();
@@ -294,7 +280,6 @@ pub fn wrong_contract() -> Contract {
 
 //==================================================================================================
 pub fn futures_on_options() -> Contract {
-    //fopcontract]
     let mut contract = Contract::default();
     contract.symbol = "ES".to_string();
     contract.sec_type = "FOP".to_string();
@@ -304,13 +289,13 @@ pub fn futures_on_options() -> Contract {
     contract.strike = 2900.0;
     contract.right = "C".to_string();
     contract.multiplier = "50".to_string();
-    //fopcontract]
+
     contract
 }
 
 //==================================================================================================
-// It is also possible to pub fnine contracts based on their ISIN (IBKR STK
-//    sample).
+/// It is also possible to deine contracts based on their ISIN (IBKR STK
+/// sample).
 pub fn by_isin() -> Contract {
     let mut contract = Contract::default();
     contract.sec_id_type = "ISIN".to_string();
@@ -322,13 +307,13 @@ pub fn by_isin() -> Contract {
 }
 
 //==================================================================================================
-// Or their con_id (EUR.uSD sample).
-//    Note: passing a contract containing the con_id can cause problems if one of
-//    the other provided attributes does not match 100% with what is in IB's
-//    database. This is particularly important for contracts such as Bonds which
-//    may change their description from one day to another.
-//    If the con_id is provided, it is best not to give too much information as
-//    in the example below.
+/// Or their con_id (EUR.uSD sample).
+/// Note: passing a contract containing the con_id can cause problems if one of
+/// the other provided attributes does not match 100% with what is in IB's
+/// database. This is particularly important for contracts such as Bonds which
+/// may change their description from one day to another.
+/// If the con_id is provided, it is best not to give too much information as
+/// in the example below.
 pub fn by_con_id() -> Contract {
     let mut contract = Contract::default();
     contract.sec_type = "CASH".to_string();
@@ -338,19 +323,18 @@ pub fn by_con_id() -> Contract {
 }
 
 //==================================================================================================
-// Ambiguous contracts are great to use with
-// use crate::core::contract::Contract; reqContractDetails. This way
-// you can query the whole option chain for an underlying. Bear in mind that
-// there are pacing mechanisms in place which will delay any further responses
-// from the TWS to prevent abuse.
+/// Ambiguous contracts are great to use with
+/// Contract::req_contract_details. This way
+/// you can query the whole option chain for an underlying. Bear in mind that
+/// there are pacing mechanisms in place which will delay any further responses
+/// from the TWS to prevent abuse.
 pub fn option_for_query() -> Contract {
-    //optionforquery]
     let mut contract = Contract::default();
     contract.symbol = "FISV".to_string();
     contract.sec_type = "OPT".to_string();
     contract.exchange = "SMART".to_string();
     contract.currency = "USD".to_string();
-    //optionforquery]
+
     contract
 }
 
@@ -382,11 +366,10 @@ pub fn option_combo_contract() -> Contract {
 }
 
 //==================================================================================================
-// STK Combo contract
-//    Leg 1: 43645865 - IBKR's STK
-//    Leg 2: 9408 - McDonald's STK
+/// STK Combo contract
+/// Leg 1: 43645865 - IBKR's STK
+/// Leg 2: 9408 - McDonald's STK
 pub fn stock_combo_contract() -> Contract {
-    //bagstkcontract]
     let mut contract = Contract::default();
     contract.symbol = "IBKR,MCD".to_string();
     contract.sec_type = "BAG".to_string();
@@ -408,14 +391,13 @@ pub fn stock_combo_contract() -> Contract {
     contract.combo_legs = vec![];
     contract.combo_legs.push(leg1);
     contract.combo_legs.push(leg2);
-    //bagstkcontract]
+
     contract
 }
 
 //==================================================================================================
-//CBOE volatility Index Future combo contract
+/// CBOE volatility Index Future combo contract
 pub fn future_combo_contract() -> Contract {
-    //bagfutcontract]
     let mut contract = Contract::default();
     contract.symbol = "VIX".to_string();
     contract.sec_type = "BAG".to_string();
@@ -437,14 +419,14 @@ pub fn future_combo_contract() -> Contract {
     contract.combo_legs = vec![];
     contract.combo_legs.push(leg1);
     contract.combo_legs.push(leg2);
-    //bagfutcontract]
+
     contract
 }
 
 //==================================================================================================
 pub fn smart_future_combo_contract() -> Contract {
     let mut contract = Contract::default();
-    contract.symbol = "WTI".to_string(); // WTI,COIL spread. Symbol can be pub fnined as first leg symbol ("WTI") or currency ("USD")
+    contract.symbol = "WTI".to_string(); // WTI,COIL spread. Symbol can be defined as first leg symbol ("WTI") or currency ("USD")
     contract.sec_type = "BAG".to_string();
     contract.currency = "USD".to_string();
     contract.exchange = "SMART".to_string();
