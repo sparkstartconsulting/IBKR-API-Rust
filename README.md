@@ -41,7 +41,7 @@ fn main() -> Result<(), IBKRApiLibError> {
 ## TODO
 
 - [X] Expand documentation - Done
-- [ ] Write automated tests
+- [ ] Write automated tests - in progress
 - [ ] Write an async function in TestWrapper that checks when next_valid_id has been populated by the callback
 - [ ] Publish to crates.io
 
