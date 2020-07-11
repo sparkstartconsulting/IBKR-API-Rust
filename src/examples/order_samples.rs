@@ -9,10 +9,10 @@ use crate::core::order_condition::{
     PriceCondition, TimeCondition, VolumeCondition,
 };
 
-/**! An auction order is entered into the electronic trading system during the pre-market opening period for execution at the
-Calculated Opening Price (COP). If your order is not filled on the open, the order is re-submitted as a limit order with
-the limit price set to the COP or the best bid/ask after the market opens.
-Products: FUT, STK **/
+/// An auction order is entered into the electronic trading system during the pre-market opening period for execution at the
+/// Calculated Opening Price (COP). If your order is not filled on the open, the order is re-submitted as a limit order with
+/// the limit price set to the COP or the best bid/ask after the market opens.
+/// Products: FUT, STK *///
 //==================================================================================================
 pub fn at_auction(action: &str, quantity: f64, price: f64) -> Order {
     let mut order = Order::default();
@@ -165,18 +165,16 @@ pub fn pegged_to_stock(
     order
 }
 
-/*
-#/ Relative (a.k.a. Pegged-to-Primary) orders provide a means for traders to seek a more aggressive price than the National Best Bid
-#/ and Offer (NBBO). By acting as liquidity providers, and placing more aggressive bids and offers than the current best bids and offers,
-#/ traders increase their odds of filling their order. Quotes are automatically adjusted as the markets move, to remain aggressive.
-#/ For a buy order, your bid is pegged to the NBB by a more aggressive offset, and if the NBB moves up, your bid will also move up.
-#/ If the NBB moves down, there will be no adjustment because your bid will become even more aggressive and execute. For sales, your
-#/ offer is pegged to the NBO by a more aggressive offset, and if the NBO moves down, your offer will also move down. If the NBO moves up,
-#/ there will be no adjustment because your offer will become more aggressive and execute. In addition to the offset, you can define an
-#/ absolute cap, which works like a limit price, and will prevent your order from being executed above or below a specified level.
-#/ Stocks, Options and Futures - not available on paper trading
-#/ Products: CFD, STK, OPT, FUT
-*/
+/// Relative (a.k.a. Pegged-to-Primary) orders provide a means for traders to seek a more aggressive price than the National Best Bid
+/// and Offer (NBBO). By acting as liquidity providers, and placing more aggressive bids and offers than the current best bids and offers,
+/// traders increase their odds of filling their order. Quotes are automatically adjusted as the markets move, to remain aggressive.
+/// For a buy order, your bid is pegged to the NBB by a more aggressive offset, and if the NBB moves up, your bid will also move up.
+/// If the NBB moves down, there will be no adjustment because your bid will become even more aggressive and execute. For sales, your
+/// offer is pegged to the NBO by a more aggressive offset, and if the NBO moves down, your offer will also move down. If the NBO moves up,
+/// there will be no adjustment because your offer will become more aggressive and execute. In addition to the offset, you can define an
+/// absolute cap, which works like a limit price, and will prevent your order from being executed above or below a specified level.
+/// Stocks, Options and Futures - not available on paper trading
+/// Products: CFD, STK, OPT, FUT
 //==================================================================================================
 pub fn relative_pegged_to_primary(
     action: &str,
@@ -195,13 +193,11 @@ pub fn relative_pegged_to_primary(
     order
 }
 
-/*
-#/ Sweep-to-fill orders are useful when a trader values speed of execution over price. A sweep-to-fill order identifies the best price
-#/ and the exact quantity offered/available at that price, and transmits the corresponding portion of your order for immediate execution.
-#/ Simultaneously it identifies the next best price and quantity offered/available, and submits the matching quantity of your order for
-#/ immediate execution.
-#/ Products: CFD, STK, WAR
-*/
+/// Sweep-to-fill orders are useful when a trader values speed of execution over price. A sweep-to-fill order identifies the best price
+/// and the exact quantity offered/available at that price, and transmits the corresponding portion of your order for immediate execution.
+/// Simultaneously it identifies the next best price and quantity offered/available, and submits the matching quantity of your order for
+/// immediate execution.
+/// Products: CFD, STK, WAR
 //==================================================================================================
 pub fn sweep_to_fill(action: &str, quantity: f64, price: f64) -> Order {
     //sweep_to_fill]
@@ -215,17 +211,15 @@ pub fn sweep_to_fill(action: &str, quantity: f64, price: f64) -> Order {
     order
 }
 
-/*
-#/ For option orders routed to the Boston Options Exchange (BOX) you may elect to participate in the BOX's price improvement auction in
-#/ pennies. All BOX-directed price improvement orders are immediately sent from Interactive Brokers to the BOX order book, and when the
-#/ terms allow, IB will evaluate it for inclusion in a price improvement auction based on price and volume priority. In the auction, your
-#/ order will have priority over broker-dealer price improvement orders at the same price.
-#/ An Auction Limit order at a specified price. Use of a limit order ensures that you will not receive an execution at a price less favorable
-#/ than the limit price. Enter limit orders in penny increments with your auction improvement amount computed as the difference between your
-#/ limit order price and the nearest listed increment.
-#/ Products: OPT
-#/ Supported Exchanges: BOX
-*/
+/// For option orders routed to the Boston Options Exchange (BOX) you may elect to participate in the BOX's price improvement auction in
+/// pennies. All BOX-directed price improvement orders are immediately sent from Interactive Brokers to the BOX order book, and when the
+/// terms allow, IB will evaluate it for inclusion in a price improvement auction based on price and volume priority. In the auction, your
+/// order will have priority over broker-dealer price improvement orders at the same price.
+/// An Auction Limit order at a specified price. Use of a limit order ensures that you will not receive an execution at a price less favorable
+/// than the limit price. Enter limit orders in penny increments with your auction improvement amount computed as the difference between your
+/// limit order price and the nearest listed increment.
+/// Products: OPT
+/// Supported Exchanges: BOX
 //==================================================================================================
 pub fn auction_limit(
     action: &str,
@@ -244,20 +238,18 @@ pub fn auction_limit(
     order
 }
 
-/*
-#/ For option orders routed to the Boston Options Exchange (BOX) you may elect to participate in the BOX's price improvement auction in pennies.
-#/ All BOX-directed price improvement orders are immediately sent from Interactive Brokers to the BOX order book, and when the terms allow,
-#/ IB will evaluate it for inclusion in a price improvement auction based on price and volume priority. In the auction, your order will have
-#/ priority over broker-dealer price improvement orders at the same price.
-#/ An Auction Pegged to Stock order adjusts the order price by the product of a signed delta (which is entered as an absolute and assumed to be
-#/ positive for calls, negative for puts) and the change of the option's underlying stock price. A buy or sell call order price is determined
-#/ by adding the delta times a change in an underlying stock price change to a specified starting price for the call. To determine the change
-#/ in price, a stock reference price (NBBO midpoat:the:i32 time of the order is assumed if no reference price is entered) is subtracted from
-#/ the current NBBO midpoint. A stock range may also be entered that cancels an order when reached. The delta times the change in stock price
-#/ will be rounded to the nearest penny in favor of the order and will be used as your auction improvement amount.
-#/ Products: OPT
-#/ Supported Exchanges: BOX
-*/
+/// For option orders routed to the Boston Options Exchange (BOX) you may elect to participate in the BOX's price improvement auction in pennies.
+/// All BOX-directed price improvement orders are immediately sent from Interactive Brokers to the BOX order book, and when the terms allow,
+/// IB will evaluate it for inclusion in a price improvement auction based on price and volume priority. In the auction, your order will have
+/// priority over broker-dealer price improvement orders at the same price.
+/// An Auction Pegged to Stock order adjusts the order price by the product of a signed delta (which is entered as an absolute and assumed to be
+/// positive for calls, negative for puts) and the change of the option's underlying stock price. A buy or sell call order price is determined
+/// by adding the delta times a change in an underlying stock price change to a specified starting price for the call. To determine the change
+/// in price, a stock reference price (NBBO midpoat:the:i32 time of the order is assumed if no reference price is entered) is subtracted from
+/// the current NBBO midpoint. A stock range may also be entered that cancels an order when reached. The delta times the change in stock price
+/// will be rounded to the nearest penny in favor of the order and will be used as your auction improvement amount.
+/// Products: OPT
+/// Supported Exchanges: BOX
 //==================================================================================================
 pub fn auction_pegged_to_stock(
     action: &str,
@@ -276,20 +268,18 @@ pub fn auction_pegged_to_stock(
     order
 }
 
-/*
-#/ For option orders routed to the Boston Options Exchange (BOX) you may elect to participate in the BOX's price improvement auction in pennies.
-#/ All BOX-directed price improvement orders are immediately sent from Interactive Brokers to the BOX order book, and when the terms allow,
-#/ IB will evaluate it for inclusion in a price improvement auction based on price and volume priority. In the auction, your order will have
-#/ priority over broker-dealer price improvement orders at the same price.
-#/ An Auction Relative order that adjusts the order price by the product of a signed delta (which is entered as an absolute and assumed to be
-#/ positive for calls, negative for puts) and the change of the option's underlying stock price. A buy or sell call order price is determined
-#/ by adding the delta times a change in an underlying stock price change to a specified starting price for the call. To determine the change
-#/ in price, a stock reference price (NBBO midpoat:the:i32 time of the order is assumed if no reference price is entered) is subtracted from
-#/ the current NBBO midpoint. A stock range may also be entered that cancels an order when reached. The delta times the change in stock price
-#/ will be rounded to the nearest penny in favor of the order and will be used as your auction improvement amount.
-#/ Products: OPT
-#/ Supported Exchanges: BOX
-*/
+/// For option orders routed to the Boston Options Exchange (BOX) you may elect to participate in the BOX's price improvement auction in pennies.
+/// All BOX-directed price improvement orders are immediately sent from Interactive Brokers to the BOX order book, and when the terms allow,
+/// IB will evaluate it for inclusion in a price improvement auction based on price and volume priority. In the auction, your order will have
+/// priority over broker-dealer price improvement orders at the same price.
+/// An Auction Relative order that adjusts the order price by the product of a signed delta (which is entered as an absolute and assumed to be
+/// positive for calls, negative for puts) and the change of the option's underlying stock price. A buy or sell call order price is determined
+/// by adding the delta times a change in an underlying stock price change to a specified starting price for the call. To determine the change
+/// in price, a stock reference price (NBBO midpoat:the:i32 time of the order is assumed if no reference price is entered) is subtracted from
+/// the current NBBO midpoint. A stock range may also be entered that cancels an order when reached. The delta times the change in stock price
+/// will be rounded to the nearest penny in favor of the order and will be used as your auction improvement amount.
+/// Products: OPT
+/// Supported Exchanges: BOX
 //==================================================================================================
 pub fn auction_relative(action: &str, quantity: f64, offset: f64) -> Order {
     //auction_relative]
@@ -302,11 +292,9 @@ pub fn auction_relative(action: &str, quantity: f64, offset: f64) -> Order {
     order
 }
 
-/*
-#/ The block attribute is used for large volume option orders on ISE that consist of at least 50 contracts. To execute large-volume
-#/ orders over time without moving the market, use the Accumulate/Distribute algorithm.
-#/ Products: OPT
-*/
+/// The block attribute is used for large volume option orders on ISE that consist of at least 50 contracts. To execute large-volume
+/// orders over time without moving the market, use the Accumulate/Distribute algorithm.
+/// Products: OPT
 //==================================================================================================
 pub fn block(action: &str, quantity: f64, price: f64) -> Order {
     //block]
@@ -320,12 +308,10 @@ pub fn block(action: &str, quantity: f64, price: f64) -> Order {
     order
 }
 
-/*
-#/ A Box Top order executes as a market order at the current best price. If the order is only partially filled, the remainder is submitted as
-#/ a limit order with the limit price equal to the price at which the filled portion of the order executed.
-#/ Products: OPT
-#/ Supported Exchanges: BOX
-*/
+/// A Box Top order executes as a market order at the current best price. If the order is only partially filled, the remainder is submitted as
+/// a limit order with the limit price equal to the price at which the filled portion of the order executed.
+/// Products: OPT
+/// Supported Exchanges: BOX
 //==================================================================================================
 pub fn box_top(action: &str, quantity: f64) -> Order {
     //boxtop]
@@ -337,11 +323,9 @@ pub fn box_top(action: &str, quantity: f64) -> Order {
     order
 }
 
-/*
-#/ A Limit order is an order to buy or sell at a specified price or better. The Limit order ensures that if the order fills,
-#/ it will not fill at a price less favorable than your limit price, but it does not guarantee a fill.
-#/ Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
-*/
+/// A Limit order is an order to buy or sell at a specified price or better. The Limit order ensures that if the order fills,
+/// it will not fill at a price less favorable than your limit price, but it does not guarantee a fill.
+/// Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
 //==================================================================================================
 pub fn limit_order(action: &str, quantity: f64, limit_price: f64) -> Order {
     //limitorder]
@@ -355,11 +339,9 @@ pub fn limit_order(action: &str, quantity: f64, limit_price: f64) -> Order {
     order
 }
 
-/*
-#/ Forex orders can be placed in demonination of second currency in pair using cashQty field
-#/ Requires TWS or IBG 963+
-#/ https://www.interactivebrokers.com/en/index.php?f=23876#963-02
-*/
+/// Forex orders can be placed in demonination of second currency in pair using cashQty field
+/// Requires TWS or IBG 963+
+/// <https://www.interactivebrokers.com/en/index.php?f=23876#963-02>
 //==================================================================================================
 pub fn limit_order_with_cash_qty(
     action: &str,
@@ -367,23 +349,20 @@ pub fn limit_order_with_cash_qty(
     limit_price: f64,
     cash_qty: f64,
 ) -> Order {
-    //limitorderwithcashqty]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "LMT".to_string();
     order.total_quantity = quantity;
     order.lmt_price = limit_price;
     order.cash_qty = cash_qty;
-    //limitorderwithcashqty]
+
     order
 }
 
-/*
-#/ A Limit if Touched is an order to buy (or sell) a contract at a specified price or better, below (or above) the market. This order is
-#/ held in the system until the trigger price is touched. An LIT order is similar to a stop limit order, except that an LIT sell order is
-#/ placed above the current market price, and a stop limit sell order is placed below.
-#/ Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
-*/
+/// A Limit if Touched is an order to buy (or sell) a contract at a specified price or better, below (or above) the market. This order is
+/// held in the system until the trigger price is touched. An LIT order is similar to a stop limit order, except that an LIT sell order is
+/// placed above the current market price, and a stop limit sell order is placed below.
+/// Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
 //==================================================================================================
 pub fn limit_if_touched(
     action: &str,
@@ -402,72 +381,61 @@ pub fn limit_if_touched(
     order
 }
 
-/*
-#/ A Limit-on-close (LOC) order will be submitted at the close and will execute if the closing price is at or better than the submitted
-#/ limit price.
-#/ Products: CFD, FUT, STK, WAR
-*/
+/// A Limit-on-close (LOC) order will be submitted at the close and will execute if the closing price is at or better than the submitted
+/// limit price.
+/// Products: CFD, FUT, STK, WAR
 //==================================================================================================
 pub fn limit_on_close(action: &str, quantity: f64, limit_price: f64) -> Order {
-    //limitonclose]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "LOC".to_string();
     order.total_quantity = quantity;
     order.lmt_price = limit_price;
-    //limitonclose]
+
     order
 }
 
-/*
-#/ A Limit-on-Open (LOO) order combines a limit order with the OPG time in force to create an order that is submitted at the market's open,
-#/ and that will only execute at the specified limit price or better. Orders are filled in accordance with specific exchange rules.
-#/ Products: CFD, STK, OPT, WAR
-*/
+/// A Limit-on-Open (LOO) order combines a limit order with the OPG time in force to create an order that is submitted at the market's open,
+/// and that will only execute at the specified limit price or better. Orders are filled in accordance with specific exchange rules.
+/// Products: CFD, STK, OPT, WAR
 //==================================================================================================
 pub fn limit_on_open(action: &str, quantity: f64, limit_price: f64) -> Order {
-    //limitonopen]
     let mut order = Order::default();
     order.action = action.to_string();
     order.tif = "OPG".to_string();
     order.order_type = "LMT".to_string();
     order.total_quantity = quantity;
     order.lmt_price = limit_price;
-    //limitonopen]
+
     order
 }
 
-/*
-#/ Passive Relative orders provide a means for traders to seek a less aggressive price than the National Best Bid and Offer (NBBO) while
-#/ keeping the order pegged to the best bid (for a buy) or ask (for a sell). The order price is automatically adjusted as the markets move
-#/ to keep the order less aggressive. For a buy order, your order price is pegged to the NBB by a less aggressive offset, and if the NBB
-#/ moves up, your bid will also move up. If the NBB moves down, there will be no adjustment because your bid will become aggressive and execute.
-#/ For a sell order, your price is pegged to the NBO by a less aggressive offset, and if the NBO moves down, your offer will also move down.
-#/ If the NBO moves up, there will be no adjustment because your offer will become aggressive and execute. In addition to the offset, you can
-#/ define an absolute cap, which works like a limit price, and will prevent your order from being executed above or below a specified level.
-#/ The Passive Relative order is similar to the Relative/Pegged-to-Primary order, except that the Passive relative subtracts the offset from
-#/ the bid and the Relative adds the offset to the bid.
-#/ Products: STK, WAR
-*/
+/// Passive Relative orders provide a means for traders to seek a less aggressive price than the National Best Bid and Offer (NBBO) while
+/// keeping the order pegged to the best bid (for a buy) or ask (for a sell). The order price is automatically adjusted as the markets move
+/// to keep the order less aggressive. For a buy order, your order price is pegged to the NBB by a less aggressive offset, and if the NBB
+/// moves up, your bid will also move up. If the NBB moves down, there will be no adjustment because your bid will become aggressive and execute.
+/// For a sell order, your price is pegged to the NBO by a less aggressive offset, and if the NBO moves down, your offer will also move down.
+/// If the NBO moves up, there will be no adjustment because your offer will become aggressive and execute. In addition to the offset, you can
+/// define an absolute cap, which works like a limit price, and will prevent your order from being executed above or below a specified level.
+/// The Passive Relative order is similar to the Relative/Pegged-to-Primary order, except that the Passive relative subtracts the offset from
+/// the bid and the Relative adds the offset to the bid.
+/// Products: STK, WAR
 //==================================================================================================
 pub fn passive_relative(action: &str, quantity: f64, offset: f64) -> Order {
-    //passive_relative]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "PASSV REL".to_string();
     order.total_quantity = quantity;
     order.aux_price = offset;
-    //passive_relative]
+
     order
 }
 
-/*
-#/ A pegged-to-midpoorder:provides:i32 a means for traders to seek a price at the midpoof:the:i32 National Best Bid and Offer (NBBO).
-#/ The price automatically adjusts to peg the midpoas:the:i32 markets move, to remain aggressive. For a buy order, your bid is pegged to
-#/ the NBBO midpoand:the:i32 order price adjusts automatically to continue to peg the midpoif:the:i32 market moves. The price only adjusts
-#/ to be more aggressive. If the market moves in the opposite direction, the order will execute.
-#/ Products: STK
-*/
+/// A pegged-to-midpoorder:provides:i32 a means for traders to seek a price at the midpoof:the:i32 National Best Bid and Offer (NBBO).
+/// The price automatically adjusts to peg the midpoas:the:i32 markets move, to remain aggressive. For a buy order, your bid is pegged to
+/// the NBBO midpoand:the:i32 order price adjusts automatically to continue to peg the midpoif:the:i32 market moves. The price only adjusts
+/// to be more aggressive. If the market moves in the opposite direction, the order will execute.
+/// Products: STK
 //==================================================================================================
 pub fn pegged_to_midpoint(action: &str, quantity: f64, offset: f64, limit_price: f64) -> Order {
     //pegged_midpoint]
@@ -481,13 +449,10 @@ pub fn pegged_to_midpoint(action: &str, quantity: f64, offset: f64, limit_price:
     order
 }
 
-/*
-#/ Bracket orders are designed to help limit your loss and lock in a profit by "bracketing" an order with two opposite-side orders.
-#/ A BUY order is bracketed by a high-side sell limit order and a low-side sell stop order. A SELL order is bracketed by a high-side buy
-#/ stop order and a low side buy limit order.
-#/ Products: CFD, BAG, FOP, CASH, FUT, OPT, STK, WAR
-*/
-//bracket]
+/// Bracket orders are designed to help limit your loss and lock in a profit by "bracketing" an order with two opposite-side orders.
+/// A BUY order is bracketed by a high-side sell limit order and a low-side sell stop order. A SELL order is bracketed by a high-side buy
+/// stop order and a low side buy limit order.
+/// Products: CFD, BAG, FOP, CASH, FUT, OPT, STK, WAR
 //==================================================================================================
 pub fn bracket_order(
     parent_order_id: i32,
@@ -532,109 +497,90 @@ pub fn bracket_order(
     (parent, take_profit, stop_loss)
 }
 
-//bracket]
-
-/*
-#/ Products:CFD, FUT, FOP, OPT, STK, WAR
-#/ A Market-to-Limit (MTL) order is submitted as a market order to execute at the current best market price. If the order is only
-#/ partially filled, the remainder of the order is canceled and re-submitted as a limit order with the limit price equal to the price
-#/ at which the filled portion of the order executed.
-*/
+/// Products:CFD, FUT, FOP, OPT, STK, WAR
+/// A Market-to-Limit (MTL) order is submitted as a market order to execute at the current best market price. If the order is only
+/// partially filled, the remainder of the order is canceled and re-submitted as a limit order with the limit price equal to the price
+/// at which the filled portion of the order executed.
 //==================================================================================================
 pub fn market_to_limit(action: &str, quantity: f64) -> Order {
-    //markettolimit]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "MTL".to_string();
     order.total_quantity = quantity;
-    //markettolimit]
+
     order
 }
 
-/*
-#/ This order type is useful for futures traders using Globex. A Market with Protection order is a market order that will be cancelled and
-#/ resubmitted as a limit order if the entire order does not immediately execute at the market price. The limit price is set by Globex to be
-#/ close to the current market price, slightly higher for a sell order and lower for a buy order.
-#/ Products: FUT, FOP
-*/
+/// This order type is useful for futures traders using Globex. A Market with Protection order is a market order that will be cancelled and
+/// resubmitted as a limit order if the entire order does not immediately execute at the market price. The limit price is set by Globex to be
+/// close to the current market price, slightly higher for a sell order and lower for a buy order.
+/// Products: FUT, FOP
 //==================================================================================================
 pub fn market_with_protection(action: &str, quantity: f64) -> Order {
-    //marketwithprotection]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "MKT PRT".to_string();
     order.total_quantity = quantity;
-    //marketwithprotection]
+
     order
 }
 
-/*
-#/ A stop order is an instruction to submit a buy or sell market order if and when the user-specified stop trigger price is attained or
-#/ penetrated. A stop order is not guaranteed a specific execution price and may execute significantly away from its stop price. A Sell
-#/ stop order is always placed below the current market price and is typically used to limit a loss or protect a profit on a long stock
-#/ position. A Buy stop order is always placed above the current market price. It is typically used to limit a loss or help protect a
-#/ profit on a short sale.
-#/ Products: CFD, BAG, CASH, FUT, FOP, OPT, STK, WAR
-*/
+/// A stop order is an instruction to submit a buy or sell market order if and when the user-specified stop trigger price is attained or
+/// penetrated. A stop order is not guaranteed a specific execution price and may execute significantly away from its stop price. A Sell
+/// stop order is always placed below the current market price and is typically used to limit a loss or protect a profit on a long stock
+/// position. A Buy stop order is always placed above the current market price. It is typically used to limit a loss or help protect a
+/// profit on a short sale.
+/// Products: CFD, BAG, CASH, FUT, FOP, OPT, STK, WAR
 //==================================================================================================
 pub fn stop(action: &str, quantity: f64, stop_price: f64) -> Order {
-    //stop]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "STP".to_string();
     order.aux_price = stop_price;
     order.total_quantity = quantity;
-    //stop]
+
     order
 }
 
-/*
-#/ A stop-Limit order is an instruction to submit a buy or sell limit order when the user-specified stop trigger price is attained or
-#/ penetrated. The order has two basic components: the stop price and the limit price. When a trade has occurred at or through the stop
-#/ price, the order becomes executable and enters the market as a limit order, which is an order to buy or sell at a specified price or better.
-#/ Products: CFD, CASH, FUT, FOP, OPT, STK, WAR
-*/
+/// A stop-Limit order is an instruction to submit a buy or sell limit order when the user-specified stop trigger price is attained or
+/// penetrated. The order has two basic components: the stop price and the limit price. When a trade has occurred at or through the stop
+/// price, the order becomes executable and enters the market as a limit order, which is an order to buy or sell at a specified price or better.
+/// Products: CFD, CASH, FUT, FOP, OPT, STK, WAR
 //==================================================================================================
 pub fn stop_limit(action: &str, quantity: f64, limit_price: f64, stop_price: f64) -> Order {
-    //stoplimit]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "STP LMT".to_string();
     order.total_quantity = quantity;
     order.lmt_price = limit_price;
     order.aux_price = stop_price;
-    //stoplimit]
+
     order
 }
 
-/*
-#/ A stop with Protection order combines the functionality of a stop limit order with a market with protection order. The order is set
-#/ to trigger at a specified stop price. When the stop price is penetrated, the order is triggered as a market with protection order,
-#/ which means that it will fill within a specified protected price range equal to the trigger price +/- the exchange-defined protection
-#/ porange:i32. Any portion of the order that does not fill within this protected range is submitted as a limit order at the exchange-defined
-#/ trigger price +/- the protection points.
-#/ Products: FUT
-*/
+/// A stop with Protection order combines the functionality of a stop limit order with a market with protection order. The order is set
+/// to trigger at a specified stop price. When the stop price is penetrated, the order is triggered as a market with protection order,
+/// which means that it will fill within a specified protected price range equal to the trigger price +/- the exchange-defined protection
+/// porange:i32. Any portion of the order that does not fill within this protected range is submitted as a limit order at the exchange-defined
+/// trigger price +/- the protection points.
+/// Products: FUT
 //==================================================================================================
 pub fn stop_with_protection(action: &str, quantity: f64, stop_price: f64) -> Order {
-    //stopwithprotection]
     let mut order = Order::default();
     order.total_quantity = quantity;
     order.action = action.to_string();
     order.order_type = "STP PRT".to_string();
     order.aux_price = stop_price;
-    //stopwithprotection]
+
     order
 }
 
-/*
-#/ A sell trailing stop order sets the stop price at a fixed amount below the market price with an attached "trailing" amount. As the
-#/ market price rises, the stop price rises by the trail amount, but if the stock price falls, the stop loss price doesn't change,
-#/ and a market order is submitted when the stop price is hit. This technique is designed to allow an investor to specify a limit on the
-#/ maximum possible loss, without setting a limit on the maximum possible gain. "Buy" trailing stop orders are the mirror image of sell
-#/ trailing stop orders, and are most appropriate for use in falling markets.
-#/ Products: CFD, CASH, FOP, FUT, OPT, STK, WAR
-*/
+/// A sell trailing stop order sets the stop price at a fixed amount below the market price with an attached "trailing" amount. As the
+/// market price rises, the stop price rises by the trail amount, but if the stock price falls, the stop loss price doesn't change,
+/// and a market order is submitted when the stop price is hit. This technique is designed to allow an investor to specify a limit on the
+/// maximum possible loss, without setting a limit on the maximum possible gain. "Buy" trailing stop orders are the mirror image of sell
+/// trailing stop orders, and are most appropriate for use in falling markets.
+/// Products: CFD, CASH, FOP, FUT, OPT, STK, WAR
 //==================================================================================================
 pub fn trailing_stop(
     action: &str,
@@ -642,27 +588,24 @@ pub fn trailing_stop(
     trailing_percent: f64,
     trail_stop_price: f64,
 ) -> Order {
-    //trailingstop]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "TRAIL".to_string();
     order.total_quantity = quantity;
     order.trailing_percent = trailing_percent;
     order.trail_stop_price = trail_stop_price;
-    //trailingstop]
+
     order
 }
 
-/*
-#/ A trailing stop limit order is designed to allow an investor to specify a limit on the maximum possible loss, without setting a limit
-#/ on the maximum possible gain. A SELL trailing stop limit moves with the market price, and continually recalculates the stop trigger
-#/ price at a fixed amount below the market price, based on the user-defined "trailing" amount. The limit order price is also continually
-#/ recalculated based on the limit offset. As the market price rises, both the stop price and the limit price rise by the trail amount and
-#/ limit offset respectively, but if the stock price falls, the stop price remains unchanged, and when the stop price is hit a limit order
-#/ is submitted at the last calculated limit price. A "Buy" trailing stop limit order is the mirror image of a sell trailing stop limit,
-#/ and is generally used in falling markets.
-#/ Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
-*/
+/// A trailing stop limit order is designed to allow an investor to specify a limit on the maximum possible loss, without setting a limit
+/// on the maximum possible gain. A SELL trailing stop limit moves with the market price, and continually recalculates the stop trigger
+/// price at a fixed amount below the market price, based on the user-defined "trailing" amount. The limit order price is also continually
+/// recalculated based on the limit offset. As the market price rises, both the stop price and the limit price rise by the trail amount and
+/// limit offset respectively, but if the stock price falls, the stop price remains unchanged, and when the stop price is hit a limit order
+/// is submitted at the last calculated limit price. A "Buy" trailing stop limit order is the mirror image of a sell trailing stop limit,
+/// and is generally used in falling markets.
+/// Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
 //==================================================================================================
 pub fn trailing_stop_limit(
     action: &str,
@@ -671,7 +614,6 @@ pub fn trailing_stop_limit(
     trailing_amount: f64,
     trail_stop_price: f64,
 ) -> Order {
-    //trailingstoplimit]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "TRAIL LIMIT".to_string();
@@ -679,17 +621,15 @@ pub fn trailing_stop_limit(
     order.trail_stop_price = trail_stop_price;
     order.lmt_price_offset = lmt_price_offset;
     order.aux_price = trailing_amount;
-    //trailingstoplimit]
+
     order
 }
 
-/*
-#/ Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
-#/ through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
-#/ if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
-#/ best execution.
-#/ Products: OPT, STK, FUT
-*/
+/// Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
+/// through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
+/// if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
+/// best execution.
+/// Products: OPT, STK, FUT
 //==================================================================================================
 pub fn combo_limit_order(
     action: &str,
@@ -697,7 +637,6 @@ pub fn combo_limit_order(
     limit_price: f64,
     non_guaranteed: bool,
 ) -> Order {
-    //combolimit]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "LMT".to_string();
@@ -709,20 +648,16 @@ pub fn combo_limit_order(
             .push(TagValue::new("NonGuaranteed".to_string(), "1".to_string()));
     }
 
-    //combolimit]
     order
 }
 
-/*
-#/ Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
-#/ through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
-#/ if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
-#/ best execution.
-#/ Products: OPT, STK, FUT
-*/
+/// Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
+/// through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
+/// if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
+/// best execution.
+/// Products: OPT, STK, FUT
 //==================================================================================================
 pub fn combo_market_order(action: &str, quantity: f64, non_guaranteed: bool) -> Order {
-    //combomarket]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "MKT".to_string();
@@ -733,17 +668,14 @@ pub fn combo_market_order(action: &str, quantity: f64, non_guaranteed: bool) -> 
             .push(TagValue::new("NonGuaranteed".to_string(), "1".to_string()));
     }
 
-    //combomarket]
     order
 }
 
-/*
-#/ Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
-#/ through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
-#/ if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
-#/ best execution.
-#/ Products: OPT, STK, FUT
-*/
+/// Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
+/// through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
+/// if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
+/// best execution.
+/// Products: OPT, STK, FUT
 //==================================================================================================
 pub fn limit_order_for_combo_with_leg_prices(
     action: &str,
@@ -751,7 +683,6 @@ pub fn limit_order_for_combo_with_leg_prices(
     leg_prices: Vec<f64>,
     non_guaranteed: bool,
 ) -> Order {
-    //limitordercombolegprices]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "LMT".to_string();
@@ -768,17 +699,15 @@ pub fn limit_order_for_combo_with_leg_prices(
             .smart_combo_routing_params
             .push(TagValue::new("NonGuaranteed".to_string(), "1".to_string()));
     }
-    //limitordercombolegprices]
+
     order
 }
 
-/*
-#/ Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
-#/ through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
-#/ if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
-#/ best execution.
-#/ Products: OPT, STK, FUT
-*/
+/// Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
+/// through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
+/// if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
+/// best execution.
+/// Products: OPT, STK, FUT
 //==================================================================================================
 pub fn relative_limit_combo(
     action: &str,
@@ -786,7 +715,6 @@ pub fn relative_limit_combo(
     limit_price: f64,
     non_guaranteed: bool,
 ) -> Order {
-    //relativelimitcombo]
     let mut order = Order::default();
     order.action = action.to_string();
     order.total_quantity = quantity;
@@ -798,20 +726,16 @@ pub fn relative_limit_combo(
             .push(TagValue::new("NonGuaranteed".to_string(), "1".to_string()));
     }
 
-    //relativelimitcombo]
     order
 }
 
-/*
-#/ Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
-#/ through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
-#/ if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
-#/ best execution.
-#/ Products: OPT, STK, FUT
-*/
+/// Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
+/// through SmartRouting). Although a combination/spread order is constructed of separate legs, it is executed as a single transaction
+/// if it is routed directly to an exchange. For combination orders that are SmartRouted, each leg may be executed separately to ensure
+/// best execution.
+/// Products: OPT, STK, FUT
 //==================================================================================================
 pub fn relative_market_combo(action: &str, quantity: f64, non_guaranteed: bool) -> Order {
-    //relativemarketcombo]
     let mut order = Order::default();
     order.action = action.to_string();
     order.total_quantity = quantity;
@@ -822,23 +746,19 @@ pub fn relative_market_combo(action: &str, quantity: f64, non_guaranteed: bool) 
             .push(TagValue::new("NonGuaranteed".to_string(), "1".to_string()));
     }
 
-    //relativemarketcombo]
     order
 }
 
-/*
-#/ One-Cancels All (OCA) order type allows an investor to place multiple and possibly unrelated orders assigned to a group. The aim is
-#/ to complete just one of the orders, which in turn will cause TWS to cancel the remaining orders. The investor may submit several
-#/ orders aimed at taking advantage of the most desirable price within the group. Completion of one piece of the group order causes
-#/ cancellation of the remaining group orders while partial completion causes the group to rebalance. An investor might desire to sell
-#/ 1000 shares of only ONE of three positions held above prevailing market prices. The OCA order group allows the investor to enter prices
-#/ at specified target levels and if one is completed, the other two will automatically cancel. Alternatively, an investor may wish to take
-#/ a LONG position in eMini S&P stock index futures in a falling market or else SELL US treasury futures at a more favorable price.
-#/ Grouping the two orders using an OCA order type offers the investor two chance to enter a similar position, while only running the risk
-#/ of taking on a single position.
-#/ Products: BOND, CASH, FUT, FOP, STK, OPT, WAR
-*/
-//oca]
+/// One-Cancels All (OCA) order type allows an investor to place multiple and possibly unrelated orders assigned to a group. The aim is
+/// to complete just one of the orders, which in turn will cause TWS to cancel the remaining orders. The investor may submit several
+/// orders aimed at taking advantage of the most desirable price within the group. Completion of one piece of the group order causes
+/// cancellation of the remaining group orders while partial completion causes the group to rebalance. An investor might desire to sell
+/// 1000 shares of only ONE of three positions held above prevailing market prices. The OCA order group allows the investor to enter prices
+/// at specified target levels and if one is completed, the other two will automatically cancel. Alternatively, an investor may wish to take
+/// a LONG position in eMini S&P stock index futures in a falling market or else SELL US treasury futures at a more favorable price.
+/// Grouping the two orders using an OCA order type offers the investor two chance to enter a similar position, while only running the risk
+/// of taking on a single position.
+/// Products: BOND, CASH, FUT, FOP, STK, OPT, WAR
 //==================================================================================================
 pub fn one_cancels_all(oca_group: &str, oca_orders: Vec<Order>, oca_type: i32) {
     for mut order in oca_orders {
@@ -847,19 +767,15 @@ pub fn one_cancels_all(oca_group: &str, oca_orders: Vec<Order>, oca_type: i32) {
     }
 }
 
-//oca]
-
-/*
-#/ Specific to US options, investors are able to create and enter volatility-type orders for options and combinations rather than price orders.
-#/ Option traders may wish to trade and position for movements in the price of the option determined by its implied volatility. Because
-#/ implied volatility is a key determinant of the premium on an option, traders position in specific contract months in an effort to take
-#/ advantage of perceived changes in implied volatility arising before, during or after earnings or when company specific or broad market
-#/ volatility is predicted to change. In order to create a volatility order, clients must first create a volatility Trader page from the
-#/ Trading Tools menu and as they enter option contracts, premiums will display in percentage terms rather than premium. The buy/sell process
-#/ is the same as for regular orders priced in premium terms except that the client can limit the volatility level they are willing to pay or
-#/ receive.
-#/ Products: FOP, OPT
-*/
+/// Specific to US options, investors are able to create and enter volatility-type orders for options and combinations rather than price orders.
+/// Option traders may wish to trade and position for movements in the price of the option determined by its implied volatility. Because
+/// implied volatility is a key determinant of the premium on an option, traders position in specific contract months in an effort to take
+/// advantage of perceived changes in implied volatility arising before, during or after earnings or when company specific or broad market
+/// volatility is predicted to change. In order to create a volatility order, clients must first create a volatility Trader page from the
+/// Trading Tools menu and as they enter option contracts, premiums will display in percentage terms rather than premium. The buy/sell process
+/// is the same as for regular orders priced in premium terms except that the client can limit the volatility level they are willing to pay or
+/// receive.
+/// Products: FOP, OPT
 //==================================================================================================
 pub fn volatility(
     action: &str,
@@ -867,7 +783,6 @@ pub fn volatility(
     volatility_percent: f64,
     volatility_type: i32,
 ) -> Order {
-    //volatility]
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "VOL".to_string();
@@ -878,7 +793,6 @@ pub fn volatility(
     order
 }
 
-//fhedge]
 //==================================================================================================
 pub fn market_fhedge(parent_order_id: i32, action: &str) -> Order {
     // FX Hedge orders can only have a quantity of 0
@@ -888,7 +802,6 @@ pub fn market_fhedge(parent_order_id: i32, action: &str) -> Order {
     order
 }
 
-//fhedge]
 //==================================================================================================
 pub fn pegged_to_benchmark(
     action: &str,
@@ -903,7 +816,6 @@ pub fn pegged_to_benchmark(
     reference_contract_lower_range: f64,
     reference_contract_upper_range: f64,
 ) -> Order {
-    //pegged_benchmark]
     let mut order = Order::default();
     order.order_type = "PEG BENCH".to_string();
     // BUY or SELL
@@ -938,7 +850,6 @@ pub fn attach_adjustable_to_stop(
     trigger_price: f64,
     adjust_stop_price: f64,
 ) -> Order {
-    //adjustable_stop]
     // Attached order is a conventional STP order in opposite direction
     let mut order = stop(
         (if parent.action == "BUY" {
@@ -969,7 +880,6 @@ pub fn attach_adjustable_to_stop_limit(
     adjusted_stop_price: f64,
     adjusted_stop_limit_price: f64,
 ) -> Order {
-    //adjustable_stop_limit]
     // Attached order is a conventional STP order
     let mut order = stop(
         (if parent.action == "BUY" {
@@ -1003,7 +913,6 @@ pub fn attach_adjustable_to_trail(
     adjusted_trail_amount: f64,
     trail_unit: i32,
 ) -> Order {
-    //adjustable_trail]
     // Attached order is a conventional STP order
     let mut order = stop(
         (if parent.action == "BUY" {
@@ -1026,7 +935,7 @@ pub fn attach_adjustable_to_trail(
     order.adjustable_trailing_unit = trail_unit;
     // of...
     order.adjusted_trailing_amount = adjusted_trail_amount;
-    //adjustable_trail]
+
     order
 }
 
@@ -1039,7 +948,6 @@ pub fn price_condition(
     is_more: bool,
     is_conjunction: bool,
 ) -> PriceCondition {
-    //price_condition]
     // Conditions have to be created via the OrderCondition.create
     let mut price_condition: PriceCondition = create_condition(ConditionType::Price).into();
     // When this contract...
@@ -1060,7 +968,7 @@ pub fn price_condition(
         .operator_condition
         .order_condition
         .is_conjunction_connection = is_conjunction;
-    //price_condition]
+
     price_condition
 }
 
@@ -1071,7 +979,6 @@ pub fn execution_condition(
     exchange: &str,
     is_conjunction: bool,
 ) -> ExecutionCondition {
-    //execution_condition]
     let mut exec_condition: ExecutionCondition = create_condition(ConditionType::Execution).into();
     // When an execution on symbol
     exec_condition.symbol = symbol.to_string();
@@ -1082,13 +989,12 @@ pub fn execution_condition(
     // AND | OR next condition (will be ignored if no more conditions are added)
     exec_condition.order_condition.is_conjunction_connection = is_conjunction;
     exec_condition.order_condition.cond_type = ConditionType::Execution;
-    //execution_condition]
+
     exec_condition
 }
 
 //==================================================================================================
 pub fn margin_condition(percent: f64, is_more: bool, is_conjunction: bool) -> MarginCondition {
-    //margin_condition]
     let mut margin_condition: MarginCondition = create_condition(ConditionType::Margin).into();
     // If margin is above/below
     margin_condition.operator_condition.is_more = is_more;
@@ -1103,8 +1009,8 @@ pub fn margin_condition(percent: f64, is_more: bool, is_conjunction: bool) -> Ma
         .operator_condition
         .order_condition
         .cond_type = ConditionType::Margin;
-    //margin_condition]
-    return margin_condition;
+
+    margin_condition
 }
 
 //==================================================================================================
@@ -1115,7 +1021,6 @@ pub fn percentage_change_condition(
     is_more: bool,
     is_conjunction: bool,
 ) -> PercentChangeCondition {
-    //percentage_condition]
     let mut pct_change_condition: PercentChangeCondition =
         create_condition(ConditionType::Execution).into();
     // If there is a price percent change measured against last close price above or below...
@@ -1140,13 +1045,12 @@ pub fn percentage_change_condition(
         .operator_condition
         .order_condition
         .cond_type = ConditionType::PercentChange;
-    //percentage_condition]
+
     pct_change_condition
 }
 
 //==================================================================================================
 pub fn time_condition(time: &str, is_more: bool, is_conjunction: bool) -> TimeCondition {
-    //time_condition]
     let mut time_condition: TimeCondition = create_condition(ConditionType::Time).into();
     // Before or after...
     time_condition.operator_condition.is_more = is_more;
@@ -1158,7 +1062,7 @@ pub fn time_condition(time: &str, is_more: bool, is_conjunction: bool) -> TimeCo
         .order_condition
         .is_conjunction_connection = is_conjunction;
     time_condition.operator_condition.order_condition.cond_type = ConditionType::Time;
-    //time_condition]
+
     time_condition
 }
 
@@ -1170,7 +1074,6 @@ pub fn volume_condition(
     volume: i32,
     is_conjunction: bool,
 ) -> VolumeCondition {
-    //volume_condition]
     let mut vol_cond: VolumeCondition = create_condition(ConditionType::Volume).into();
     // Whenever contract...
     vol_cond.contract_condition.con_id = con_id;
@@ -1191,6 +1094,14 @@ pub fn volume_condition(
         .operator_condition
         .order_condition
         .cond_type = ConditionType::Volume;
-    //volume_condition]
+
     vol_cond
+}
+
+//==================================================================================================
+pub fn what_if_limit_order(action: &str, quantity: f64, limit_price: f64) -> Order {
+    let mut order = limit_order(action, quantity, limit_price);
+    order.what_if = true;
+
+    order
 }
