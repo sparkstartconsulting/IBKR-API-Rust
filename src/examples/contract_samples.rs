@@ -157,7 +157,7 @@ pub fn us_option_contract() -> Contract {
     contract.sec_type = "OPT".to_string();
     contract.exchange = "SMART".to_string();
     contract.currency = "USD".to_string();
-    contract.last_trade_date_or_contract_month = "20190315".to_string();
+    contract.last_trade_date_or_contract_month = "202009".to_string();
     contract.strike = 1180.0;
     contract.right = "C".to_string();
     contract.multiplier = "100".to_string();
@@ -235,7 +235,7 @@ pub fn simple_future() -> Contract {
     contract.sec_type = "FUT".to_string();
     contract.exchange = "GLOBEX".to_string();
     contract.currency = "USD".to_string();
-    contract.last_trade_date_or_contract_month = "202003".to_string();
+    contract.last_trade_date_or_contract_month = "202009".to_string();
 
     contract
 }
@@ -248,7 +248,7 @@ pub fn future_with_local_symbol() -> Contract {
     contract.sec_type = "FUT".to_string();
     contract.exchange = "GLOBEX".to_string();
     contract.currency = "USD".to_string();
-    contract.local_symbol = "ESU6".to_string();
+    contract.local_symbol = "ESU0".to_string();
 
     contract
 }
@@ -608,7 +608,7 @@ pub fn qbalgo_contract() -> Contract {
     contract.sec_type = "FUT".to_string();
     contract.exchange = "QBALGO".to_string();
     contract.currency = "USD".to_string();
-    contract.last_trade_date_or_contract_month = "202003".to_string();
+    contract.last_trade_date_or_contract_month = "202009".to_string();
 
     contract
 }

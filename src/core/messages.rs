@@ -250,7 +250,7 @@ pub fn read_fields(buf: &str) -> Vec<String> {
 
 //==================================================================================================
 pub fn make_field(val: &dyn Any) -> Result<String, IBKRApiLibError> {
-    debug!("CALLING make_field!!");
+    // debug!("CALLING make_field!!");
     // adds the NULL string terminator
     let mut field = String::new();
     // bool type is encoded as int

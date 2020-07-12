@@ -43,9 +43,9 @@ pub enum ConnStatus {
 //==================================================================================================
 /// Struct for sending requests
 #[derive(Debug)]
-pub struct EClient<T: Wrapper + Sync + Send> {
+pub struct EClient {
     //decoder: Decoder<'a, T>,
-    wrapper: Arc<Mutex<T>>,
+    // wrapper: Arc<Mutex<T>>,
     stream: Option<TcpStream>,
     host: String,
     port: u32,
@@ -58,13 +58,10 @@ pub struct EClient<T: Wrapper + Sync + Send> {
     disconnect_requested: Arc<AtomicBool>,
 }
 
-impl<T> EClient<T>
-where
-    T: Wrapper + Sync + Send + 'static,
-{
-    pub fn new(the_wrapper: Arc<Mutex<T>>) -> Self {
+impl EClient {
+    pub fn new() -> Self {
         EClient {
-            wrapper: the_wrapper,
+            //wrapper: the_wrapper,
             stream: None,
             host: "".to_string(),
             port: 0,
@@ -90,11 +87,12 @@ where
 
     //----------------------------------------------------------------------------------------------
     /// Establishes a connection to TWS or IB Gateway
-    pub fn connect(
+    pub fn connect<T: Wrapper + Sync + Send>(
         &mut self,
         host: &str,
         port: u32,
         client_id: i32,
+        the_wrapper: Arc<Mutex<T>>,
     ) -> Result<(), IBKRApiLibError> {
         self.host = host.to_string();
         self.port = port;
@@ -129,7 +127,7 @@ where
 
         //let mut decoder = Decoder::new(self.wrapper.clone(), rx, self.server_version);
         let mut decoder = Decoder::new(
-            self.wrapper.clone(),
+            the_wrapper.clone(),
             rx,
             self.server_version,
             self.conn_state.clone(),
@@ -1929,7 +1927,7 @@ where
             msg.push_str(&make_field_handle_empty(&order.use_price_mgmt_algo)?);
         }
 
-        info!("Placing order {:?}", msg);
+        // info!("Placing order {:?}", msg);
         self.send_request(msg.as_str())?;
         Ok(())
     }

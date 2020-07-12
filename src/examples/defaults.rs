@@ -1,6 +1,6 @@
 //! Example implementation of the Wrapper callback trait.  Just logs callback methods
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
+
 use std::time::{Duration, UNIX_EPOCH};
 
 use bigdecimal::BigDecimal;
@@ -8,7 +8,6 @@ use chrono::prelude::DateTime;
 use chrono::Utc;
 use log::*;
 
-use crate::core::client::EClient;
 use crate::core::common::{
     BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
     HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
@@ -22,13 +21,11 @@ use crate::core::wrapper::Wrapper;
 
 //==================================================================================================
 /// Example implementation of the Wrapper callback trait.  Just logs callback methods
-pub struct DefaultWrapper {
-    pub client: Option<Arc<Mutex<EClient<DefaultWrapper>>>>,
-}
+pub struct DefaultWrapper {}
 
 impl DefaultWrapper {
     pub fn new() -> Self {
-        DefaultWrapper { client: None }
+        DefaultWrapper {}
     }
 }
 impl Wrapper for DefaultWrapper {
