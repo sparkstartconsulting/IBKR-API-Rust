@@ -1,6 +1,6 @@
 //! Examples of populating fields that define various types of contacts
 
-use crate::core::contract::{ComboLeg, Contract};
+use crate::core::contract::{ComboLeg, Contract, PositionType};
 
 //==================================================================================================
 pub fn eur_gbp_fx() -> Contract {
@@ -348,13 +348,13 @@ pub fn option_combo_contract() -> Contract {
 
     let mut leg1 = ComboLeg::default();
     leg1.con_id = 317960956; //DBK JUN 21 2019 C
-    leg1.ratio = 1;
+    leg1.ratio = 1.0;
     leg1.action = "BUY".to_string();
     leg1.exchange = "DTB".to_string();
 
     let mut leg2 = ComboLeg::default();
     leg2.con_id = 334216780; //DBK MAR 15 2019 C
-    leg2.ratio = 1;
+    leg2.ratio = 1.0;
     leg2.action = "SELL".to_string();
     leg2.exchange = "DTB".to_string();
 
@@ -378,13 +378,13 @@ pub fn stock_combo_contract() -> Contract {
 
     let mut leg1 = ComboLeg::default();
     leg1.con_id = 43645865; //IBKR STK
-    leg1.ratio = 1;
+    leg1.ratio = 1.0;
     leg1.action = "BUY".to_string();
     leg1.exchange = "SMART".to_string();
 
     let mut leg2 = ComboLeg::default();
     leg2.con_id = 9408; //MCD STK
-    leg2.ratio = 1;
+    leg2.ratio = 1.0;
     leg2.action = "SELL".to_string();
     leg2.exchange = "SMART".to_string();
 
@@ -405,16 +405,20 @@ pub fn future_combo_contract() -> Contract {
     contract.exchange = "CFE".to_string();
 
     let mut leg1 = ComboLeg::default();
-    leg1.con_id = 326501438; // VIX FUT 201903
-    leg1.ratio = 1;
+    leg1.con_id = 438391466; // VIX FUT 201903
+    leg1.ratio = 1.0;
     leg1.action = "BUY".to_string();
     leg1.exchange = "CFE".to_string();
+    leg1.exempt_code = -1;
+    leg1.open_close = PositionType::SamePos;
 
     let mut leg2 = ComboLeg::default();
-    leg2.con_id = 323072528; // VIX FUT 2019049
-    leg2.ratio = 1;
+    leg2.con_id = 394987014; // VIX FUT 201904
+    leg2.ratio = 1.0;
     leg2.action = "SELL".to_string();
     leg2.exchange = "CFE".to_string();
+    leg2.exempt_code = -1;
+    leg2.open_close = PositionType::SamePos;
 
     contract.combo_legs = vec![];
     contract.combo_legs.push(leg1);
@@ -433,13 +437,13 @@ pub fn smart_future_combo_contract() -> Contract {
 
     let mut leg1 = ComboLeg::default();
     leg1.con_id = 55928698; // WTI future June 2017
-    leg1.ratio = 1;
+    leg1.ratio = 1.0;
     leg1.action = "BUY".to_string();
     leg1.exchange = "IPE".to_string();
 
     let mut leg2 = ComboLeg::default();
     leg2.con_id = 55850663; // COIL future June 2017
-    leg2.ratio = 1;
+    leg2.ratio = 1.0;
     leg2.action = "SELL".to_string();
     leg2.exchange = "IPE".to_string();
 
@@ -460,13 +464,13 @@ pub fn inter_cmdty_futures_contract() -> Contract {
 
     let mut leg1 = ComboLeg::default();
     leg1.con_id = 47207310; //CL Dec'16 @NYMEX
-    leg1.ratio = 1;
+    leg1.ratio = 1.0;
     leg1.action = "BUY".to_string();
     leg1.exchange = "NYMEX".to_string();
 
     let mut leg2 = ComboLeg::default();
     leg2.con_id = 47195961; //BZ Dec'16 @NYMEX
-    leg2.ratio = 1;
+    leg2.ratio = 1.0;
     leg2.action = "SELL".to_string();
     leg2.exchange = "NYMEX".to_string();
 

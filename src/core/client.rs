@@ -1628,6 +1628,7 @@ impl EClient {
             && contract.sec_type == "BAG"
         {
             let order_combo_legs_count = order.order_combo_legs.len();
+
             msg.push_str(&make_field(&order_combo_legs_count)?);
             if order_combo_legs_count > 0 {
                 for order_combo_leg in &order.order_combo_legs {
@@ -1927,7 +1928,7 @@ impl EClient {
             msg.push_str(&make_field_handle_empty(&order.use_price_mgmt_algo)?);
         }
 
-        // info!("Placing order {:?}", msg);
+        info!("Placing order {:?}", msg);
         self.send_request(msg.as_str())?;
         Ok(())
     }

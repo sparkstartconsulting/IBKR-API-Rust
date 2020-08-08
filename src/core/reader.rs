@@ -28,8 +28,8 @@ impl Reader {
             stream,
             messages,
             disconnect_requested,
-            is_connected:true,
-        } 
+            is_connected: true,
+        }
     }
 
     //----------------------------------------------------------------------------------------------
@@ -110,7 +110,7 @@ impl Reader {
     pub fn run(&mut self) {
         debug!("starting reader loop");
         loop {
-            if self.disconnect_requested.load(Ordering::Acquire) || !self.is_connected{
+            if self.disconnect_requested.load(Ordering::Acquire) || !self.is_connected {
                 return;
             }
             let result = self.process_reader_msgs();

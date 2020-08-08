@@ -30,7 +30,7 @@ pub fn main() -> Result<(), IBKRApiLibError> {
     app.lock()
         .unwrap()
         .connect("127.0.0.1", 4002, 0, wrapper.clone())?;
-//4002
+    //4002
     thread::sleep(Duration::new(18600, 0));
 
     Ok(())

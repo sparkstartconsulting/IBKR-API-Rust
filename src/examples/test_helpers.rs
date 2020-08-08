@@ -198,6 +198,7 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     #[allow(dead_code)]
     fn order_operations_req(&mut self) -> Result<(), IBKRApiLibError> {
+        info!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ order_operations_req...");
         // Requesting the next valid id
         // The parameter is always ignored.
 
@@ -223,12 +224,12 @@ impl TestWrapper {
 
         // Requesting this API client's orders
         info!("req_open_orders...");
-        self.client
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .req_open_orders()?;
+        // self.client
+        //     .as_ref()
+        //     .unwrap()
+        //     .lock()
+        //     .unwrap()
+        //     .req_open_orders()?;
 
         // Placing/ modifying an order - remember to ALWAYS increment the
         // nextValidId after placing an order so it can be used for the next one!
@@ -319,12 +320,13 @@ impl TestWrapper {
         // )?;
 
         //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   PROBLEMS WITH ALL COMBOS!!!!!
-        // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
-        //     next_id,
-        //     &contract_samples::future_combo_contract(),
-        //     order_samples::combo_limit_order("SELL", 1.0, 1.0, false).borrow(),
-        // )?;
+        info!("Placing combo order...");
+        let next_id = self.next_order_id();
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            &contract_samples::future_combo_contract(),
+            order_samples::combo_limit_order("SELL", 1.0, 1.0, false).borrow(),
+        )?;
 
         // let next_id = self.next_order_id();
         // self.client.as_ref().unwrap().lock().unwrap().place_order(
@@ -358,7 +360,6 @@ impl TestWrapper {
         //     &contract_samples::usstock().borrow(),
         //     order_samples::discretionary("SELL", 1.0, 45.0, 0.5).borrow(),
         // )?;
-
 
         //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@PROBLEM WITH SECURITY DEFINITION
         // let next_id = self.next_order_id();
@@ -484,12 +485,12 @@ impl TestWrapper {
         // //Interactive Broker's has a 50 messages per second limit, so sleep for 1 sec and continue placing orders
         // thread::sleep(Duration::from_secs(1));
 
-       self.algo_samples()?;
-       //self.bracket_sample()?;
+        // self.algo_samples()?;
+        //self.bracket_sample()?;
 
-     // self.condition_samples()?;
+        // self.condition_samples()?;
 
-      //self.hedge_sample()?;
+        //self.hedge_sample()?;
 
         // NOTE: the following orders are not supported for Paper Trading
         // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::usstock().borrow(), order_samples::AtAuction("BUY", 100, 30.0))
@@ -518,7 +519,7 @@ impl TestWrapper {
         // self.client.unwrap().lock().unwrap().place_order( self.next_order_id(), &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToTrailAmount(lmtParent, 34, 32, 33, 0.008))
         //        self.algo_samples();
 
-       // self.oca_sample()?;
+        // self.oca_sample()?;
 
         // Request the day's executions
         // self.client
@@ -536,6 +537,8 @@ impl TestWrapper {
         //     .req_completed_orders(true)?;
         thread::sleep(Duration::from_secs(2));
         self.req_global_cancel()?;
+
+        info!("################################# END order_operations_req...");
 
         Ok(())
     }
@@ -711,7 +714,7 @@ impl TestWrapper {
         # ! [place_midprice]
         self.placeOrder(self.nextOrderId(), ContractSamples.USStockAtSmart(), OrderSamples.Midprice("BUY", 1, 150))
         # ! [place_midprice]
-		
+
         # ! [ad]
         # The Time Zone in "startTime" and "endTime" attributes is ignored and always defaulted to GMT
         AvailableAlgoParams.FillAccumulateDistributeParams(baseOrder, 10, 60, True, True, 1, True, True, "20161010-12:00:00 GMT", "20161010-16:00:00 GMT")
@@ -786,8 +789,9 @@ impl TestWrapper {
     #[allow(dead_code)]
     fn algo_samples(&mut self) -> Result<(), IBKRApiLibError> {
         let next_id = self.next_order_id();
-        let mut scale_order = order_samples::relative_pegged_to_primary("BUY", 70000.0, 189.0, 0.01);
-        
+        let mut scale_order =
+            order_samples::relative_pegged_to_primary("BUY", 70000.0, 189.0, 0.01);
+
         fill_scale_params(
             scale_order.borrow_mut(),
             2000,
@@ -862,7 +866,6 @@ impl TestWrapper {
             contract_samples::us_stock_at_smart().borrow(),
             base_order.borrow(),
         )?;
-   
 
         let next_id = self.next_order_id();
         fill_twap_params(
@@ -878,7 +881,7 @@ impl TestWrapper {
             contract_samples::us_stock_at_smart().borrow(),
             base_order.borrow(),
         )?;
- 
+
         let next_id = self.next_order_id();
         fill_vwap_params(
             &mut base_order.clone(),
@@ -895,7 +898,6 @@ impl TestWrapper {
             base_order.borrow(),
         )?;
 
-        
         let next_id = self.next_order_id();
         fill_balance_impact_risk_params(&mut base_order.clone(), 0.1, "Aggressive", true);
         self.client.as_ref().unwrap().lock().unwrap().place_order(
@@ -903,7 +905,7 @@ impl TestWrapper {
             contract_samples::us_option_contract().borrow(),
             base_order.borrow(),
         )?;
- 
+
         let next_id = self.next_order_id();
         fill_min_impact_params(&mut base_order.clone(), 0.3);
         self.client.as_ref().unwrap().lock().unwrap().place_order(
@@ -911,7 +913,7 @@ impl TestWrapper {
             contract_samples::us_option_contract().borrow(),
             base_order.borrow(),
         )?;
- 
+
         let next_id = self.next_order_id();
         fill_adaptive_params(&mut base_order.clone(), "Normal");
         self.client.as_ref().unwrap().lock().unwrap().place_order(
@@ -919,7 +921,7 @@ impl TestWrapper {
             contract_samples::us_stock_at_smart().borrow(),
             base_order.borrow(),
         )?;
-  
+
         let next_id = self.next_order_id();
         fill_close_price_params(
             &mut base_order.clone(),
@@ -950,7 +952,6 @@ impl TestWrapper {
             base_order.borrow(),
         )?;
 
-
         let next_id = self.next_order_id();
         fill_price_variant_pct_vol_params(
             &mut base_order.clone(),
@@ -968,7 +969,6 @@ impl TestWrapper {
             contract_samples::us_stock_at_smart().borrow(),
             base_order.borrow(),
         )?;
- 
 
         let next_id = self.next_order_id();
         fill_size_variant_pct_vol_params(

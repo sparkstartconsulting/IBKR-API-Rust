@@ -252,10 +252,12 @@ pub fn read_fields(buf: &str) -> Vec<String> {
 pub fn make_field(val: &dyn Any) -> Result<String, IBKRApiLibError> {
     // debug!("CALLING make_field!!");
     // adds the NULL string terminator
-    let mut field = String::new();
+    let mut field = "\0".to_string();
     // bool type is encoded as int
     if let Some(boolval) = val.downcast_ref::<bool>() {
         field = format!("{}\0", *boolval as i32);
+    } else if let Some(stringval) = val.downcast_ref::<usize>() {
+        field = format!("{}\0", *stringval as i32);
     } else if let Some(stringval) = val.downcast_ref::<f64>() {
         if UNSET_DOUBLE == *stringval {
             field = format!("{}\0", "");
@@ -268,8 +270,6 @@ pub fn make_field(val: &dyn Any) -> Result<String, IBKRApiLibError> {
         } else {
             field = format!("{}\0", *stringval as i32);
         }
-    } else if let Some(stringval) = val.downcast_ref::<usize>() {
-        field = format!("{}\0", *stringval as i32);
     } else if let Some(stringval) = val.downcast_ref::<String>() {
         field = format!("{}\0", stringval);
     } else if let Some(stringval) = val.downcast_ref::<&str>() {
