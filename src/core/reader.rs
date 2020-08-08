@@ -15,6 +15,7 @@ pub struct Reader {
     stream: TcpStream,
     messages: Sender<String>,
     disconnect_requested: Arc<AtomicBool>,
+    is_connected: bool,
 }
 
 impl Reader {
@@ -27,6 +28,7 @@ impl Reader {
             stream,
             messages,
             disconnect_requested,
+            is_connected: true,
         }
     }
 
@@ -40,6 +42,7 @@ impl Reader {
             if !self.disconnect_requested.load(Ordering::Acquire) {
                 info!("socket either closed or broken, disconnecting");
                 self.stream.shutdown(Shutdown::Both)?;
+                self.is_connected = false;
             }
         }
         Ok(buf)
@@ -107,7 +110,7 @@ impl Reader {
     pub fn run(&mut self) {
         debug!("starting reader loop");
         loop {
-            if self.disconnect_requested.load(Ordering::Acquire) {
+            if self.disconnect_requested.load(Ordering::Acquire) || !self.is_connected {
                 return;
             }
             let result = self.process_reader_msgs();

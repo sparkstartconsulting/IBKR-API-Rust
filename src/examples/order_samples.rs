@@ -640,6 +640,7 @@ pub fn combo_limit_order(
     let mut order = Order::default();
     order.action = action.to_string();
     order.order_type = "LMT".to_string();
+    order.tif = "GTC".to_string();
     order.total_quantity = quantity;
     order.lmt_price = limit_price;
     if non_guaranteed {

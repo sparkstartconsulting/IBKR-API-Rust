@@ -613,7 +613,7 @@ impl<'a> OrderDecoder<'a> {
                 for _ in 0..combo_legs_count {
                     let mut combo_leg: ComboLeg = ComboLeg::default();
                     combo_leg.con_id = decode_i32(fields_iter)?;
-                    combo_leg.ratio = decode_i32(fields_iter)?;
+                    combo_leg.ratio = decode_f64(fields_iter)?;
                     combo_leg.action = decode_string(fields_iter)?;
                     combo_leg.exchange = decode_string(fields_iter)?;
                     combo_leg.open_close =

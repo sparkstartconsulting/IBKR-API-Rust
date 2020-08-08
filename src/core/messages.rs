@@ -250,12 +250,14 @@ pub fn read_fields(buf: &str) -> Vec<String> {
 
 //==================================================================================================
 pub fn make_field(val: &dyn Any) -> Result<String, IBKRApiLibError> {
-    debug!("CALLING make_field!!");
+    // debug!("CALLING make_field!!");
     // adds the NULL string terminator
-    let mut field = String::new();
+    let mut field = "\0".to_string();
     // bool type is encoded as int
     if let Some(boolval) = val.downcast_ref::<bool>() {
         field = format!("{}\0", *boolval as i32);
+    } else if let Some(stringval) = val.downcast_ref::<usize>() {
+        field = format!("{}\0", *stringval as i32);
     } else if let Some(stringval) = val.downcast_ref::<f64>() {
         if UNSET_DOUBLE == *stringval {
             field = format!("{}\0", "");
@@ -268,8 +270,6 @@ pub fn make_field(val: &dyn Any) -> Result<String, IBKRApiLibError> {
         } else {
             field = format!("{}\0", *stringval as i32);
         }
-    } else if let Some(stringval) = val.downcast_ref::<usize>() {
-        field = format!("{}\0", *stringval as i32);
     } else if let Some(stringval) = val.downcast_ref::<String>() {
         field = format!("{}\0", stringval);
     } else if let Some(stringval) = val.downcast_ref::<&str>() {
@@ -313,6 +313,8 @@ mod tests {
         assert_eq!("2.5\u{0}", make_field(&2.5)?);
         assert_eq!("hello\u{0}", make_field(&"hello")?);
         assert_eq!("hello\u{0}", make_field(&"hello".to_string())?);
+        assert_eq!("\u{0}", make_field(&"".to_string())?);
+        assert_eq!("\u{0}", make_field(&Option::<String>::None)?);
         Ok(())
     }
 

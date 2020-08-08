@@ -1533,7 +1533,7 @@ where
     //----------------------------------------------------------------------------------------------
     fn process_open_order(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-        info!("Processing open order");
+        //info!("Processing open order");
         //throw away message_id
         fields_itr.next();
 
@@ -2628,7 +2628,7 @@ where
         info!("Starting run...");
         // !self.done &&
         loop {
-            debug!("Client waiting for message...");
+            // debug!("Client waiting for message...");
 
             let text = self.msg_queue.recv();
             match text {

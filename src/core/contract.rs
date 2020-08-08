@@ -41,14 +41,11 @@ impl Default for PositionType {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ComboLeg {
     pub con_id: i32,
-    // type: int
-    pub ratio: i32,
-    // type: int
+    pub ratio: f64,
     pub action: String,
     // BUY /SELL / SSHORT
     pub exchange: String,
     pub open_close: PositionType,
-    // type: int; LegOpenClose enum values
     // for stock legs when doing short sale
     pub short_sale_slot: i32,
     pub designated_location: String,
@@ -58,7 +55,7 @@ pub struct ComboLeg {
 impl ComboLeg {
     pub fn new(
         con_id: i32,
-        ratio: i32,
+        ratio: f64,
         action: String,
         exchange: String,
         open_close: PositionType,
@@ -107,10 +104,8 @@ impl Display for ComboLeg {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct DeltaNeutralContract {
     pub con_id: i32,
-    // type: int
     pub delta: f64,
-    // type: float
-    pub price: f64, // type: float
+    pub price: f64,
 }
 
 impl DeltaNeutralContract {
@@ -141,7 +136,6 @@ pub struct Contract {
     pub sec_type: String,
     pub last_trade_date_or_contract_month: String,
     pub strike: f64,
-    // float ! !
     pub right: String,
     pub multiplier: String,
     pub exchange: String,
@@ -157,9 +151,8 @@ pub struct Contract {
 
     //combos
     pub combo_legs_descrip: String,
-    // type: str; received in open order 14 and up for all combos
+    // received in open order 14 and up for all combos
     pub combo_legs: Vec<ComboLeg>,
-    // type: list<ComboLeg>
     pub delta_neutral_contract: Option<DeltaNeutralContract>,
 }
 
