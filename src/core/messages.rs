@@ -313,6 +313,8 @@ mod tests {
         assert_eq!("2.5\u{0}", make_field(&2.5)?);
         assert_eq!("hello\u{0}", make_field(&"hello")?);
         assert_eq!("hello\u{0}", make_field(&"hello".to_string())?);
+        assert_eq!("\u{0}", make_field(&"".to_string())?);
+        assert_eq!("\u{0}", make_field(&Option::<String>::None)?);
         Ok(())
     }
 
