@@ -9,7 +9,7 @@ use crate::core::common::TagValue;
 
 //==================================================================================================
 #[repr(i32)]
-#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, FromPrimitive, Debug)]
 pub enum PositionType {
     SamePos = 0,
     //open/close leg value is same as combo

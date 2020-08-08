@@ -1613,7 +1613,7 @@ impl EClient {
                     msg.push_str(&make_field(&combo_leg.ratio)?);
                     msg.push_str(&make_field(&combo_leg.action)?);
                     msg.push_str(&make_field(&combo_leg.exchange)?);
-                    msg.push_str(&make_field(&combo_leg.open_close)?);
+                    msg.push_str(&make_field(&(combo_leg.open_close as i32))?);
                     msg.push_str(&make_field(&combo_leg.short_sale_slot)?); //srv v35 && above
                     msg.push_str(&make_field(&combo_leg.designated_location)?); // srv v35 && above
                     if self.server_version() >= MIN_SERVER_VER_SSHORTX_OLD {
