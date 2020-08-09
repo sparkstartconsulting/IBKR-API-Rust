@@ -41,7 +41,7 @@ use std::time::{Duration, UNIX_EPOCH};
 /// Example implementation of the Wrapper callback trait.  Just logs callback methods
 #[derive(Debug)]
 pub struct TestWrapper {
-    pub client: Option<Arc<Mutex<EClient>>>,
+    pub client: Option<Arc<Mutex<EClient<TestWrapper>>>>,
     pub next_order_id: i32,
     account: String,
 }
@@ -57,30 +57,30 @@ impl TestWrapper {
 
     //----------------------------------------------------------------------------------------------
     pub fn start_requests(&mut self) -> Result<(), IBKRApiLibError> {
-        self.order_operations_req()?; //tested ok
-                                      // self.what_if_order_operations()?; //tested ok
-                                      //self.account_operations_req()?; //tested ok
-                                      //self.market_data_type_operations(); //tested ok
-                                      //self.tick_data_operations_req(); //tested ok
-                                      //self.market_depth_operations_req(); //tested ok
-                                      //self.real_time_bars_operations_req(); // Tested ok
-                                      //self.historical_data_operations_req(); // Tested ok
-                                      //self.options_operations_req(); tested ok
-                                      // self.market_scanners_perations_req(); testd ok
-                                      //self.fundamentals_operations_req(); //retest with research data subscription
-                                      //self.contract_operations()?; //tested ok
-                                      //self.tick_by_tick_operations_req(); //tested ok
-                                      // self.historical_ticks_operations(); //tested ok
-                                      //self.histogram_operations_req(); //tested ok
-                                      // self.continuous_futures_operations_req(); //tested ok
-                                      //self.pnl_operations_req()?; //tested ok
-                                      // self.market_rule_operations(); //testd ok
-                                      // self.reroute_cfd_operations(); //tested ok
-                                      //self.financial_advisor_operations(); need financial advisor account to test
-                                      //self.news_operations_req()?; // tested ok
-                                      //self.bulletins_operations_req()?; //tested ok
-                                      //self.miscelaneous_operations(); //tested ok
-                                      //self.linking_operations(); //tested ok
+        // self.order_operations_req()?; //tested ok
+        self.what_if_order_operations()?; //tested ok
+                                          //self.account_operations_req()?; //tested ok
+                                          //self.market_data_type_operations(); //tested ok
+                                          //self.tick_data_operations_req(); //tested ok
+                                          //self.market_depth_operations_req(); //tested ok
+                                          //self.real_time_bars_operations_req(); // Tested ok
+                                          //self.historical_data_operations_req(); // Tested ok
+                                          //self.options_operations_req(); tested ok
+                                          // self.market_scanners_perations_req(); testd ok
+                                          //self.fundamentals_operations_req(); //retest with research data subscription
+                                          //self.contract_operations()?; //tested ok
+                                          //self.tick_by_tick_operations_req(); //tested ok
+                                          // self.historical_ticks_operations(); //tested ok
+                                          //self.histogram_operations_req(); //tested ok
+                                          // self.continuous_futures_operations_req(); //tested ok
+                                          //self.pnl_operations_req()?; //tested ok
+                                          // self.market_rule_operations(); //testd ok
+                                          // self.reroute_cfd_operations(); //tested ok
+                                          //self.financial_advisor_operations(); need financial advisor account to test
+                                          //self.news_operations_req()?; // tested ok
+                                          //self.bulletins_operations_req()?; //tested ok
+                                          //self.miscelaneous_operations(); //tested ok
+                                          //self.linking_operations(); //tested ok
         Ok(())
     }
 
@@ -2790,7 +2790,7 @@ impl Wrapper for TestWrapper {
         order_state: OrderState,
     ) {
         info!(
-            "open_order -- order_id: {}, contract: {}, order: {}, order_state: {}",
+            "open_order -- order_id: {}\n\n\t     contract: {}\n\t     order: {}\n\t     order_state: {}",
             order_id, contract, order, order_state
         );
     }
