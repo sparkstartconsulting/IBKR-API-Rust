@@ -18,7 +18,7 @@ pub fn main() -> Result<(), IBKRApiLibError> {
     log4rs::init_file("./log_config.yml", Default::default()).unwrap();
 
     let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
-    let app = Arc::new(Mutex::new(EClient::new()));
+    let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
 
     info!("getting connection...");
     wrapper.lock().unwrap().client = Option::from(app.clone());
@@ -27,9 +27,7 @@ pub fn main() -> Result<(), IBKRApiLibError> {
     // next_valid_id to be called, which will start sending tests requests to TWS (see the
     // start_requests function inn TestWrapper which is called by next_valid_id
     // app.lock().unwrap().connect("127.0.0.1", 7497, 0);
-    app.lock()
-        .unwrap()
-        .connect("127.0.0.1", 4002, 0, wrapper.clone())?;
+    app.lock().unwrap().connect("127.0.0.1", 4002, 0)?;
     //4002
     thread::sleep(Duration::new(18600, 0));
 

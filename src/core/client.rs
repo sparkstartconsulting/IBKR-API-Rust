@@ -43,9 +43,9 @@ pub enum ConnStatus {
 //==================================================================================================
 /// Struct for sending requests
 #[derive(Debug)]
-pub struct EClient {
+pub struct EClient<T: Wrapper + Send + Sync> {
     //decoder: Decoder<'a, T>,
-    // wrapper: Arc<Mutex<T>>,
+    wrapper: Arc<Mutex<T>>,
     stream: Option<TcpStream>,
     host: String,
     port: u32,
@@ -58,10 +58,10 @@ pub struct EClient {
     disconnect_requested: Arc<AtomicBool>,
 }
 
-impl EClient {
-    pub fn new() -> Self {
+impl<T: Wrapper + Send + Sync> EClient<T> {
+    pub fn new(wrapper: Arc<Mutex<T>>) -> Self {
         EClient {
-            //wrapper: the_wrapper,
+            wrapper: wrapper,
             stream: None,
             host: "".to_string(),
             port: 0,
@@ -87,12 +87,11 @@ impl EClient {
 
     //----------------------------------------------------------------------------------------------
     /// Establishes a connection to TWS or IB Gateway
-    pub fn connect<T: Wrapper + Sync + Send>(
+    pub fn connect(
         &mut self,
         host: &str,
         port: u32,
         client_id: i32,
-        the_wrapper: Arc<Mutex<T>>,
     ) -> Result<(), IBKRApiLibError> {
         self.host = host.to_string();
         self.port = port;
@@ -101,9 +100,6 @@ impl EClient {
         self.disconnect_requested.store(false, Ordering::Release);
         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTING;
         let thestream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port)).unwrap();
-
-        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTED;
-        debug!("Connected");
 
         self.stream = Option::from(thestream.try_clone().unwrap());
 
@@ -126,8 +122,9 @@ impl EClient {
         let mut fields: Vec<String> = Vec::new();
 
         //let mut decoder = Decoder::new(self.wrapper.clone(), rx, self.server_version);
+
         let mut decoder = Decoder::new(
-            the_wrapper.clone(),
+            self.wrapper.clone(),
             rx,
             self.server_version,
             self.conn_state.clone(),
@@ -166,6 +163,8 @@ impl EClient {
                 panic!("decoder.run() failed!!");
             }
         });
+        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTED;
+        debug!("Connected");
         self.start_api()?;
         Ok(())
     }

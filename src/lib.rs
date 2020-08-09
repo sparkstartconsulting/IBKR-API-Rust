@@ -20,10 +20,10 @@
 //!
 //! fn main() -> Result<(), IBKRApiLibError> {
 //!     let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
-//!     let app = Arc::new(Mutex::new(EClient::new()));
+//!     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
 //!     wrapper.lock().unwrap().client = Option::from(app.clone());
 //!
-//!     app.lock().unwrap().connect("127.0.0.1", 4002, 0, wrapper.clone())?;
+//!     app.lock().unwrap().connect("127.0.0.1", 4002, 0)?;
 //!     thread::sleep(Duration::new(18600, 0));
 //!
 //!     Ok(())

@@ -114,9 +114,10 @@ impl Reader {
                 return;
             }
             let result = self.process_reader_msgs();
-            if result.is_err() {
-                error!("{:?}", result);
+            if !result.is_err() {
+                continue;
             }
+            error!("{:?}", result);
         }
     }
 }
