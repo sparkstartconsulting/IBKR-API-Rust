@@ -3,7 +3,7 @@ use std::io::Write;
 use std::marker::Sync;
 use std::net::Shutdown;
 use std::net::TcpStream;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
@@ -28,6 +28,8 @@ use crate::core::reader::Reader;
 use crate::core::scanner::ScannerSubscription;
 use crate::core::server_versions::*;
 use crate::core::wrapper::Wrapper;
+
+static POISONED_MUTEX: &str = "Mutex was poisoned";
 
 //==================================================================================================
 /// Connection status
@@ -105,12 +107,12 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
         self.client_id = client_id;
         info!("Connecting");
         self.disconnect_requested.store(false, Ordering::Release);
-        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTING;
-        let thestream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port)).unwrap();
+        *self.conn_state.lock().expect(POISONED_MUTEX) = ConnStatus::CONNECTING;
+        let thestream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port))?;
 
         self.stream = Option::from(thestream.try_clone().unwrap());
 
-        let _reader_stream = thestream.try_clone().unwrap();
+        let _reader_stream = thestream.try_clone()?;
         let (tx, rx) = channel::<String>();
         let mut reader = Reader::new(thestream, tx.clone(), self.disconnect_requested.clone());
 
@@ -126,15 +128,13 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
         self.send_bytes(bytearray.as_slice())?;
         let mut fields: Vec<String> = Vec::new();
 
-        //let mut decoder = Decoder::new(self.wrapper.clone(), rx, self.server_version);
-
         let mut decoder = Decoder::new(
             self.wrapper.clone(),
             rx,
             self.server_version,
             self.conn_state.clone(),
         );
-        //sometimes I get news before the server version, thus the loop
+        //An Interactive Broker's developer's note: "sometimes I get news before the server version, thus the loop"
         while fields.len() != 2 {
             if fields.len() > 0 {
                 decoder.interpret(fields.as_slice())?;
@@ -168,7 +168,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
                 panic!("decoder.run() failed!!");
             }
         });
-        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTED;
+        *self.conn_state.lock().expect(POISONED_MUTEX) = ConnStatus::CONNECTED;
         debug!("Connected");
         self.start_api()?;
         Ok(())
@@ -252,7 +252,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
         info!("Disconnect requested.  Shutting down stream...");
         self.disconnect_requested.store(true, Ordering::Release);
         self.stream.as_mut().unwrap().shutdown(Shutdown::Both)?;
-        *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
+        *self.conn_state.lock().expect(POISONED_MUTEX) = ConnStatus::DISCONNECTED;
         Ok(())
     }
 
