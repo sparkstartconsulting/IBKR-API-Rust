@@ -565,49 +565,49 @@ pub fn fill_csfbinline_params(
     base_order.algo_strategy = "INLINE".to_string();
 
     base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
+        "StartTime".to_string(),
         start_time.to_string(),
     ));
     base_order
         .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
+        .push(TagValue::new("EndTime".to_string(), end_time.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "execStyle".to_string(),
+        "ExecStyle".to_string(),
         exec_style.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "minPercent".to_string(),
+        "MinPercent".to_string(),
         min_percent.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "maxPercent".to_string(),
+        "MaxPercent".to_string(),
         max_percent.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "displaySize".to_string(),
+        "DisplaySize".to_string(),
         display_size.to_string(),
     ));
     base_order
         .algo_params
         .push(TagValue::new("Auction".to_string(), auction.to_string()));
     base_order.algo_params.push(TagValue::new(
-        "blockFinder".to_string(),
+        "BlockFinder".to_string(),
         (block_finder as i32).to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "blockPrice".to_string(),
+        "BlockPrice".to_string(),
         block_price.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "minBlockSize".to_string(),
+        "MinBlockSize".to_string(),
         min_block_size.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "maxBlockSize".to_string(),
+        "MaxBlockSize".to_string(),
         max_block_size.to_string(),
     ));
     base_order.algo_params.push(TagValue::new(
-        "iWouldPrice".to_string(),
+        "IWouldPrice".to_string(),
         i_would_price.to_string(),
     ));
 }
