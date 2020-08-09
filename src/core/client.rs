@@ -44,7 +44,6 @@ pub enum ConnStatus {
 /// Struct for sending requests
 #[derive(Debug)]
 pub struct EClient<T: Wrapper + Send + Sync> {
-    //decoder: Decoder<'a, T>,
     wrapper: Arc<Mutex<T>>,
     stream: Option<TcpStream>,
     host: String,
@@ -93,10 +92,18 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
         port: u32,
         client_id: i32,
     ) -> Result<(), IBKRApiLibError> {
+        if self.is_connected() {
+            info!("Already connected...");
+            return Err(IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                -1,
+                TwsError::AlreadyConnected.code().to_string(),
+                TwsError::AlreadyConnected.message().to_string(),
+            )));
+        }
         self.host = host.to_string();
         self.port = port;
         self.client_id = client_id;
-        debug!("Connecting");
+        info!("Connecting");
         self.disconnect_requested.store(false, Ordering::Release);
         *self.conn_state.lock().unwrap().deref_mut() = ConnStatus::CONNECTING;
         let thestream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port)).unwrap();
@@ -106,8 +113,6 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
         let _reader_stream = thestream.try_clone().unwrap();
         let (tx, rx) = channel::<String>();
         let mut reader = Reader::new(thestream, tx.clone(), self.disconnect_requested.clone());
-
-        //self.msg_queue = Option::from(Mutex::new(rx));
 
         let v_100_prefix = "API\0";
         let v_100_version = format!("v{}..{}", MIN_CLIENT_VER, MAX_CLIENT_VER);
