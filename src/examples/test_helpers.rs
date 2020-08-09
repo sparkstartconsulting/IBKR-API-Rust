@@ -201,7 +201,6 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     #[allow(dead_code)]
     fn order_operations_req(&mut self) -> Result<(), IBKRApiLibError> {
-        // info!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ order_operations_req...");
         // Requesting the next valid id
         // The parameter is always ignored.
 
