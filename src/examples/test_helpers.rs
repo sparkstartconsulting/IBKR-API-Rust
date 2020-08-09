@@ -37,6 +37,9 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, UNIX_EPOCH};
 
+static CLIENT_POISONED_MUTEX: &str = "Client mutex was poisoned";
+static CLIENT_IS_NONE: &str = "Client must be assigned!";
+
 //==================================================================================================
 /// Example implementation of the Wrapper callback trait.  Just logs callback methods
 #[derive(Debug)]
@@ -91,18 +94,18 @@ impl TestWrapper {
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_managed_accts()?;
 
         // Requesting family codes
         {
             self.client
                 .as_ref()
-                .unwrap()
+                .expect(CLIENT_IS_NONE)
                 .lock()
-                .unwrap()
+                .expect(CLIENT_POISONED_MUTEX)
                 .req_family_codes()?;
         }
 
@@ -111,64 +114,64 @@ impl TestWrapper {
             let all_tags = AccountSummaryTags::AllTags.to_string();
             self.client
                 .as_ref()
-                .unwrap()
+                .expect(CLIENT_IS_NONE)
                 .lock()
-                .unwrap()
+                .expect(CLIENT_POISONED_MUTEX)
                 .req_account_summary(9001, "All", all_tags.as_str())?;
         }
 
         {
             self.client
                 .as_ref()
-                .unwrap()
+                .expect(CLIENT_IS_NONE)
                 .lock()
-                .unwrap()
+                .expect(CLIENT_POISONED_MUTEX)
                 .req_account_summary(9002, "All", "$LEDGER")?;
         }
 
         {
             self.client
                 .as_ref()
-                .unwrap()
+                .expect(CLIENT_IS_NONE)
                 .lock()
-                .unwrap()
+                .expect(CLIENT_POISONED_MUTEX)
                 .req_account_summary(9003, "All", "$LEDGER:EUR")?;
         }
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_account_summary(9004, "All", "$LEDGER:ALL")?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_account_updates(true, self.account.as_str())?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_account_updates_multi(9005, self.account.as_str(), "", true)?;
 
         // Requesting all accounts' positions.
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_positions()?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_positions_multi(9006, &self.account, "")?;
 
         Ok(())
@@ -180,9 +183,9 @@ impl TestWrapper {
         // Requesting real time bars
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_real_time_bars(
                 3001,
                 contract_samples::us_stock_at_smart().borrow(),
@@ -198,7 +201,6 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     #[allow(dead_code)]
     fn order_operations_req(&mut self) -> Result<(), IBKRApiLibError> {
-        // info!("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ order_operations_req...");
         // Requesting the next valid id
         // The parameter is always ignored.
 
@@ -217,9 +219,9 @@ impl TestWrapper {
         info!("req_auto_open_orders...");
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_auto_open_orders(true)?;
 
         // Requesting this API client's orders
@@ -241,7 +243,7 @@ impl TestWrapper {
         //     let next_id = self.next_order_id();
         //     info!("Placing order... {}", next_id);
 
-        //     self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //             self.client
         //         next_id,
         //         &contract_samples::usstock().borrow(),
         //         order_samples::limit_order("SELL", 1.0, 50.0).borrow(),
@@ -253,7 +255,10 @@ impl TestWrapper {
         // fa_order_one_account.account = "DU228250".to_string();
         // {
         //     let next_id = self.next_order_id();
-        //     self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //             self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //         next_id,
         //         &contract_samples::usstock().borrow(),
         //         fa_order_one_account.borrow(),
@@ -265,7 +270,10 @@ impl TestWrapper {
         // fa_order_group_eq.fa_method = "EqualQuantity".to_string();
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::simple_future(),
         //     fa_order_group_eq.borrow(),
@@ -278,7 +286,10 @@ impl TestWrapper {
         // fa_order_group_pc.fa_percentage = "100".to_string();
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::eur_gbp_fx(),
         //     fa_order_group_pc.borrow(),
@@ -288,7 +299,10 @@ impl TestWrapper {
         // fa_order_profile.fa_profile = "Percent_60_40".to_string();
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::european_stock(),
         //     fa_order_profile.borrow(),
@@ -299,21 +313,30 @@ impl TestWrapper {
         // model_order.model_code = "Technology".to_string(); // model for tech stocks first created in TWS
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     model_order.borrow(),
         //  )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::option_at_box(),
         //     order_samples::block("BUY", 50.0, 20.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::option_at_box(),
         //     order_samples::box_top("SELL", 10.0).borrow(),
@@ -321,28 +344,40 @@ impl TestWrapper {
 
         // info!("Placing combo order...");
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::future_combo_contract(),
         //     order_samples::combo_limit_order("SELL", 1.0, 1.0, false).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::stock_combo_contract(),
         //     order_samples::combo_market_order("BUY", 1.0, true).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::option_combo_contract(),
         //     order_samples::combo_market_order("BUY", 1.0, false).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::stock_combo_contract(),
         //     &order_samples::limit_order_for_combo_with_leg_prices(
@@ -354,7 +389,10 @@ impl TestWrapper {
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::discretionary("SELL", 1.0, 45.0, 0.5).borrow(),
@@ -362,56 +400,80 @@ impl TestWrapper {
 
         //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@PROBLEM WITH SECURITY DEFINITION
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::option_at_box(),
         //     order_samples::limit_if_touched("BUY", 1.0, 30.0, 34.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::limit_on_close("SELL", 1.0, 34.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::limit_on_open("BUY", 1.0, 35.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::market_if_touched("BUY", 1.0, 30.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::market_on_close("SELL", 1.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::market_on_open("BUY", 1.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::market_order("SELL", 1.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::market_to_limit("BUY", 1.0).borrow(),
@@ -419,63 +481,90 @@ impl TestWrapper {
 
         //@@@@@@@@@@@@@@@@@@@@@@@@@@@@PROBLEM WITH SECURITY DEFINITIONS
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::option_at_ise(),
         //     order_samples::midpoint_match("BUY", 1.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::market_to_limit("BUY", 1.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::stop("SELL", 1.0, 34.4).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     &order_samples::stop_limit("BUY", 1.0, 35.0, 33.0),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::simple_future(),
         //     order_samples::stop_with_protection("SELL", 1.0, 45.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::sweep_to_fill("BUY", 1.0, 35.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::trailing_stop("SELL", 1.0, 0.5, 30.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::usstock().borrow(),
         //     order_samples::trailing_stop_limit("BUY", 1.0, 2.0, 5.0, 50.0).borrow(),
         // )?;
 
         // let next_id = self.next_order_id();
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     &contract_samples::us_option_contract(),
         //     &order_samples::volatility("SELL", 1.0, 5.0, 2),
@@ -564,23 +653,38 @@ impl TestWrapper {
         let bracket =
             order_samples::bracket_order(self.next_order_id(), "BUY", 100.0, 30.0, 40.0, 20.0);
 
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            bracket.0.order_id,
-            contract_samples::european_stock().borrow(),
-            bracket.0.borrow(),
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .place_order(
+                bracket.0.order_id,
+                contract_samples::european_stock().borrow(),
+                bracket.0.borrow(),
+            )?;
         self.next_order_id();
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            bracket.1.order_id,
-            contract_samples::european_stock().borrow(),
-            bracket.1.borrow(),
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .place_order(
+                bracket.1.order_id,
+                contract_samples::european_stock().borrow(),
+                bracket.1.borrow(),
+            )?;
         self.next_order_id();
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            bracket.2.order_id,
-            contract_samples::european_stock().borrow(),
-            bracket.2.borrow(),
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .place_order(
+                bracket.2.order_id,
+                contract_samples::european_stock().borrow(),
+                bracket.2.borrow(),
+            )?;
         self.next_order_id();
 
         Ok(())
@@ -624,11 +728,16 @@ impl TestWrapper {
                 order_samples::volume_condition(208813720, "SMART", true, 100000, true),
             ));
         let next_id = self.next_order_id();
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            next_id,
-            contract_samples::european_stock().borrow(),
-            mkt.borrow(),
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .place_order(
+                next_id,
+                contract_samples::european_stock().borrow(),
+                mkt.borrow(),
+            )?;
 
         // Conditions can make the order active or cancel it. Only LMT orders can be conditionally canceled.
         let mut lmt = order_samples::limit_order("BUY", 100.0, 20.0);
@@ -647,11 +756,16 @@ impl TestWrapper {
             ));
 
         let next_id = self.next_order_id();
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            next_id,
-            contract_samples::european_stock().borrow(),
-            lmt.borrow(),
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .place_order(
+                next_id,
+                contract_samples::european_stock().borrow(),
+                lmt.borrow(),
+            )?;
         Ok(())
     }
 
@@ -664,19 +778,29 @@ impl TestWrapper {
         // Hedge on the currency conversion
         let hedge = order_samples::market_fhedge(parent.order_id, "BUY");
         // Place the parent first...
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            parent.order_id,
-            contract_samples::european_stock().borrow(),
-            parent.borrow(),
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .place_order(
+                parent.order_id,
+                contract_samples::european_stock().borrow(),
+                parent.borrow(),
+            )?;
 
         // Then the hedge order
         let next_id = self.next_order_id();
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            next_id,
-            contract_samples::eur_gbp_fx().borrow(),
-            hedge.borrow(),
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .place_order(
+                next_id,
+                contract_samples::eur_gbp_fx().borrow(),
+                hedge.borrow(),
+            )?;
         Ok(())
     }
 
@@ -802,7 +926,10 @@ impl TestWrapper {
         //     10,
         //     40,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     scale_order.borrow(),
@@ -823,11 +950,16 @@ impl TestWrapper {
             true,
             100000,
         );
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            next_id,
-            contract_samples::us_stock_at_smart().borrow(),
-            order,
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .place_order(
+                next_id,
+                contract_samples::us_stock_at_smart().borrow(),
+                order,
+            )?;
 
         // let next_id = self.next_order_id();
         // let order = &mut base_order.clone();
@@ -839,7 +971,10 @@ impl TestWrapper {
         //     true,
         //     100000.0,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order,
@@ -860,7 +995,10 @@ impl TestWrapper {
         //     "20161010-12:00:00 GMT",
         //     "20161010-16:00:00 GMT",
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order,
@@ -876,7 +1014,10 @@ impl TestWrapper {
         //     true,
         //     100000.0,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order,
@@ -893,7 +1034,10 @@ impl TestWrapper {
         //     true,
         //     100000.0,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order,
@@ -902,7 +1046,10 @@ impl TestWrapper {
         // let next_id = self.next_order_id();
         // let order = &mut base_order.clone();
         // fill_balance_impact_risk_params(order, 0.1, "Aggressive", true);
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_option_contract().borrow(),
         //     order,
@@ -911,7 +1058,10 @@ impl TestWrapper {
         // let next_id = self.next_order_id();
         // let order = &mut base_order.clone();
         // fill_min_impact_params(order, 0.3);
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_option_contract().borrow(),
         //     order,
@@ -921,7 +1071,10 @@ impl TestWrapper {
 
         // let order = &mut base_order.clone();
         // fill_adaptive_params(order, "Normal");
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order,
@@ -937,7 +1090,10 @@ impl TestWrapper {
         //     true,
         //     100000.0,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order,
@@ -953,7 +1109,10 @@ impl TestWrapper {
         //     true,
         //     100000.0,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order,
@@ -972,7 +1131,10 @@ impl TestWrapper {
         //     true,
         //     100000.0,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order,
@@ -989,7 +1151,10 @@ impl TestWrapper {
         //     true,
         //     100000.0,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order,
@@ -1006,7 +1171,10 @@ impl TestWrapper {
         //     true,
         //     100000.0,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
         //     order.borrow(),
@@ -1030,7 +1198,10 @@ impl TestWrapper {
         //     false,
         //     "Midpoint",
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::jefferies_contract().borrow(),
         //     order.borrow(),
@@ -1054,7 +1225,10 @@ impl TestWrapper {
         //     100,
         //     35.0,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::csfbcontract().borrow(),
         //     order.borrow(),
@@ -1071,7 +1245,10 @@ impl TestWrapper {
         //     0.25,
         //     true,
         // );
-        // self.client.as_ref().unwrap().lock().unwrap().place_order(
+        //         self.client
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order(
         //     next_id,
         //     contract_samples::qbalgo_contract().borrow(),
         //     order,
@@ -1094,12 +1271,18 @@ impl TestWrapper {
         );
         for o in oca_orders {
             let next_id = self.next_order_id();
-            self.client.as_ref().unwrap().lock().unwrap().place_order(
-                next_id,
-                contract_samples::us_stock_at_smart().borrow(),
-                o.borrow(),
-            )?;
+            self.client
+                .as_ref()
+                .expect(CLIENT_IS_NONE)
+                .lock()
+                .expect(CLIENT_POISONED_MUTEX)
+                .place_order(
+                    next_id,
+                    contract_samples::us_stock_at_smart().borrow(),
+                    o.borrow(),
+                )?;
         }
+
         Ok(())
     }
 
@@ -1109,11 +1292,16 @@ impl TestWrapper {
         let mut what_if_order = order_samples::limit_order("SELL", 5.0, 70.0);
         what_if_order.what_if = true;
         let next_id = self.next_order_id();
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            next_id,
-            contract_samples::us_stock_at_smart().borrow(),
-            what_if_order.borrow(),
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .place_order(
+                next_id,
+                contract_samples::us_stock_at_smart().borrow(),
+                what_if_order.borrow(),
+            )?;
 
         thread::sleep(Duration::from_secs(2));
 
@@ -1125,9 +1313,9 @@ impl TestWrapper {
     fn req_global_cancel(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_global_cancel()?;
         Ok(())
     }
@@ -1160,9 +1348,9 @@ impl TestWrapper {
         info!("Request Time:  {}", query_time);
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_historical_data(
                 4102,
                 contract_samples::simple_future().borrow(),
@@ -1177,9 +1365,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_historical_data(
                 4103,
                 contract_samples::simple_future().borrow(),
@@ -1194,9 +1382,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_historical_data(
                 4104,
                 contract_samples::eur_gbp_fx().borrow(),
@@ -1219,9 +1407,9 @@ impl TestWrapper {
         // Switch to live (1) frozen (2) delayed (3) delayed frozen (4).
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_market_data_type(MarketDataTypeEnum::Realtime as i32)?;
 
         Ok(())
@@ -1232,177 +1420,267 @@ impl TestWrapper {
     fn tick_data_operations_req(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_market_data_type(MarketDataTypeEnum::DelayedFrozen as i32)?;
 
         // Requesting real time market data
 
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1000,
-            contract_samples::us_stock_at_smart().borrow(),
-            "",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1001,
-            contract_samples::stock_combo_contract().borrow(),
-            "",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1000,
+                contract_samples::us_stock_at_smart().borrow(),
+                "",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1001,
+                contract_samples::stock_combo_contract().borrow(),
+                "",
+                false,
+                false,
+                vec![],
+            )?;
 
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1002,
-            contract_samples::future_combo_contract().borrow(),
-            "",
-            true,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1002,
+                contract_samples::future_combo_contract().borrow(),
+                "",
+                true,
+                false,
+                vec![],
+            )?;
 
         // Each regulatory snapshot request incurs a 0.01 USD fee
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1003,
-            contract_samples::usstock().borrow(),
-            "",
-            false,
-            true,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1003,
+                contract_samples::usstock().borrow(),
+                "",
+                false,
+                true,
+                vec![],
+            )?;
 
         // Requesting RTVolume (Time & Sales), shortable and Fundamental Ratios generic ticks
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1004,
-            contract_samples::us_stock_at_smart().borrow(),
-            "233,236,258",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1004,
+                contract_samples::us_stock_at_smart().borrow(),
+                "233,236,258",
+                false,
+                false,
+                vec![],
+            )?;
 
         // Without the API news subscription this will generate an "invalid tick type" error
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1005,
-            contract_samples::us_stock_at_smart().borrow(),
-            "100",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1006,
-            contract_samples::us_stock_at_smart().borrow(),
-            "mdoff,292:BRFG+DJNL",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1007,
-            contract_samples::us_stock_at_smart().borrow(),
-            "mdoff,292:BRFUPDN",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1008,
-            contract_samples::us_stock_at_smart().borrow(),
-            "mdoff,292:DJ-RT",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1005,
+                contract_samples::us_stock_at_smart().borrow(),
+                "100",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1006,
+                contract_samples::us_stock_at_smart().borrow(),
+                "mdoff,292:BRFG+DJNL",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1007,
+                contract_samples::us_stock_at_smart().borrow(),
+                "mdoff,292:BRFUPDN",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1008,
+                contract_samples::us_stock_at_smart().borrow(),
+                "mdoff,292:DJ-RT",
+                false,
+                false,
+                vec![],
+            )?;
 
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1009,
-            contract_samples::brfgbroadtape_news_feed().borrow(),
-            "mdoff,292",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1010,
-            contract_samples::djnlbroadtape_news_feed().borrow(),
-            "mdoff,292",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1011,
-            contract_samples::djtopbroadtape_news_feed().borrow(),
-            "mdoff,292",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1012,
-            contract_samples::brfupdnbroadtape_news_feed().borrow(),
-            "mdoff,292",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1009,
+                contract_samples::brfgbroadtape_news_feed().borrow(),
+                "mdoff,292",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1010,
+                contract_samples::djnlbroadtape_news_feed().borrow(),
+                "mdoff,292",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1011,
+                contract_samples::djtopbroadtape_news_feed().borrow(),
+                "mdoff,292",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1012,
+                contract_samples::brfupdnbroadtape_news_feed().borrow(),
+                "mdoff,292",
+                false,
+                false,
+                vec![],
+            )?;
 
         // Requesting data for an option contract will return the greek values
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1013,
-            contract_samples::option_with_local_symbol().borrow(),
-            "",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1014,
-            contract_samples::futures_on_options().borrow(),
-            "",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1013,
+                contract_samples::option_with_local_symbol().borrow(),
+                "",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1014,
+                contract_samples::futures_on_options().borrow(),
+                "",
+                false,
+                false,
+                vec![],
+            )?;
 
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1015,
-            contract_samples::simple_future().borrow(),
-            "mdoff,588",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1015,
+                contract_samples::simple_future().borrow(),
+                "mdoff,588",
+                false,
+                false,
+                vec![],
+            )?;
 
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1016,
-            contract_samples::simple_future().borrow(),
-            "",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1016,
+                contract_samples::simple_future().borrow(),
+                "",
+                false,
+                false,
+                vec![],
+            )?;
 
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            1017,
-            contract_samples::us_stock_at_smart().borrow(),
-            "mdoff,105",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                1017,
+                contract_samples::us_stock_at_smart().borrow(),
+                "mdoff,105",
+                false,
+                false,
+                vec![],
+            )?;
 
         // Requests description of map of single letter exchange codes to full exchange names
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_smart_components(1018, "a6")?;
 
         Ok(())
@@ -1414,9 +1692,9 @@ impl TestWrapper {
         // Requesting the Deep Book
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_mkt_depth(
                 2001,
                 contract_samples::eur_gbp_fx().borrow(),
@@ -1427,9 +1705,9 @@ impl TestWrapper {
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_mkt_depth(
                 2002,
                 contract_samples::us_stock_at_smart().borrow(),
@@ -1441,9 +1719,9 @@ impl TestWrapper {
         // Request list of exchanges sending market depth to UpdateMktDepthL2()
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_mkt_depth_exchanges()?;
 
         Ok(())
@@ -1454,17 +1732,17 @@ impl TestWrapper {
     fn options_operations_req(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_sec_def_opt_params(0, "IBM", "", "STK", 8314)?;
 
         // Calculating implied volatility
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .calculate_implied_volatility(
                 5001,
                 contract_samples::option_at_box().borrow(),
@@ -1476,9 +1754,9 @@ impl TestWrapper {
         // Calculating option's price
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .calculate_option_price(
                 5002,
                 contract_samples::option_at_box().borrow(),
@@ -1490,9 +1768,9 @@ impl TestWrapper {
         // Exercising options
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .exercise_options(
                 5003,
                 contract_samples::option_with_trading_class().borrow(),
@@ -1510,17 +1788,17 @@ impl TestWrapper {
         // Requesting list of valid scanner parameters which can be used in TWS
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_scanner_parameters()?;
 
         // Triggering a scanner subscription
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_scanner_subscription(
                 7001,
                 scanner_subscription_samples::high_opt_volume_pcratio_usindexes(),
@@ -1546,9 +1824,9 @@ impl TestWrapper {
         let result = self
             .client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_scanner_subscription(
                 7002,
                 scanner_subscription_samples::hot_usstk_by_volume(),
@@ -1572,9 +1850,9 @@ impl TestWrapper {
         )];
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_scanner_subscription(
                 7003,
                 scanner_subscription_samples::complex_orders_and_trades(),
@@ -1591,9 +1869,9 @@ impl TestWrapper {
         // Requesting Fundamentals
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_fundamental_data(
                 8001,
                 contract_samples::usstock().borrow(),
@@ -1603,9 +1881,9 @@ impl TestWrapper {
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_fundamental_data(
                 8002,
                 contract_samples::us_stock_at_smart().borrow(),
@@ -1614,9 +1892,9 @@ impl TestWrapper {
             )?; // for company overview
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_fundamental_data(
                 8003,
                 contract_samples::us_stock_at_smart().borrow(),
@@ -1625,9 +1903,9 @@ impl TestWrapper {
             )?; // for financial ratios
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_fundamental_data(
                 8004,
                 contract_samples::us_stock_at_smart().borrow(),
@@ -1636,9 +1914,9 @@ impl TestWrapper {
             )?; // for financial statements
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_fundamental_data(
                 8005,
                 contract_samples::us_stock_at_smart().borrow(),
@@ -1647,9 +1925,9 @@ impl TestWrapper {
             )?; // for analyst estimates
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_fundamental_data(
                 8006,
                 contract_samples::us_stock_at_smart().borrow(),
@@ -1666,40 +1944,40 @@ impl TestWrapper {
     fn contract_operations(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_contract_details(210, contract_samples::option_for_query().borrow())?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_contract_details(211, contract_samples::eur_gbp_fx().borrow())?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_contract_details(212, contract_samples::bond().borrow())?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_contract_details(213, contract_samples::futures_on_options().borrow())?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_contract_details(214, contract_samples::simple_future().borrow())?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_matching_symbols(211, "IB")?;
 
         Ok(())
@@ -1711,9 +1989,9 @@ impl TestWrapper {
         // Requesting tick - by - tick data (only refresh)
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_tick_by_tick_data(
                 19001,
                 contract_samples::usstock().borrow(),
@@ -1723,9 +2001,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_tick_by_tick_data(
                 19002,
                 contract_samples::european_stock2().borrow(),
@@ -1735,9 +2013,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_tick_by_tick_data(
                 19003,
                 contract_samples::european_stock2().borrow(),
@@ -1747,9 +2025,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_tick_by_tick_data(
                 19004,
                 contract_samples::eur_gbp_fx().borrow(),
@@ -1761,9 +2039,9 @@ impl TestWrapper {
         // Requesting tick - by - tick data (refresh + historicalticks)
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_tick_by_tick_data(
                 19005,
                 contract_samples::european_stock2().borrow(),
@@ -1773,9 +2051,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_tick_by_tick_data(
                 19006,
                 contract_samples::european_stock2().borrow(),
@@ -1785,9 +2063,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_tick_by_tick_data(
                 19007,
                 contract_samples::european_stock2().borrow(),
@@ -1797,9 +2075,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_tick_by_tick_data(
                 19008,
                 contract_samples::eur_gbp_fx().borrow(),
@@ -1816,9 +2094,9 @@ impl TestWrapper {
     fn historical_ticks_operations(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_historical_ticks(
                 18001,
                 contract_samples::usstock().borrow(),
@@ -1832,9 +2110,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_historical_ticks(
                 18002,
                 contract_samples::us_stock_at_smart().borrow(),
@@ -1848,9 +2126,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_historical_ticks(
                 18003,
                 contract_samples::us_stock_at_smart().borrow(),
@@ -1871,9 +2149,9 @@ impl TestWrapper {
     fn histogram_operations_req(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_histogram_data(4002, contract_samples::usstock().borrow(), false, "3 days")?;
 
         Ok(())
@@ -1884,9 +2162,9 @@ impl TestWrapper {
     fn histogram_operations_cancel(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_histogram_data(4002)
     }
 
@@ -1895,17 +2173,17 @@ impl TestWrapper {
     fn continuous_futures_operations_req(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_contract_details(18001, contract_samples::cont_fut().borrow())?;
 
         let time_str = Utc::now().format("%Y%m%d %H:%M:%S");
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_historical_data(
                 18002,
                 contract_samples::cont_fut().borrow(),
@@ -1927,16 +2205,16 @@ impl TestWrapper {
     fn pnl_operations_req(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_pnl(17001, "DU228243", "")?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_pnl_single(17002, "DU228243", "", 8314)?;
 
         Ok(())
@@ -1947,16 +2225,16 @@ impl TestWrapper {
     fn pnl_operations_cancel(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_pnl(17001)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_pnl_single(17002)?;
 
         Ok(())
@@ -1967,28 +2245,28 @@ impl TestWrapper {
     fn market_rule_operations(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_contract_details(17001, contract_samples::usstock().borrow())?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_contract_details(17002, contract_samples::bond().borrow())?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_market_rule(26)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_market_rule(239)?;
 
         Ok(())
@@ -1997,36 +2275,51 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     #[allow(dead_code)]
     fn reroute_cfd_operations(&self) -> Result<(), IBKRApiLibError> {
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            16001,
-            contract_samples::usstock_cfd().borrow(),
-            "",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            16002,
-            contract_samples::european_stock_cfd().borrow(),
-            "",
-            false,
-            false,
-            vec![],
-        )?;
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            16003,
-            contract_samples::cash_cfd().borrow(),
-            "",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                16001,
+                contract_samples::usstock_cfd().borrow(),
+                "",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                16002,
+                contract_samples::european_stock_cfd().borrow(),
+                "",
+                false,
+                false,
+                vec![],
+            )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                16003,
+                contract_samples::cash_cfd().borrow(),
+                "",
+                false,
+                false,
+                vec![],
+            )?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_mkt_depth(
                 16004,
                 contract_samples::usstock_cfd().borrow(),
@@ -2036,9 +2329,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_mkt_depth(
                 16005,
                 contract_samples::european_stock_cfd().borrow(),
@@ -2048,9 +2341,9 @@ impl TestWrapper {
             )?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_mkt_depth(
                 16006,
                 contract_samples::cash_cfd().borrow(),
@@ -2069,60 +2362,60 @@ impl TestWrapper {
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .request_fa(FaDataType::ALIASES)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .request_fa(FaDataType::GROUPS)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .request_fa(FaDataType::PROFILES)?;
 
         // Replacing FA information - Fill in with the appropriate XML string.
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .replace_fa(FaDataType::GROUPS, fa_allocation_samples::FA_ONE_GROUP)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .replace_fa(FaDataType::GROUPS, fa_allocation_samples::FA_TWO_GROUPS)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .replace_fa(FaDataType::PROFILES, fa_allocation_samples::FA_ONE_PROFILE)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .replace_fa(FaDataType::PROFILES, fa_allocation_samples::FA_TWO_PROFILES)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_soft_dollar_tiers(14001)?;
 
         Ok(())
@@ -2132,44 +2425,49 @@ impl TestWrapper {
     #[allow(dead_code)]
     fn news_operations_req(&self) -> Result<(), IBKRApiLibError> {
         // Requesting news ticks
-        self.client.as_ref().unwrap().lock().unwrap().req_mkt_data(
-            10001,
-            contract_samples::usstock().borrow(),
-            "mdoff,258",
-            false,
-            false,
-            vec![],
-        )?;
+        self.client
+            .as_ref()
+            .expect(CLIENT_IS_NONE)
+            .lock()
+            .expect(CLIENT_POISONED_MUTEX)
+            .req_mkt_data(
+                10001,
+                contract_samples::usstock().borrow(),
+                "mdoff,258",
+                false,
+                false,
+                vec![],
+            )?;
 
         // Returns list of subscribed news providers
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_news_providers()?;
 
         // Returns body of news article given article ID
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_news_article(10002, "BRFG", "BRFG4fb9da2", vec![])?;
 
         // Returns list of historical news headlines with IDs
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_historical_news(10003, 8314, "BRFG", "", "", 10, vec![])?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_contract_details(10004, contract_samples::news_feed_for_query().borrow())?;
 
         Ok(())
@@ -2181,9 +2479,9 @@ impl TestWrapper {
         // Canceling news ticks
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(10001)
     }
 
@@ -2193,9 +2491,9 @@ impl TestWrapper {
         // Requesting Interactive Broker's news bulletins_operations_req
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_news_bulletins(true)
     }
 
@@ -2205,9 +2503,9 @@ impl TestWrapper {
         // Canceling IB's news bulletins_operations_req
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_news_bulletins()
     }
 
@@ -2217,16 +2515,16 @@ impl TestWrapper {
         // Request TWS' current time
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_current_time()?;
         // Setting TWS logging level
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .set_server_log_level(1)?;
 
         Ok(())
@@ -2237,30 +2535,30 @@ impl TestWrapper {
     fn linking_operations(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .query_display_groups(19001)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .subscribe_to_group_events(19002, 1)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .update_display_group(19002, "8314@SMART")?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .unsubscribe_from_group_events(19002)?;
 
         Ok(())
@@ -2271,52 +2569,52 @@ impl TestWrapper {
     fn tick_by_tick_operations_cancel(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_tick_by_tick_data(19001)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_tick_by_tick_data(19002)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_tick_by_tick_data(19003)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_tick_by_tick_data(19004)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_tick_by_tick_data(19005)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_tick_by_tick_data(19006)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_tick_by_tick_data(19007)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_tick_by_tick_data(19008)?;
 
         Ok(())
@@ -2327,9 +2625,9 @@ impl TestWrapper {
     fn continuous_futures_operations_cancel(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_historical_data(18002)
     }
 
@@ -2338,39 +2636,39 @@ impl TestWrapper {
     fn fundamentals_operations_cancel(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_fundamental_data(8001)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_fundamental_data(8002)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_fundamental_data(8003)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_fundamental_data(8004)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_fundamental_data(8005)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_fundamental_data(8006)?;
 
         Ok(())
@@ -2382,21 +2680,21 @@ impl TestWrapper {
         // Canceling the scanner subscription
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_scanner_subscription(7001)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_scanner_subscription(7002)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_scanner_subscription(7003)?;
 
         Ok(())
@@ -2408,16 +2706,16 @@ impl TestWrapper {
         // Canceling implied volatility
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_calculate_implied_volatility(5001)?;
         // Canceling option's price calculation
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_calculate_option_price(5002)?;
 
         Ok(())
@@ -2428,29 +2726,29 @@ impl TestWrapper {
     fn historical_data_operations_cancel(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_head_time_stamp(4101)?;
 
         // Canceling historical data requests
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_historical_data(4102)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_historical_data(4103)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_historical_data(4104)?;
 
         Ok(())
@@ -2462,9 +2760,9 @@ impl TestWrapper {
         // Canceling real time bars
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_real_time_bars(3001)
     }
 
@@ -2474,15 +2772,15 @@ impl TestWrapper {
         // Canceling the Deep Book request
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_depth(2001, false)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_depth(2002, true)?;
 
         Ok(())
@@ -2494,106 +2792,106 @@ impl TestWrapper {
         // Canceling the market data subscription
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1000)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1001)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1004)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1005)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1006)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1007)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1008)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1009)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1010)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1011)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1012)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1013)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1014)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1015)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1016)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_mkt_data(1017)?;
 
         Ok(())
@@ -2604,55 +2902,55 @@ impl TestWrapper {
     fn account_operations_cancel(&self) -> Result<(), IBKRApiLibError> {
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_account_summary(9001)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_account_summary(9002)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_account_summary(9003)?;
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_account_summary(9004)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .req_account_updates(false, self.account.as_str())?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_account_updates_multi(9005)?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_positions()?;
 
         self.client
             .as_ref()
-            .unwrap()
+            .expect(CLIENT_IS_NONE)
             .lock()
-            .unwrap()
+            .expect(CLIENT_POISONED_MUTEX)
             .cancel_positions_multi(9006)?;
 
         Ok(())
@@ -2790,7 +3088,7 @@ impl Wrapper for TestWrapper {
         order_state: OrderState,
     ) {
         info!(
-            "open_order -- order_id: {}\n\n\t     contract: {}\n\t     order: {}\n\t     order_state: {}",
+            "open_order -- order_id: {}\n\n\t     contract: {}\n\t     order: {}\n\t    order_state: {}",
             order_id, contract, order, order_state
         );
     }

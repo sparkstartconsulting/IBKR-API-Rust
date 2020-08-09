@@ -19,11 +19,17 @@
 //! use std::thread;
 //!
 //! fn main() -> Result<(), IBKRApiLibError> {
+//!
 //!     let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
 //!     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
-//!     wrapper.lock().unwrap().client = Option::from(app.clone());
+//!     
+//!     wrapper.lock().expect("Wrapper mutex was poisoned").client = Option::from(app.clone());
+//!     
+//!     println!("getting connection...");
+//!     app.lock()
+//!         .expect("EClient mutex was poisoned")
+//!         .connect("127.0.0.1", 4002, 0)?;
 //!
-//!     app.lock().unwrap().connect("127.0.0.1", 4002, 0)?;
 //!     thread::sleep(Duration::new(18600, 0));
 //!
 //!     Ok(())

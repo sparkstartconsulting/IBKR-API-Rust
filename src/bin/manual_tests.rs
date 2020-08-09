@@ -15,19 +15,29 @@ use twsapi::examples::test_helpers::TestWrapper;
 /// start_requests function inn TestWrapper which is called by next_valid_id
 //==================================================================================================
 pub fn main() -> Result<(), IBKRApiLibError> {
-    log4rs::init_file("./log_config.yml", Default::default()).unwrap();
+    match log4rs::init_file("./log_config.yml", Default::default()) {
+        Ok(_) => (),
+        Err(_) => {
+            return Err(IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                -1,
+                "-1".to_string(),
+                "Failed to create logger!!".to_string(),
+            )))
+        }
+    };
 
     let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
 
     info!("getting connection...");
-    wrapper.lock().unwrap().client = Option::from(app.clone());
 
-    // Upon connecting, TWS will send the next valid order ID which will cause the wrapper callback method
-    // next_valid_id to be called, which will start sending tests requests to TWS (see the
-    // start_requests function inn TestWrapper which is called by next_valid_id
-    // app.lock().unwrap().connect("127.0.0.1", 7497, 0);
-    app.lock().unwrap().connect("127.0.0.1", 4002, 0)?;
+    wrapper.lock().expect("Wrapper mutex was poisoned").client = Option::from(app.clone());
+
+    //use port 7497 for TWS or 4002 for IB Gateway, depending on the port you have set
+    app.lock()
+        .expect("EClient mutex was poisoned")
+        .connect("127.0.0.1", 4002, 0)?;
+
     //4002
     thread::sleep(Duration::new(18600, 0));
 

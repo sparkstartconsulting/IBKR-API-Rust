@@ -2,7 +2,7 @@
 use std::collections::HashSet;
 
 use std::marker::Sync;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::slice::Iter;
 use std::str::FromStr;
 use std::string::ToString;
@@ -41,6 +41,7 @@ use crate::core::server_versions::{
 };
 use crate::core::wrapper::Wrapper;
 
+static WRAPPER_POISONED_MUTEX: &str = "Wrapper mutex was poisoned";
 //==================================================================================================
 pub fn decode_i32(iter: &mut Iter<String>) -> Result<i32, IBKRApiLibError> {
     let next = iter.next();
@@ -296,12 +297,15 @@ where
         if self.server_version >= MIN_SERVER_VER_PRE_OPEN_BID_ASK {
             tick_arrtibute.pre_open = attr_mask & 4 != 0;
         }
-        self.wrapper.lock().unwrap().deref_mut().tick_price(
-            req_id,
-            FromPrimitive::from_i32(tick_type).unwrap(),
-            price,
-            tick_arrtibute,
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .tick_price(
+                req_id,
+                FromPrimitive::from_i32(tick_type).unwrap(),
+                price,
+                tick_arrtibute,
+            );
 
         // process ver 2 fields
 
@@ -318,8 +322,7 @@ where
         if size_tick_type as i32 != TickType::NotSet as i32 {
             self.wrapper
                 .lock()
-                .unwrap()
-                .deref_mut()
+                .expect(WRAPPER_POISONED_MUTEX)
                 .tick_size(req_id, size_tick_type, size);
         }
         Ok(())
@@ -338,11 +341,14 @@ where
         let tick_type: i32 = decode_i32(&mut fields_itr)?;
         let value = decode_string(&mut fields_itr)?;
 
-        self.wrapper.lock().unwrap().deref_mut().tick_string(
-            req_id,
-            FromPrimitive::from_i32(tick_type).unwrap(),
-            value.as_ref(),
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .tick_string(
+                req_id,
+                FromPrimitive::from_i32(tick_type).unwrap(),
+                value.as_ref(),
+            );
         Ok(())
     }
 
@@ -355,13 +361,16 @@ where
         //throw away version
         fields_itr.next();
 
-        self.wrapper.lock().unwrap().deref_mut().account_summary(
-            decode_i32(&mut fields_itr)?,
-            decode_string(&mut fields_itr)?.as_ref(),
-            decode_string(&mut fields_itr)?.as_ref(),
-            decode_string(&mut fields_itr)?.as_ref(),
-            decode_string(&mut fields_itr)?.as_ref(),
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .account_summary(
+                decode_i32(&mut fields_itr)?,
+                decode_string(&mut fields_itr)?.as_ref(),
+                decode_string(&mut fields_itr)?.as_ref(),
+                decode_string(&mut fields_itr)?.as_ref(),
+                decode_string(&mut fields_itr)?.as_ref(),
+            );
         Ok(())
     }
 
@@ -376,8 +385,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .account_summary_end(decode_i32(&mut fields_itr)?);
         Ok(())
     }
@@ -400,8 +408,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .account_update_multi(
                 req_id,
                 account.as_ref(),
@@ -429,8 +436,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .account_update_multi_end(req_id);
         Ok(())
     }
@@ -446,8 +452,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .account_download_end(decode_string(&mut fields_itr)?.as_ref());
         Ok(())
     }
@@ -463,8 +468,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .update_account_time(decode_string(&mut fields_itr)?.as_ref());
         Ok(())
     }
@@ -480,8 +484,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .update_account_value(
                 decode_string(&mut fields_itr)?.as_ref(),
                 decode_string(&mut fields_itr)?.as_ref(),
@@ -565,8 +568,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .bond_contract_details(req_id, contract.clone());
         Ok(())
     }
@@ -592,8 +594,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .commission_report(commission_report);
         Ok(())
     }
@@ -621,8 +622,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .completed_order(contract, order, order_state);
         Ok(())
     }
@@ -635,8 +635,7 @@ where
         fields_itr.next();
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .completed_orders_end();
         Ok(())
     }
@@ -728,8 +727,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .contract_details(req_id, contract.clone());
         Ok(())
     }
@@ -747,8 +745,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .contract_details_end(req_id);
         Ok(())
     }
@@ -764,8 +761,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .current_time(decode_i64(&mut fields_itr)?);
         Ok(())
     }
@@ -792,8 +788,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .delta_neutral_validation(req_id, delta_neutral_contract);
         Ok(())
     }
@@ -813,8 +808,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .display_group_list(req_id, groups.as_ref());
         Ok(())
     }
@@ -834,8 +828,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .display_group_updated(req_id, contract_info.as_ref());
         Ok(())
     }
@@ -848,7 +841,7 @@ where
         //throw away version
         fields_itr.next();
 
-        self.wrapper.lock().unwrap().deref_mut().error(
+        self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).error(
             decode_i32(&mut fields_itr)?,
             decode_i32(&mut fields_itr)?,
             decode_string(&mut fields_itr)?.as_ref(),
@@ -944,8 +937,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .exec_details(req_id, contract, execution);
         Ok(())
     }
@@ -963,8 +955,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .exec_details_end(req_id);
         Ok(())
     }
@@ -987,8 +978,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .family_codes(family_codes);
         Ok(())
     }
@@ -1006,8 +996,7 @@ where
         let data = decode_string(&mut fields_itr)?;
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .fundamental_data(req_id, data.as_ref());
         Ok(())
     }
@@ -1023,8 +1012,7 @@ where
         let timestamp = decode_string(&mut fields_itr)?;
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .fundamental_data(req_id, timestamp.as_ref());
         Ok(())
     }
@@ -1049,8 +1037,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .histogram_data(req_id, histogram);
         Ok(())
     }
@@ -1095,16 +1082,14 @@ where
 
             self.wrapper
                 .lock()
-                .unwrap()
-                .deref_mut()
+                .expect(WRAPPER_POISONED_MUTEX)
                 .historical_data(req_id, bar);
         }
 
         // send end of dataset marker
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .historical_data_end(req_id, start_date.as_ref(), end_date.as_ref());
         Ok(())
     }
@@ -1129,8 +1114,7 @@ where
         bar.volume = decode_i64(&mut fields_itr)?;
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .historical_data_update(req_id, bar);
         Ok(())
     }
@@ -1147,13 +1131,16 @@ where
         let provider_code = decode_string(&mut fields_itr)?;
         let article_id = decode_string(&mut fields_itr)?;
         let headline = decode_string(&mut fields_itr)?;
-        self.wrapper.lock().unwrap().deref_mut().historical_news(
-            req_id,
-            time.as_ref(),
-            provider_code.as_ref(),
-            article_id.as_ref(),
-            headline.as_ref(),
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .historical_news(
+                req_id,
+                time.as_ref(),
+                provider_code.as_ref(),
+                article_id.as_ref(),
+                headline.as_ref(),
+            );
         Ok(())
     }
 
@@ -1169,8 +1156,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .historical_news_end(req_id, has_more);
         Ok(())
     }
@@ -1200,8 +1186,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .historical_ticks(req_id, ticks, done);
         Ok(())
     }
@@ -1240,8 +1225,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .historical_ticks_bid_ask(req_id, ticks, done);
         Ok(())
     }
@@ -1277,8 +1261,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .historical_ticks_last(req_id, ticks, done);
         Ok(())
     }
@@ -1296,8 +1279,7 @@ where
         info!("calling managed_accounts");
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .managed_accounts(accounts_list.as_ref());
         info!("finished calling managed_accounts");
         Ok(())
@@ -1314,8 +1296,7 @@ where
         let market_data_type = decode_i32(&mut fields_itr)?;
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .market_data_type(req_id, market_data_type);
         Ok(())
     }
@@ -1338,8 +1319,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .update_mkt_depth(req_id, position, operation, side, price, size);
         Ok(())
     }
@@ -1369,8 +1349,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .update_mkt_depth_l2(
                 req_id,
                 position,
@@ -1405,8 +1384,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .market_rule(market_rule_id, price_increments);
         Ok(())
     }
@@ -1437,8 +1415,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .mkt_depth_exchanges(depth_mkt_data_descriptions);
         Ok(())
     }
@@ -1453,11 +1430,10 @@ where
         let req_id = decode_i32(&mut fields_itr)?;
         let article_type = decode_i32(&mut fields_itr)?;
         let article_text = decode_string(&mut fields_itr)?;
-        self.wrapper.lock().unwrap().deref_mut().news_article(
-            req_id,
-            article_type,
-            article_text.as_ref(),
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .news_article(req_id, article_type, article_text.as_ref());
         Ok(())
     }
 
@@ -1477,8 +1453,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .update_news_bulletin(
                 news_msg_id,
                 news_msg_type,
@@ -1506,8 +1481,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .news_providers(news_providers);
         Ok(())
     }
@@ -1524,8 +1498,7 @@ where
         let order_id = decode_i32(&mut fields_itr)?;
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .next_valid_id(order_id);
         Ok(())
     }
@@ -1556,18 +1529,19 @@ where
 
         order_decoder.decode_open(&mut fields_itr)?;
 
-        self.wrapper.lock().unwrap().deref_mut().open_order(
-            order.order_id,
-            contract,
-            order,
-            order_state,
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .open_order(order.order_id, contract, order, order_state);
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn process_open_order_end(&mut self, _fields: &[String]) -> Result<(), IBKRApiLibError> {
-        self.wrapper.lock().unwrap().deref_mut().open_order_end();
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .open_order_end();
         Ok(())
     }
 
@@ -1584,8 +1558,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .order_bound(req_id, api_client_id, api_order_id);
         Ok(())
     }
@@ -1633,19 +1606,22 @@ where
             mkt_cap_price = decode_f64(&mut fields_itr)?;
         }
 
-        self.wrapper.try_lock().unwrap().deref_mut().order_status(
-            order_id,
-            status.as_ref(),
-            filled,
-            remaining,
-            avg_fill_price,
-            perm_id,
-            parent_id,
-            last_fill_price,
-            client_id,
-            why_held.as_ref(),
-            mkt_cap_price,
-        );
+        self.wrapper
+            .try_lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .order_status(
+                order_id,
+                status.as_ref(),
+                filled,
+                remaining,
+                avg_fill_price,
+                perm_id,
+                parent_id,
+                last_fill_price,
+                client_id,
+                why_held.as_ref(),
+                mkt_cap_price,
+            );
         Ok(())
     }
 
@@ -1669,7 +1645,7 @@ where
             realized_pnl = decode_f64(&mut fields_itr)?;
         }
 
-        self.wrapper.lock().unwrap().deref_mut().pnl(
+        self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).pnl(
             req_id,
             daily_pnl,
             unrealized_pnl,
@@ -1701,14 +1677,10 @@ where
 
         let value = decode_f64(&mut fields_itr)?;
 
-        self.wrapper.lock().unwrap().deref_mut().pnl_single(
-            req_id,
-            pos,
-            daily_pnl,
-            unrealized_pnl,
-            realized_pnl,
-            value,
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .pnl_single(req_id, pos, daily_pnl, unrealized_pnl, realized_pnl, value);
         Ok(())
     }
 
@@ -1760,16 +1732,19 @@ where
             contract.primary_exchange = decode_string(&mut fields_itr)?;
         }
 
-        self.wrapper.lock().unwrap().deref_mut().update_portfolio(
-            contract,
-            position,
-            market_price,
-            market_value,
-            average_cost,
-            unrealized_pnl,
-            realized_pnl,
-            account_name.as_ref(),
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .update_portfolio(
+                contract,
+                position,
+                market_price,
+                market_value,
+                average_cost,
+                unrealized_pnl,
+                realized_pnl,
+                account_name.as_ref(),
+            );
         Ok(())
     }
 
@@ -1812,7 +1787,7 @@ where
             avg_cost = decode_f64(&mut fields_itr)?;
         }
 
-        self.wrapper.lock().unwrap().deref_mut().position(
+        self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).position(
             account.as_ref(),
             contract,
             position,
@@ -1823,7 +1798,10 @@ where
 
     //----------------------------------------------------------------------------------------------
     fn process_position_end(&mut self, _fields: &[String]) -> Result<(), IBKRApiLibError> {
-        self.wrapper.lock().unwrap().deref_mut().position_end();
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .position_end();
         Ok(())
     }
 
@@ -1858,14 +1836,17 @@ where
         let avg_cost = decode_f64(&mut fields_itr)?;
         let model_code = decode_string(&mut fields_itr)?;
 
-        self.wrapper.lock().unwrap().deref_mut().position_multi(
-            req_id,
-            account.as_ref(),
-            model_code.as_ref(),
-            contract,
-            position,
-            avg_cost,
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .position_multi(
+                req_id,
+                account.as_ref(),
+                model_code.as_ref(),
+                contract,
+                position,
+                avg_cost,
+            );
 
         Ok(())
     }
@@ -1882,8 +1863,7 @@ where
         let req_id = decode_i32(&mut fields_itr)?;
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .position_multi_end(req_id);
         Ok(())
     }
@@ -1911,8 +1891,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .realtime_bar(req_id, bar);
         Ok(())
     }
@@ -1931,8 +1910,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .receive_fa(FromPrimitive::from_i32(fa_data_type).unwrap(), xml.as_ref());
         Ok(())
     }
@@ -1950,8 +1928,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .reroute_mkt_data_req(req_id, con_id, exchange.as_ref());
         Ok(())
     }
@@ -1969,8 +1946,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .reroute_mkt_depth_req(req_id, con_id, exchange.as_ref());
         Ok(())
     }
@@ -2009,21 +1985,23 @@ where
             data.benchmark = decode_string(&mut fields_itr)?;
             data.projection = decode_string(&mut fields_itr)?;
             data.legs = decode_string(&mut fields_itr)?;
-            self.wrapper.lock().unwrap().deref_mut().scanner_data(
-                req_id,
-                data.rank,
-                data.contract,
-                data.distance.as_ref(),
-                data.benchmark.as_ref(),
-                data.projection.as_ref(),
-                data.legs.as_ref(),
-            );
+            self.wrapper
+                .lock()
+                .expect(WRAPPER_POISONED_MUTEX)
+                .scanner_data(
+                    req_id,
+                    data.rank,
+                    data.contract,
+                    data.distance.as_ref(),
+                    data.benchmark.as_ref(),
+                    data.projection.as_ref(),
+                    data.legs.as_ref(),
+                );
         }
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .scanner_data_end(req_id);
         Ok(())
     }
@@ -2040,8 +2018,7 @@ where
         let xml = decode_string(&mut fields_itr)?;
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .scanner_parameters(xml.as_ref());
         Ok(())
     }
@@ -2080,8 +2057,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .security_definition_option_parameter(
                 req_id,
                 exchange.as_ref(),
@@ -2107,8 +2083,7 @@ where
         let req_id = decode_i32(&mut fields_itr)?;
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .security_definition_option_parameter_end(req_id);
         Ok(())
     }
@@ -2135,8 +2110,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .smart_components(req_id, smart_components);
         Ok(())
     }
@@ -2163,8 +2137,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .soft_dollar_tiers(req_id, tiers);
         Ok(())
     }
@@ -2198,8 +2171,7 @@ where
         }
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .symbol_samples(req_id, contract_descriptions);
         Ok(())
     }
@@ -2231,8 +2203,7 @@ where
                 let special_conditions = decode_string(&mut fields_itr)?;
                 self.wrapper
                     .lock()
-                    .unwrap()
-                    .deref_mut()
+                    .expect(WRAPPER_POISONED_MUTEX)
                     .tick_by_tick_all_last(
                         req_id,
                         FromPrimitive::from_i32(tick_type).unwrap(),
@@ -2257,8 +2228,7 @@ where
                 tick_attrib_bid_ask.ask_past_high = mask & 2 != 0;
                 self.wrapper
                     .lock()
-                    .unwrap()
-                    .deref_mut()
+                    .expect(WRAPPER_POISONED_MUTEX)
                     .tick_by_tick_bid_ask(
                         req_id,
                         time,
@@ -2275,8 +2245,7 @@ where
                 let mid_point = decode_f64(&mut fields_itr)?;
                 self.wrapper
                     .lock()
-                    .unwrap()
-                    .deref_mut()
+                    .expect(WRAPPER_POISONED_MUTEX)
                     .tick_by_tick_mid_point(req_id, time, mid_point);
             }
             _ => return Ok(()),
@@ -2303,7 +2272,7 @@ where
         let future_last_trade_date = decode_string(&mut fields_itr)?;
         let dividend_impact = decode_f64(&mut fields_itr)?;
         let dividends_to_last_trade_date = decode_f64(&mut fields_itr)?;
-        self.wrapper.lock().unwrap().deref_mut().tick_efp(
+        self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).tick_efp(
             ticker_id,
             FromPrimitive::from_i32(tick_type).unwrap(),
             basis_points,
@@ -2330,11 +2299,14 @@ where
         let tick_type = decode_i32(&mut fields_itr)?;
         let value = decode_f64(&mut fields_itr)?;
 
-        self.wrapper.lock().unwrap().deref_mut().tick_generic(
-            ticker_id,
-            FromPrimitive::from_i32(tick_type).unwrap(),
-            value,
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .tick_generic(
+                ticker_id,
+                FromPrimitive::from_i32(tick_type).unwrap(),
+                value,
+            );
         Ok(())
     }
 
@@ -2350,14 +2322,17 @@ where
         let article_id = decode_string(&mut fields_itr)?;
         let headline = decode_string(&mut fields_itr)?;
         let extra_data = decode_string(&mut fields_itr)?;
-        self.wrapper.lock().unwrap().deref_mut().tick_news(
-            ticker_id,
-            time_stamp,
-            provider_code.as_ref(),
-            article_id.as_ref(),
-            headline.as_ref(),
-            extra_data.as_ref(),
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .tick_news(
+                ticker_id,
+                time_stamp,
+                provider_code.as_ref(),
+                article_id.as_ref(),
+                headline.as_ref(),
+                extra_data.as_ref(),
+            );
         Ok(())
     }
 
@@ -2432,8 +2407,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .tick_option_computation(
                 ticker_id,
                 FromPrimitive::from_i32(tick_type).unwrap(),
@@ -2460,12 +2434,15 @@ where
         let min_tick = decode_f64(&mut fields_itr)?;
         let bbo_exchange = decode_string(&mut fields_itr)?;
         let snapshot_permissions = decode_i32(&mut fields_itr)?;
-        self.wrapper.lock().unwrap().deref_mut().tick_req_params(
-            ticker_id,
-            min_tick,
-            bbo_exchange.as_ref(),
-            snapshot_permissions,
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .tick_req_params(
+                ticker_id,
+                min_tick,
+                bbo_exchange.as_ref(),
+                snapshot_permissions,
+            );
         Ok(())
     }
 
@@ -2482,11 +2459,10 @@ where
         let tick_type = decode_i32(&mut fields_itr)?;
         let size = decode_i32(&mut fields_itr)?;
 
-        self.wrapper.lock().unwrap().deref_mut().tick_size(
-            ticker_id,
-            FromPrimitive::from_i32(tick_type).unwrap(),
-            size,
-        );
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .tick_size(ticker_id, FromPrimitive::from_i32(tick_type).unwrap(), size);
         Ok(())
     }
 
@@ -2503,8 +2479,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .tick_snapshot_end(req_id);
         Ok(())
     }
@@ -2526,8 +2501,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .verify_and_auth_completed(is_successful, error_text.as_ref());
         Ok(())
     }
@@ -2549,8 +2523,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .verify_and_auth_message_api(api_data.as_ref(), xyz_challenge.as_ref());
         Ok(())
     }
@@ -2569,8 +2542,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .verify_completed(is_successful, error_text.as_ref());
         Ok(())
     }
@@ -2588,8 +2560,7 @@ where
 
         self.wrapper
             .lock()
-            .unwrap()
-            .deref_mut()
+            .expect(WRAPPER_POISONED_MUTEX)
             .verify_message_api(api_data.as_ref());
         Ok(())
     }
@@ -2605,17 +2576,17 @@ where
             let splitted = read_date.split_whitespace().collect::<Vec<&str>>();
             if splitted.len() > 0 {
                 if is_bond {
-                    contract.maturity = splitted.get(0).unwrap().to_string();
+                    contract.maturity = splitted.get(0).unwrap_or_else(|| &"").to_string();
                 } else {
                     contract.contract.last_trade_date_or_contract_month =
-                        splitted.get(0).unwrap().to_string();
+                        splitted.get(0).unwrap_or_else(|| &"").to_string();
                 }
             }
             if splitted.len() > 1 {
-                contract.last_trade_time = splitted.get(1).unwrap().to_string();
+                contract.last_trade_time = splitted.get(1).unwrap_or_else(|| &"").to_string();
             }
             if is_bond && splitted.len() > 2 {
-                contract.time_zone_id = splitted.get(2).unwrap().to_string();
+                contract.time_zone_id = splitted.get(2).unwrap_or_else(|| &"").to_string();
             }
         }
         Ok(())
@@ -2624,7 +2595,7 @@ where
     //----------------------------------------------------------------------------------------------
     pub fn run(&mut self) -> Result<(), IBKRApiLibError> {
         //This is the function that has the message loop.
-
+        let conn_state_poisoned = "Connection state mutex was poisoned";
         info!("Starting run...");
         // !self.done &&
         loop {
@@ -2634,7 +2605,7 @@ where
             match text {
                 Result::Ok(val) => {
                     if val.len() > MAX_MSG_LEN as usize {
-                        self.wrapper.try_lock().unwrap().deref_mut().error(
+                        self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).error(
                             NO_VALID_ID,
                             TwsError::NotConnected.code(),
                             format!("{}:{}:{}", TwsError::NotConnected.message(), val.len(), val)
@@ -2642,11 +2613,11 @@ where
                         );
                         error!("Error receiving message.  Disconnected: Message too big");
                         self.wrapper
-                            .try_lock()
-                            .unwrap()
-                            .deref_mut()
+                            .lock()
+                            .expect(WRAPPER_POISONED_MUTEX)
                             .connection_closed();
-                        *self.conn_state.try_lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
+                        *self.conn_state.lock().expect(conn_state_poisoned) =
+                            ConnStatus::DISCONNECTED;
                         error!("Error receiving message.  Invalid size.  Disconnected.");
                         return Ok(());
                     } else {
@@ -2656,16 +2627,16 @@ where
                     }
                 }
                 Result::Err(err) => {
-                    if *self.conn_state.lock().unwrap().deref() as i32
+                    if *self.conn_state.lock().expect(conn_state_poisoned).deref() as i32
                         != ConnStatus::DISCONNECTED as i32
                     {
                         info!("Error receiving message.  Disconnected: {:?}", err);
                         self.wrapper
-                            .try_lock()
-                            .unwrap()
-                            .deref_mut()
+                            .lock()
+                            .expect(WRAPPER_POISONED_MUTEX)
                             .connection_closed();
-                        *self.conn_state.try_lock().unwrap().deref_mut() = ConnStatus::DISCONNECTED;
+                        *self.conn_state.lock().expect(conn_state_poisoned) =
+                            ConnStatus::DISCONNECTED;
 
                         return Ok(());
                     } else {
