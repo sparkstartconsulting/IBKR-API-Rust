@@ -1928,7 +1928,6 @@ impl EClient {
             msg.push_str(&make_field_handle_empty(&order.use_price_mgmt_algo)?);
         }
 
-        //info!("Placing order {:?}", msg);
         self.send_request(msg.as_str())?;
         Ok(())
     }

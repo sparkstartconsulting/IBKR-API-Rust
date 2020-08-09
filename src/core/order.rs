@@ -8,6 +8,7 @@ use crate::core::common::{TagValue, UNSET_DOUBLE, UNSET_INTEGER};
 use crate::core::order::AuctionStrategy::AuctionUnset;
 use crate::core::order::Origin::Customer;
 use crate::core::order_condition::{Condition, OrderConditionEnum};
+use std::collections::HashMap;
 
 //==================================================================================================
 #[repr(i32)]
@@ -164,9 +165,21 @@ impl Display for OrderState {
             self.init_margin_after,
             self.maint_margin_after,
             self.equity_with_loan_after,
-            self.commission,
-            self.min_commission,
-            self.max_commission,
+            if self.commission == UNSET_DOUBLE {
+                format!("{:E}", self.commission)
+            } else {
+                format!("{:?}", self.commission)
+            },
+            if self.min_commission == UNSET_DOUBLE {
+                format!("{:E}", self.min_commission)
+            } else {
+                format!("{:?}", self.min_commission)
+            },
+            if self.max_commission == UNSET_DOUBLE {
+                format!("{:E}", self.max_commission)
+            } else {
+                format!("{:?}", self.max_commission)
+            },
             self.commission_currency,
             self.warning_text,
             self.completed_time,
@@ -702,8 +715,10 @@ impl Display for Order {
              lmt_price = {},
              tif = {},
              what_if = {},
-             CMB({}),
-             COND({})",
+             algo_strategy = {},
+             algo_params = ({}),
+             CMB = ({}),
+             COND = ({})",
             self.order_id,
             self.client_id,
             self.perm_id,
@@ -713,6 +728,16 @@ impl Display for Order {
             self.lmt_price,
             self.tif,
             self.what_if,
+            self.algo_strategy,
+            if !self.algo_params.is_empty() {
+                self.algo_params
+                    .iter()
+                    .map(|t| format!("{} = {}", t.tag, t.value))
+                    .collect::<Vec<String>>()
+                    .join(",")
+            } else {
+                "".to_string()
+            },
             if !self.order_combo_legs.is_empty() {
                 self.order_combo_legs
                     .iter()

@@ -785,49 +785,49 @@ impl TestWrapper {
     //----------------------------------------------------------------------------------------------
     #[allow(dead_code)]
     fn algo_samples(&mut self) -> Result<(), IBKRApiLibError> {
-        let next_id = self.next_order_id();
-        let mut scale_order =
-            order_samples::relative_pegged_to_primary("BUY", 70000.0, 189.0, 0.01);
-
-        fill_scale_params(
-            scale_order.borrow_mut(),
-            2000,
-            500,
-            true,
-            0.02,
-            189.00,
-            3600,
-            2.00,
-            true,
-            10,
-            40,
-        );
-        self.client.as_ref().unwrap().lock().unwrap().place_order(
-            next_id,
-            contract_samples::us_stock_at_smart().borrow(),
-            scale_order.borrow(),
-        )?;
-
-        // // thread::sleep(Duration::from_secs(1));
-
-        // let base_order = order_samples::limit_order("BUY", 1000.0, 1.0);
         // let next_id = self.next_order_id();
-        // let order = &mut base_order.clone();
-        // fill_arrival_price_params(
-        //     order,
-        //     0.1,
-        //     "Aggressive",
-        //     "09:00:00 CET",
-        //     "16:00:00 CET",
+        // let mut scale_order =
+        //     order_samples::relative_pegged_to_primary("BUY", 70000.0, 189.0, 0.01);
+
+        // fill_scale_params(
+        //     scale_order.borrow_mut(),
+        //     2000,
+        //     500,
         //     true,
+        //     0.02,
+        //     189.00,
+        //     3600,
+        //     2.00,
         //     true,
-        //     100000,
+        //     10,
+        //     40,
         // );
         // self.client.as_ref().unwrap().lock().unwrap().place_order(
         //     next_id,
         //     contract_samples::us_stock_at_smart().borrow(),
-        //     order,
+        //     scale_order.borrow(),
         // )?;
+
+        // // thread::sleep(Duration::from_secs(1));
+
+        let base_order = order_samples::limit_order("BUY", 1000.0, 1.0);
+        let next_id = self.next_order_id();
+        let order = &mut base_order.clone();
+        fill_arrival_price_params(
+            order,
+            0.1,
+            "Aggressive",
+            "09:00:00 CET",
+            "16:00:00 CET",
+            true,
+            true,
+            100000,
+        );
+        self.client.as_ref().unwrap().lock().unwrap().place_order(
+            next_id,
+            contract_samples::us_stock_at_smart().borrow(),
+            order,
+        )?;
 
         // let next_id = self.next_order_id();
         // let order = &mut base_order.clone();
