@@ -157,7 +157,7 @@ pub fn us_option_contract() -> Contract {
     contract.sec_type = "OPT".to_string();
     contract.exchange = "SMART".to_string();
     contract.currency = "USD".to_string();
-    contract.last_trade_date_or_contract_month = "202009".to_string();
+    contract.last_trade_date_or_contract_month = "20201218".to_string();
     contract.strike = 1180.0;
     contract.right = "C".to_string();
     contract.multiplier = "100".to_string();
@@ -172,7 +172,7 @@ pub fn option_at_box() -> Contract {
     contract.sec_type = "OPT".to_string();
     contract.exchange = "BOX".to_string();
     contract.currency = "USD".to_string();
-    contract.last_trade_date_or_contract_month = "20190315".to_string();
+    contract.last_trade_date_or_contract_month = "20201218".to_string();
     contract.strike = 1180.0;
     contract.right = "C".to_string();
     contract.multiplier = "100".to_string();
