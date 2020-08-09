@@ -28,14 +28,6 @@ pub fn main() -> Result<(), IBKRApiLibError> {
     // start_requests function inn TestWrapper which is called by next_valid_id
     // app.lock().unwrap().connect("127.0.0.1", 7497, 0);
     app.lock().unwrap().connect("127.0.0.1", 4002, 0)?;
-    thread::sleep(Duration::new(2, 0));
-    let res = app.lock().unwrap().connect("127.0.0.1", 4002, 0);
-    if res.is_err() {
-        println!("{:?}", res);
-    }
-    app.lock().unwrap().disconnect()?;
-    thread::sleep(Duration::new(2, 0));
-    app.lock().unwrap().connect("127.0.0.1", 4002, 0)?;
     //4002
     thread::sleep(Duration::new(18600, 0));
 
