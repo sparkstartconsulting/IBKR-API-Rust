@@ -130,7 +130,7 @@ where
             return Ok(());
         }
 
-        let msg_id = i32::from_str(fields.get(0).unwrap().as_str()).unwrap();
+        let msg_id = i32::from_str(fields.get(0).unwrap().as_str())?;
 
         match FromPrimitive::from_i32(msg_id) {
             Some(IncomingMessageIds::TickPrice) => self.process_tick_price(fields)?,

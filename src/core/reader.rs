@@ -1,6 +1,6 @@
 //! Reads and processes messages from the TCP socket
 use std::io::Read;
-use std::net::{Shutdown, TcpStream};
+use std::net::Shutdown;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
@@ -53,22 +53,20 @@ impl Reader {
     fn _recv_all_msg(&mut self) -> Result<Vec<u8>, IBKRApiLibError> {
         let mut cont = true;
         let mut allbuf: Vec<u8> = Vec::new();
+        const NUM_BYTES: usize = 4096;
 
         while cont {
-            let mut buf: [u8; 4096] = [0; 4096];
-            //debug!("Getting bytes");
-            //info!("Starting read");
+            let mut buf: [u8; NUM_BYTES] = [0; NUM_BYTES];
+
             let bytes_read = self
                 .stream
                 .read(&mut buf)
-                .expect("Couldnt read from reader..."); //read(&mut buf)?;
-                                                        //debug!("got bytes: {}", bytes_read);
-                                                        //info!("Finished read. Read {}", bytes_read);
+                .expect("Couldn't read from reader..."); 
+
             allbuf.extend_from_slice(&buf[0..bytes_read]);
             //logger.debug("len %d raw:%s|", len(buf), buf)
 
-            if bytes_read < 4096 {
-                //debug!("bytes_read: {}", bytes_read);
+            if bytes_read < NUM_BYTES {
                 cont = false;
             }
         }
@@ -84,7 +82,6 @@ impl Reader {
         // Read messages from the packet until there are no more.
         // When this loop ends, break into the outer loop and grab another packet.
         // Repeat until the connection is closed
-        //
         let _msg = String::new();
         while message_packet.len() > 0 {
             // Read a message from the packet then add it to the message queue below.

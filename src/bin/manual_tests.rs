@@ -38,8 +38,7 @@ pub fn main() -> Result<(), IBKRApiLibError> {
         .expect("EClient mutex was poisoned")
         .connect("127.0.0.1", 4002, 0)?;
 
-    //4002
-    thread::sleep(Duration::new(18600, 0));
+    thread::sleep(Duration::new(1, 0));
 
     Ok(())
 }

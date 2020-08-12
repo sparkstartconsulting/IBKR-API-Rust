@@ -8,7 +8,6 @@ use crate::core::common::{TagValue, UNSET_DOUBLE, UNSET_INTEGER};
 use crate::core::order::AuctionStrategy::AuctionUnset;
 use crate::core::order::Origin::Customer;
 use crate::core::order_condition::{Condition, OrderConditionEnum};
-use std::collections::HashMap;
 
 //==================================================================================================
 #[repr(i32)]

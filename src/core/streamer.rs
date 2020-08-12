@@ -1,14 +1,16 @@
 use bytebuffer::ByteBuffer;
-use std::net::{Ipv4Addr, SocketAddr, TcpStream};
+use std::net::{SocketAddr, TcpStream};
 use std::{
     io::{self, Read, Write},
-    net::{Shutdown, ToSocketAddrs},
+    net::Shutdown,
 };
 
+//----------------------------------------------------------------------------------------------
 pub trait Streamer: Read + Write + Send + Sync {
     fn shutdown(&mut self, how: Shutdown) -> io::Result<()>;
     fn connect(&mut self, addr: &SocketAddr);
 }
+//----------------------------------------------------------------------------------------------
 #[derive(Debug)]
 pub struct TcpStreamer {
     pub(crate) stream: TcpStream,
@@ -51,6 +53,7 @@ impl Write for TcpStreamer {
     }
 }
 
+//----------------------------------------------------------------------------------------------
 pub struct TestStreamer {
     stream: ByteBuffer,
 }
@@ -64,11 +67,11 @@ impl TestStreamer {
 }
 
 impl Streamer for TestStreamer {
-    fn shutdown(&mut self, how: Shutdown) -> io::Result<()> {
+    fn shutdown(&mut self, _how: Shutdown) -> io::Result<()> {
         Ok(())
     }
 
-    fn connect(&mut self, addr: &SocketAddr) {}
+    fn connect(&mut self, _addr: &SocketAddr) {}
 }
 
 impl Read for TestStreamer {
@@ -78,22 +81,18 @@ impl Read for TestStreamer {
 
     fn read_to_end(&mut self, allbuf: &mut Vec<u8>) -> io::Result<usize> {
         let mut cont = true;
+        const NUM_BYTES: usize = 4096;
 
         while cont {
-            let mut buf: [u8; 4096] = [0; 4096];
-            //debug!("Getting bytes");
-            //info!("Starting read");
+            let mut buf: [u8; NUM_BYTES] = [0; NUM_BYTES];
+
             let bytes_read = self
                 .stream
                 .read(&mut buf)
-                .expect("Couldnt read from reader..."); //read(&mut buf)?;
-                                                        //debug!("got bytes: {}", bytes_read);
-                                                        //info!("Finished read. Read {}", bytes_read);
+                .expect("Couldnt read from reader..."); 
             allbuf.extend_from_slice(&buf[0..bytes_read]);
-            //logger.debug("len %d raw:%s|", len(buf), buf)
 
-            if bytes_read < 4096 {
-                //debug!("bytes_read: {}", bytes_read);
+            if bytes_read < NUM_BYTES {
                 cont = false;
             }
         }
