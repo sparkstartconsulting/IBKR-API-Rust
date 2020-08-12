@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use twsapi::core::client::EClient;
-use twsapi::core::{streamer::TcpStreamer, errors::*};
+use twsapi::core::{errors::*, streamer::TcpStreamer};
 use twsapi::examples::test_helpers::TestWrapper;
 
 /// Example of using client and wrapper.

@@ -4516,8 +4516,541 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
 //////////////////////////////////////////TESTS /////////////////////////////////////////////////
 #[cfg(test)]
 mod tests {
+    use super::{ConnStatus, EClient, POISONED_MUTEX};
+    use crate::core::{
+        common::{
+            BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode,
+            HistogramData, HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider,
+            PriceIncrement, RealTimeBar, SmartComponent, TickAttrib, TickAttribBidAsk,
+            TickAttribLast, TickByTickType, TickType,
+        },
+        contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract},
+        execution::Execution,
+        order::{Order, SoftDollarTier},
+        streamer::{Streamer, TestStreamer},
+        wrapper::Wrapper,
+    };
+    use crate::core::{
+        errors::IBKRApiLibError,
+        messages::{read_fields, read_msg, OutgoingMessageIds},
+        order::OrderState,
+    };
+    use std::sync::{Arc, Mutex};
+
+    pub struct DummyTestWrapper {}
+
+    impl DummyTestWrapper {
+        fn new() -> Self {
+            DummyTestWrapper {}
+        }
+    }
+
+    impl Wrapper for DummyTestWrapper {
+        fn error(&mut self, req_id: i32, error_code: i32, error_string: &str) {
+            todo!()
+        }
+        fn win_error(&mut self, text: &str, last_error: i32) {
+            todo!()
+        }
+        fn connect_ack(&mut self) {
+            todo!()
+        }
+        fn market_data_type(&mut self, req_id: i32, market_data_type: i32) {
+            todo!()
+        }
+        fn tick_price(&mut self, req_id: i32, tick_type: TickType, price: f64, attrib: TickAttrib) {
+            todo!()
+        }
+        fn tick_size(&mut self, req_id: i32, tick_type: TickType, size: i32) {
+            todo!()
+        }
+        fn tick_snapshot_end(&mut self, req_id: i32) {
+            todo!()
+        }
+        fn tick_generic(&mut self, req_id: i32, tick_type: TickType, value: f64) {
+            todo!()
+        }
+        fn tick_string(&mut self, req_id: i32, tick_type: TickType, value: &str) {
+            todo!()
+        }
+        fn tick_efp(
+            &mut self,
+            req_id: i32,
+            tick_type: TickType,
+            basis_points: f64,
+            formatted_basis_points: &str,
+            implied_future: f64,
+            hold_days: i32,
+            future_last_trade_date: &str,
+            dividend_impact: f64,
+            dividends_to_last_trade_date: f64,
+        ) {
+            todo!()
+        }
+        fn order_status(
+            &mut self,
+            order_id: i32,
+            status: &str,
+            filled: f64,
+            remaining: f64,
+            avg_fill_price: f64,
+            perm_id: i32,
+            parent_id: i32,
+            last_fill_price: f64,
+            client_id: i32,
+            why_held: &str,
+            mkt_cap_price: f64,
+        ) {
+            todo!()
+        }
+        fn open_order(
+            &mut self,
+            order_id: i32,
+            contract: Contract,
+            order: Order,
+            order_state: OrderState,
+        ) {
+            todo!()
+        }
+        fn open_order_end(&mut self) {
+            todo!()
+        }
+        fn connection_closed(&mut self) {
+            todo!()
+        }
+        fn update_account_value(
+            &mut self,
+            key: &str,
+            val: &str,
+            currency: &str,
+            account_name: &str,
+        ) {
+            todo!()
+        }
+        fn update_portfolio(
+            &mut self,
+            contract: Contract,
+            position: f64,
+            market_price: f64,
+            market_value: f64,
+            average_cost: f64,
+            unrealized_pnl: f64,
+            realized_pnl: f64,
+            account_name: &str,
+        ) {
+            todo!()
+        }
+        fn update_account_time(&mut self, time_stamp: &str) {
+            todo!()
+        }
+        fn account_download_end(&mut self, account_name: &str) {
+            todo!()
+        }
+        fn next_valid_id(&mut self, order_id: i32) {
+            todo!()
+        }
+        fn contract_details(&mut self, req_id: i32, contract_details: ContractDetails) {
+            todo!()
+        }
+        fn bond_contract_details(&mut self, req_id: i32, contract_details: ContractDetails) {
+            todo!()
+        }
+        fn contract_details_end(&mut self, req_id: i32) {
+            todo!()
+        }
+        fn exec_details(&mut self, req_id: i32, contract: Contract, execution: Execution) {
+            todo!()
+        }
+        fn exec_details_end(&mut self, req_id: i32) {
+            todo!()
+        }
+        fn update_mkt_depth(
+            &mut self,
+            req_id: i32,
+            position: i32,
+            operation: i32,
+            side: i32,
+            price: f64,
+            size: i32,
+        ) {
+            todo!()
+        }
+        fn update_mkt_depth_l2(
+            &mut self,
+            req_id: i32,
+            position: i32,
+            market_maker: &str,
+            operation: i32,
+            side: i32,
+            price: f64,
+            size: i32,
+            is_smart_depth: bool,
+        ) {
+            todo!()
+        }
+        fn update_news_bulletin(
+            &mut self,
+            msg_id: i32,
+            msg_type: i32,
+            news_message: &str,
+            origin_exch: &str,
+        ) {
+            todo!()
+        }
+        fn managed_accounts(&mut self, accounts_list: &str) {
+            todo!()
+        }
+        fn receive_fa(&mut self, fa_data: FaDataType, cxml: &str) {
+            todo!()
+        }
+        fn historical_data(&mut self, req_id: i32, bar: BarData) {
+            todo!()
+        }
+        fn historical_data_end(&mut self, req_id: i32, start: &str, end: &str) {
+            todo!()
+        }
+        fn scanner_parameters(&mut self, xml: &str) {
+            todo!()
+        }
+        fn scanner_data(
+            &mut self,
+            req_id: i32,
+            rank: i32,
+            contract_details: ContractDetails,
+            distance: &str,
+            benchmark: &str,
+            projection: &str,
+            legs_str: &str,
+        ) {
+            todo!()
+        }
+        fn scanner_data_end(&mut self, req_id: i32) {
+            todo!()
+        }
+        fn realtime_bar(&mut self, req_id: i32, bar: RealTimeBar) {
+            todo!()
+        }
+        fn current_time(&mut self, time: i64) {
+            todo!()
+        }
+        fn fundamental_data(&mut self, req_id: i32, data: &str) {
+            todo!()
+        }
+        fn delta_neutral_validation(
+            &mut self,
+            req_id: i32,
+            delta_neutral_contract: DeltaNeutralContract,
+        ) {
+            todo!()
+        }
+        fn commission_report(&mut self, commission_report: CommissionReport) {
+            todo!()
+        }
+        fn position(&mut self, account: &str, contract: Contract, position: f64, avg_cost: f64) {
+            todo!()
+        }
+        fn position_end(&mut self) {
+            todo!()
+        }
+        fn account_summary(
+            &mut self,
+            req_id: i32,
+            account: &str,
+            tag: &str,
+            value: &str,
+            currency: &str,
+        ) {
+            todo!()
+        }
+        fn account_summary_end(&mut self, req_id: i32) {
+            todo!()
+        }
+        fn verify_message_api(&mut self, api_data: &str) {
+            todo!()
+        }
+        fn verify_completed(&mut self, is_successful: bool, error_text: &str) {
+            todo!()
+        }
+        fn verify_and_auth_message_api(&mut self, api_data: &str, xyz_challange: &str) {
+            todo!()
+        }
+        fn verify_and_auth_completed(&mut self, is_successful: bool, error_text: &str) {
+            todo!()
+        }
+        fn display_group_list(&mut self, req_id: i32, groups: &str) {
+            todo!()
+        }
+        fn display_group_updated(&mut self, req_id: i32, contract_info: &str) {
+            todo!()
+        }
+        fn position_multi(
+            &mut self,
+            req_id: i32,
+            account: &str,
+            model_code: &str,
+            contract: Contract,
+            pos: f64,
+            avg_cost: f64,
+        ) {
+            todo!()
+        }
+        fn position_multi_end(&mut self, req_id: i32) {
+            todo!()
+        }
+        fn account_update_multi(
+            &mut self,
+            req_id: i32,
+            account: &str,
+            model_code: &str,
+            key: &str,
+            value: &str,
+            currency: &str,
+        ) {
+            todo!()
+        }
+        fn account_update_multi_end(&mut self, req_id: i32) {
+            todo!()
+        }
+        fn tick_option_computation(
+            &mut self,
+            req_id: i32,
+            tick_type: TickType,
+            implied_vol: f64,
+            delta: f64,
+            opt_price: f64,
+            pv_dividend: f64,
+            gamma: f64,
+            vega: f64,
+            theta: f64,
+            und_price: f64,
+        ) {
+            todo!()
+        }
+        fn security_definition_option_parameter(
+            &mut self,
+            req_id: i32,
+            exchange: &str,
+            underlying_con_id: i32,
+            trading_class: &str,
+            multiplier: &str,
+            expirations: std::collections::HashSet<String>,
+            strikes: std::collections::HashSet<bigdecimal::BigDecimal>,
+        ) {
+            todo!()
+        }
+        fn security_definition_option_parameter_end(&mut self, req_id: i32) {
+            todo!()
+        }
+        fn soft_dollar_tiers(&mut self, req_id: i32, tiers: Vec<SoftDollarTier>) {
+            todo!()
+        }
+        fn family_codes(&mut self, family_codes: Vec<FamilyCode>) {
+            todo!()
+        }
+        fn symbol_samples(&mut self, req_id: i32, contract_descriptions: Vec<ContractDescription>) {
+            todo!()
+        }
+        fn mkt_depth_exchanges(
+            &mut self,
+            depth_mkt_data_descriptions: Vec<DepthMktDataDescription>,
+        ) {
+            todo!()
+        }
+        fn tick_news(
+            &mut self,
+            ticker_id: i32,
+            time_stamp: i32,
+            provider_code: &str,
+            article_id: &str,
+            headline: &str,
+            extra_data: &str,
+        ) {
+            todo!()
+        }
+        fn smart_components(&mut self, req_id: i32, smart_components: Vec<SmartComponent>) {
+            todo!()
+        }
+        fn tick_req_params(
+            &mut self,
+            ticker_id: i32,
+            min_tick: f64,
+            bbo_exchange: &str,
+            snapshot_permissions: i32,
+        ) {
+            todo!()
+        }
+        fn news_providers(&mut self, news_providers: Vec<NewsProvider>) {
+            todo!()
+        }
+        fn news_article(&mut self, request_id: i32, article_type: i32, article_text: &str) {
+            todo!()
+        }
+        fn historical_news(
+            &mut self,
+            request_id: i32,
+            time: &str,
+            provider_code: &str,
+            article_id: &str,
+            headline: &str,
+        ) {
+            todo!()
+        }
+        fn historical_news_end(&mut self, request_id: i32, has_more: bool) {
+            todo!()
+        }
+        fn head_timestamp(&mut self, req_id: i32, head_timestamp: &str) {
+            todo!()
+        }
+        fn histogram_data(&mut self, req_id: i32, items: Vec<HistogramData>) {
+            todo!()
+        }
+        fn historical_data_update(&mut self, req_id: i32, bar: BarData) {
+            todo!()
+        }
+        fn reroute_mkt_data_req(&mut self, req_id: i32, con_id: i32, exchange: &str) {
+            todo!()
+        }
+        fn reroute_mkt_depth_req(&mut self, req_id: i32, con_id: i32, exchange: &str) {
+            todo!()
+        }
+        fn market_rule(&mut self, market_rule_id: i32, price_increments: Vec<PriceIncrement>) {
+            todo!()
+        }
+        fn pnl(&mut self, req_id: i32, daily_pn_l: f64, unrealized_pn_l: f64, realized_pn_l: f64) {
+            todo!()
+        }
+        fn pnl_single(
+            &mut self,
+            req_id: i32,
+            pos: i32,
+            daily_pn_l: f64,
+            unrealized_pn_l: f64,
+            realized_pn_l: f64,
+            value: f64,
+        ) {
+            todo!()
+        }
+        fn historical_ticks(&mut self, req_id: i32, ticks: Vec<HistoricalTick>, done: bool) {
+            todo!()
+        }
+        fn historical_ticks_bid_ask(
+            &mut self,
+            req_id: i32,
+            ticks: Vec<HistoricalTickBidAsk>,
+            done: bool,
+        ) {
+            todo!()
+        }
+        fn historical_ticks_last(
+            &mut self,
+            req_id: i32,
+            ticks: Vec<HistoricalTickLast>,
+            done: bool,
+        ) {
+            todo!()
+        }
+        fn tick_by_tick_all_last(
+            &mut self,
+            req_id: i32,
+            tick_type: TickByTickType,
+            time: i64,
+            price: f64,
+            size: i32,
+            tick_attrib_last: TickAttribLast,
+            exchange: &str,
+            special_conditions: &str,
+        ) {
+            todo!()
+        }
+        fn tick_by_tick_bid_ask(
+            &mut self,
+            req_id: i32,
+            time: i64,
+            bid_price: f64,
+            ask_price: f64,
+            bid_size: i32,
+            ask_size: i32,
+            tick_attrib_bid_ask: TickAttribBidAsk,
+        ) {
+            todo!()
+        }
+        fn tick_by_tick_mid_point(&mut self, req_id: i32, time: i64, mid_point: f64) {
+            todo!()
+        }
+        fn order_bound(&mut self, req_id: i32, api_client_id: i32, api_order_id: i32) {
+            todo!()
+        }
+        fn completed_order(&mut self, contract: Contract, order: Order, order_state: OrderState) {
+            todo!()
+        }
+        fn completed_orders_end(&mut self) {
+            todo!()
+        }
+    }
+
+    trait ClientConnectForTest {
+        fn connect_test(&mut self);
+    }
+
+    impl ClientConnectForTest for EClient<DummyTestWrapper> {
+        fn connect_test(&mut self) {
+            *self.conn_state.lock().expect(POISONED_MUTEX) = ConnStatus::CONNECTED;
+            let streamer = TestStreamer::new();
+            self.set_streamer(Option::from(
+                Box::new(streamer) as Box<dyn Streamer + 'static>
+            ));
+        }
+    }
+
     #[test]
-    fn it_works_from_eclient() {
-        assert_eq!(2 + 2, 4);
+    fn test_req_account_summary() -> Result<(), IBKRApiLibError> {
+        let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
+            wrapper.clone(),
+        )));
+
+        let version = 2;
+        let req_id = 100;
+        let group_name = "MyGroup";
+        let tags = "tag1:tag_value1, tag2:tag_value2";
+
+        //use port 7497 for TWS or 4002 for IB Gateway, depending on the port you have set
+        app.lock()
+            .expect("EClient mutex was poisoned")
+            .connect_test();
+
+        app.lock()
+            .expect("EClient mutex was poisoned")
+            .req_account_summary(req_id, group_name, tags)?;
+
+        let mut buf = Vec::<u8>::new();
+
+        app.lock()
+            .expect("EClient mutex was poisoned")
+            .stream
+            .as_mut()
+            .unwrap()
+            .read_to_end(&mut buf)?;
+        let expected: [u8; 54] = [
+            0, 0, 0, 50, 54, 50, 0, 50, 0, 49, 48, 48, 0, 77, 121, 71, 114, 111, 117, 112, 0, 116,
+            97, 103, 49, 58, 116, 97, 103, 95, 118, 97, 108, 117, 101, 49, 44, 32, 116, 97, 103,
+            50, 58, 116, 97, 103, 95, 118, 97, 108, 117, 101, 50, 0,
+        ];
+
+        let msg_data = read_msg(buf.as_slice())?;
+        //println!("read message: {:?}",read_msg(buf.as_slice())?);
+        let fields = read_fields(&msg_data.1);
+        //println!("read fields: {:?}",read_fields(&msg_data.1));
+        assert_eq!(expected.as_ref(), buf.as_slice());
+        assert_eq!(
+            OutgoingMessageIds::ReqAccountSummary as u8,
+            fields[0].parse::<u8>().unwrap()
+        );
+        assert_eq!(version, fields[1].parse::<i32>().unwrap());
+        assert_eq!(req_id, fields[2].parse::<i32>().unwrap());
+        assert_eq!(group_name, fields[3]);
+        assert_eq!(tags, fields[4]);
+
+        Ok(())
     }
 }

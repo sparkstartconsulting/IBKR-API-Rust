@@ -75,6 +75,30 @@ impl Read for TestStreamer {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.stream.read(buf)
     }
+
+    fn read_to_end(&mut self, allbuf: &mut Vec<u8>) -> io::Result<usize> {
+        let mut cont = true;
+
+        while cont {
+            let mut buf: [u8; 4096] = [0; 4096];
+            //debug!("Getting bytes");
+            //info!("Starting read");
+            let bytes_read = self
+                .stream
+                .read(&mut buf)
+                .expect("Couldnt read from reader..."); //read(&mut buf)?;
+                                                        //debug!("got bytes: {}", bytes_read);
+                                                        //info!("Finished read. Read {}", bytes_read);
+            allbuf.extend_from_slice(&buf[0..bytes_read]);
+            //logger.debug("len %d raw:%s|", len(buf), buf)
+
+            if bytes_read < 4096 {
+                //debug!("bytes_read: {}", bytes_read);
+                cont = false;
+            }
+        }
+        Ok(allbuf.len())
+    }
 }
 
 impl Write for TestStreamer {
