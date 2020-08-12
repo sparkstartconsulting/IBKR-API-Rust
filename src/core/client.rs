@@ -7,13 +7,14 @@ use std::ops::Deref;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
-use std::thread;
+use std::{fmt::Debug, thread};
 
 use from_ascii::FromAscii;
 use log::*;
 
 use num_derive::FromPrimitive;
 
+use super::streamer::{Streamer, TcpStreamer};
 use crate::core::common::*;
 use crate::core::contract::Contract;
 use crate::core::decoder::Decoder;
@@ -44,10 +45,13 @@ pub enum ConnStatus {
 
 //==================================================================================================
 /// Struct for sending requests
-#[derive(Debug)]
-pub struct EClient<T: Wrapper + Send + Sync> {
+//#[derive(Debug)]
+pub struct EClient<T>
+where
+    T: Wrapper + Send + Sync,
+{
     wrapper: Arc<Mutex<T>>,
-    stream: Option<TcpStream>,
+    stream: Option<Box<dyn Streamer + 'static>>,
     host: String,
     port: u32,
     extra_auth: bool,
@@ -75,17 +79,23 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
             disconnect_requested: Arc::new(AtomicBool::new(false)),
         }
     }
-    fn send_request(&self, request: &str) -> Result<(), IBKRApiLibError> {
+    fn send_request(&mut self, request: &str) -> Result<(), IBKRApiLibError> {
         let bytes = make_message(request)?;
         self.send_bytes(bytes.as_slice())?;
         Ok(())
     }
 
-    fn send_bytes(&self, bytes: &[u8]) -> Result<usize, IBKRApiLibError> {
-        let return_val = self.stream.as_ref().unwrap().write(bytes)?;
+    fn send_bytes(&mut self, bytes: &[u8]) -> Result<usize, IBKRApiLibError> {
+        let return_val = self.stream.as_mut().unwrap().write(bytes)?;
         Ok(return_val)
     }
 
+    fn make_writer<Z: 'static + Write>(writer: Z) -> Box<dyn Write> {
+        Box::new(writer)
+    }
+    fn set_streamer(&mut self, streamer: Option<Box<dyn Streamer + 'static>>) {
+        self.stream = streamer;
+    }
     //----------------------------------------------------------------------------------------------
     /// Establishes a connection to TWS or IB Gateway
     pub fn connect(
@@ -108,13 +118,19 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
         info!("Connecting");
         self.disconnect_requested.store(false, Ordering::Release);
         *self.conn_state.lock().expect(POISONED_MUTEX) = ConnStatus::CONNECTING;
-        let thestream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port))?;
-
-        self.stream = Option::from(thestream.try_clone().unwrap());
-
-        let _reader_stream = thestream.try_clone()?;
+        let tcp_stream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port))?;
+        let streamer = TcpStreamer::new(tcp_stream);
+        self.set_streamer(Option::from(
+            Box::new(streamer.clone()) as Box<dyn Streamer + 'static>
+        ));
         let (tx, rx) = channel::<String>();
-        let mut reader = Reader::new(thestream, tx.clone(), self.disconnect_requested.clone());
+        let mut reader = Reader::new(
+            Box::new(streamer.clone()),
+            tx.clone(),
+            self.disconnect_requested.clone(),
+        );
+
+        let mut fields: Vec<String> = Vec::new();
 
         let v_100_prefix = "API\0";
         let v_100_version = format!("v{}..{}", MIN_CLIENT_VER, MAX_CLIENT_VER);
@@ -126,7 +142,6 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
         bytearray.extend_from_slice(msg.as_slice());
 
         self.send_bytes(bytearray.as_slice())?;
-        let mut fields: Vec<String> = Vec::new();
 
         let mut decoder = Decoder::new(
             self.wrapper.clone(),
@@ -134,6 +149,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
             self.server_version,
             self.conn_state.clone(),
         );
+
         //An Interactive Broker's developer's note: "sometimes I get news before the server version, thus the loop"
         while fields.len() != 2 {
             if fields.len() > 0 {
@@ -197,7 +213,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
 
     //----------------------------------------------------------------------------------------------
     /// Sets server logging level
-    pub fn set_server_log_level(&self, log_evel: i32) -> Result<(), IBKRApiLibError> {
+    pub fn set_server_log_level(&mut self, log_evel: i32) -> Result<(), IBKRApiLibError> {
         //The pub default detail level is ERROR. For more details, see API
         //        Logging.
         //TODO Make log_level an enum
@@ -230,7 +246,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
 
     //----------------------------------------------------------------------------------------------
     /// Request the current time according to TWS or IB Gateway
-    pub fn req_current_time(&self) -> Result<(), IBKRApiLibError> {
+    pub fn req_current_time(&mut self) -> Result<(), IBKRApiLibError> {
         let version = 2;
 
         let message_id: i32 = OutgoingMessageIds::ReqCurrentTime as i32;
@@ -2066,7 +2082,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
     ///
     /// # Arguments
     /// * num_ids - deprecated
-    pub fn req_ids(&self, num_ids: i32) -> Result<(), IBKRApiLibError> {
+    pub fn req_ids(&mut self, num_ids: i32) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
         info!("req_ids is connected...");
         let version = 1;
@@ -2141,7 +2157,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
     ///                already been created in TWS Global Configuration.
     /// * tags- A comma-separated list of account tags.  See the AccountSummaryTags enum for valid values
     pub fn req_account_summary(
-        &self,
+        &mut self,
         req_id: i32,
         group_name: &str,
         tags: &str,
@@ -2952,7 +2968,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
 
     //----------------------------------------------------------------------------------------------
     ///Call this function to stop receiving news bulletins.
-    pub fn cancel_news_bulletins(&self) -> Result<(), IBKRApiLibError> {
+    pub fn cancel_news_bulletins(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
@@ -4482,7 +4498,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
 
     //------------------------------------------------------------------------------------------------
     /// check if client is connected to TWS
-    fn check_connected(&self, req_id: i32) -> Result<(), IBKRApiLibError> {
+    fn check_connected(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         match self.is_connected() {
             false => {
                 let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(

@@ -7,12 +7,13 @@ use std::sync::Arc;
 
 use log::*;
 
+use super::streamer::Streamer;
 use crate::core::errors::IBKRApiLibError;
 use crate::core::messages::read_msg;
 
 //==================================================================================================
 pub struct Reader {
-    stream: TcpStream,
+    stream: Box<dyn Streamer + 'static>,
     messages: Sender<String>,
     disconnect_requested: Arc<AtomicBool>,
     is_connected: bool,
@@ -20,7 +21,7 @@ pub struct Reader {
 
 impl Reader {
     pub fn new(
-        stream: TcpStream,
+        stream: Box<impl Streamer + 'static>,
         messages: Sender<String>,
         disconnect_requested: Arc<AtomicBool>,
     ) -> Self {

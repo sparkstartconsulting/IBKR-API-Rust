@@ -1,12 +1,4 @@
 use crate::{
-    core::algo_params::{
-        fill_accumulate_distribute_params, fill_adaptive_params, fill_arrival_price_params,
-        fill_balance_impact_risk_params, fill_close_price_params, fill_csfbinline_params,
-        fill_dark_ice_params, fill_jefferies_vwapparams, fill_min_impact_params,
-        fill_pct_vol_params, fill_price_variant_pct_vol_params, fill_qbalgo_in_line_params,
-        fill_scale_params, fill_size_variant_pct_vol_params, fill_time_variant_pct_vol_params,
-        fill_twap_params, fill_vwap_params,
-    },
     core::client::EClient,
     core::common::{
         BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
@@ -23,6 +15,17 @@ use crate::{
         order_condition::TriggerMethod,
         wrapper::Wrapper,
     },
+    core::{
+        algo_params::{
+            fill_accumulate_distribute_params, fill_adaptive_params, fill_arrival_price_params,
+            fill_balance_impact_risk_params, fill_close_price_params, fill_csfbinline_params,
+            fill_dark_ice_params, fill_jefferies_vwapparams, fill_min_impact_params,
+            fill_pct_vol_params, fill_price_variant_pct_vol_params, fill_qbalgo_in_line_params,
+            fill_scale_params, fill_size_variant_pct_vol_params, fill_time_variant_pct_vol_params,
+            fill_twap_params, fill_vwap_params,
+        },
+        streamer::{Streamer, TcpStreamer},
+    },
     examples::{
         contract_samples, fa_allocation_samples, order_samples, scanner_subscription_samples,
     },
@@ -33,23 +36,28 @@ use chrono::{DateTime, Utc};
 use log::*;
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashSet;
+use std::marker::Send;
+use std::marker::Sync;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, UNIX_EPOCH};
+use std::{
+    io::{Read, Write},
+    time::{Duration, UNIX_EPOCH},
+};
 
-static CLIENT_POISONED_MUTEX: &str = "Client mutex was poisoned";
-static CLIENT_IS_NONE: &str = "Client must be assigned!";
+const CLIENT_POISONED_MUTEX: &str = "Client mutex was poisoned";
+const CLIENT_IS_NONE: &str = "Client must be assigned!";
 
 //==================================================================================================
 /// Example implementation of the Wrapper callback trait.  Just logs callback methods
-#[derive(Debug)]
-pub struct TestWrapper {
-    pub client: Option<Arc<Mutex<EClient<TestWrapper>>>>,
+//#[derive(Debug)]
+pub struct TestWrapper<T: Streamer + 'static> {
+    pub client: Option<Arc<Mutex<EClient<TestWrapper<T>>>>>,
     pub next_order_id: i32,
     account: String,
 }
 
-impl TestWrapper {
+impl<T: Streamer> TestWrapper<T> {
     pub fn new() -> Self {
         TestWrapper {
             client: None,
@@ -2957,7 +2965,7 @@ impl TestWrapper {
     }
 }
 
-impl Wrapper for TestWrapper {
+impl<T: Streamer + 'static> Wrapper for TestWrapper<T> {
     fn error(&mut self, req_id: i32, error_code: i32, error_string: &str) {
         error!(
             "req_id: {} ,error_code: {} , error_string:{}",

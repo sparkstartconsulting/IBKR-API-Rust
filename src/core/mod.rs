@@ -14,4 +14,5 @@ pub mod order_decoder;
 pub mod reader;
 pub mod scanner;
 pub mod server_versions;
+pub mod streamer;
 pub mod wrapper;
