@@ -5013,24 +5013,17 @@ mod tests {
         let req_id = 100;
         let group_name = "MyGroup";
         let tags = "tag1:tag_value1, tag2:tag_value2";
-
-        //use port 7497 for TWS or 4002 for IB Gateway, depending on the port you have set
-        app.lock()
-            .expect("EClient mutex was poisoned")
-            .connect_test();
-
-        app.lock()
-            .expect("EClient mutex was poisoned")
-            .req_account_summary(req_id, group_name, tags)?;
-
         let mut buf = Vec::<u8>::new();
 
-        app.lock()
-            .expect("EClient mutex was poisoned")
-            .stream
-            .as_mut()
-            .unwrap()
-            .read_to_end(&mut buf)?;
+        
+        let mut locked_app = app.lock()
+            .expect("EClient mutex was poisoned");
+
+            locked_app.connect_test();
+            locked_app.req_account_summary(req_id, group_name, tags)?;
+            locked_app.stream.as_mut().unwrap().read_to_end(&mut buf)?;
+
+            
         let expected: [u8; 54] = [
             0, 0, 0, 50, 54, 50, 0, 50, 0, 49, 48, 48, 0, 77, 121, 71, 114, 111, 117, 112, 0, 116,
             97, 103, 49, 58, 116, 97, 103, 95, 118, 97, 108, 117, 101, 49, 44, 32, 116, 97, 103,
