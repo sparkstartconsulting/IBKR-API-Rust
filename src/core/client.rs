@@ -4522,7 +4522,7 @@ mod tests {
             TickAttribLast, TickByTickType, TickType,
         },
         contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract},
-        execution::Execution,
+        execution::{Execution, ExecutionFilter},
         order::{Order, SoftDollarTier},
         streamer::{Streamer, TestStreamer},
         wrapper::Wrapper,
@@ -5276,9 +5276,8 @@ mod tests {
         ];
 
         let msg_data = read_msg(buf.as_slice())?;
-        //println!("read message: {:?}", read_msg(buf.as_slice())?);
         let fields = read_fields(&msg_data.1);
-        //println!("read fields: {:?}", read_fields(&msg_data.1));
+
         assert_eq!(expected.as_ref(), buf.as_slice());
         assert_eq!(
             OutgoingMessageIds::ReqContractData as u8,
@@ -5309,6 +5308,105 @@ mod tests {
 
         assert_eq!(contract.sec_id_type, fields[16]);
         assert_eq!(contract.sec_id, fields[17]);
+
+        Ok(())
+    }
+
+    //------------------------------------------------------------------------------------------------
+    #[test]
+    fn test_req_current_time() -> Result<(), IBKRApiLibError> {
+        let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
+            wrapper.clone(),
+        )));
+
+        let version = 2;
+
+        let mut buf = Vec::<u8>::new();
+
+        let mut locked_app = app.lock().expect("EClient mutex was poisoned");
+
+        locked_app.connect_test();
+        let contract = simple_future();
+        locked_app.req_current_time()?;
+        locked_app.stream.as_mut().unwrap().read_to_end(&mut buf)?;
+
+        let expected: [u8; 9] = [0, 0, 0, 5, 52, 57, 0, 50, 0];
+
+        let msg_data = read_msg(buf.as_slice())?;
+
+        let fields = read_fields(&msg_data.1);
+
+        assert_eq!(expected.as_ref(), buf.as_slice());
+        assert_eq!(
+            OutgoingMessageIds::ReqCurrentTime as u8,
+            fields[0].parse::<u8>().unwrap()
+        );
+        assert_eq!(version, fields[1].parse::<i32>().unwrap());
+
+        Ok(())
+    }
+
+    //------------------------------------------------------------------------------------------------
+    #[test]
+    fn test_req_executions() -> Result<(), IBKRApiLibError> {
+        let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
+            wrapper.clone(),
+        )));
+
+        let version = 3;
+        let req_id = 102;
+        let client_id = 0;
+        let acct_code = "D54321";
+
+        //Time from which the executions will be returned yyyymmdd hh:mm:ss Only those executions reported after the specified time will be returned.
+        let time = "";
+        let symbol = "ES";
+        let sec_type = "FUT";
+        let exchange = "GLOBEX";
+        let side = "BUY";
+        let mut buf = Vec::<u8>::new();
+
+        let mut locked_app = app.lock().expect("EClient mutex was poisoned");
+
+        locked_app.connect_test();
+
+        let exec_filter = ExecutionFilter::new(
+            client_id,
+            acct_code.to_string(),
+            time.to_string(),
+            symbol.to_string().to_string(),
+            sec_type.to_string(),
+            exchange.to_string(),
+            side.to_string(),
+        );
+        locked_app.req_executions(req_id, &exec_filter)?;
+        locked_app.stream.as_mut().unwrap().read_to_end(&mut buf)?;
+
+        let expected: [u8; 40] = [
+            0, 0, 0, 36, 55, 0, 51, 0, 49, 48, 50, 0, 48, 0, 68, 53, 52, 51, 50, 49, 0, 0, 69, 83,
+            0, 70, 85, 84, 0, 71, 76, 79, 66, 69, 88, 0, 66, 85, 89, 0,
+        ];
+
+        let msg_data = read_msg(buf.as_slice())?;
+        println!("read message: {:?}", read_msg(buf.as_slice())?);
+        let fields = read_fields(&msg_data.1);
+        println!("read fields: {:?}", read_fields(&msg_data.1));
+        assert_eq!(expected.as_ref(), buf.as_slice());
+        assert_eq!(
+            OutgoingMessageIds::ReqExecutions as u8,
+            fields[0].parse::<u8>().unwrap()
+        );
+        assert_eq!(version, fields[1].parse::<i32>().unwrap());
+        assert_eq!(req_id, fields[2].parse::<i32>().unwrap());
+        assert_eq!(client_id, fields[3].parse::<i32>().unwrap());
+        assert_eq!(acct_code, fields[4]);
+        assert_eq!(time, fields[5]);
+        assert_eq!(symbol, fields[6]);
+        assert_eq!(sec_type, fields[7]);
+        assert_eq!(exchange, fields[8]);
+        assert_eq!(side, fields[9]);
 
         Ok(())
     }
