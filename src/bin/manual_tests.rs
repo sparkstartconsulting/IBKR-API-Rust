@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use twsapi::core::client::EClient;
-use twsapi::core::errors::*;
+use twsapi::core::{errors::*, streamer::TcpStreamer};
 use twsapi::examples::test_helpers::TestWrapper;
 
 /// Example of using client and wrapper.
@@ -26,7 +26,7 @@ pub fn main() -> Result<(), IBKRApiLibError> {
         }
     };
 
-    let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
+    let wrapper = Arc::new(Mutex::new(TestWrapper::<TcpStreamer>::new()));
     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
 
     info!("getting connection...");
@@ -38,8 +38,7 @@ pub fn main() -> Result<(), IBKRApiLibError> {
         .expect("EClient mutex was poisoned")
         .connect("127.0.0.1", 4002, 0)?;
 
-    //4002
-    thread::sleep(Duration::new(18600, 0));
+    thread::sleep(Duration::new(2, 0));
 
     Ok(())
 }

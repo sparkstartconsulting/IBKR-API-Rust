@@ -13,6 +13,7 @@
 //! ```no_run        
 //! use twsapi::core::errors::IBKRApiLibError;
 //! use twsapi::core::client::EClient;
+//! use twsapi::core::streamer::{Streamer, TcpStreamer};
 //! use std::time::Duration;
 //! use twsapi::examples::test_helpers::TestWrapper;
 //! use std::sync::{Arc, Mutex};
@@ -20,19 +21,22 @@
 //!
 //! fn main() -> Result<(), IBKRApiLibError> {
 //!
-//!     let wrapper = Arc::new(Mutex::new(TestWrapper::new()));
+//!     let wrapper = Arc::new(Mutex::new(TestWrapper::<TcpStreamer>::new()));
 //!     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
-//!     
-//!     wrapper.lock().expect("Wrapper mutex was poisoned").client = Option::from(app.clone());
-//!     
+//!
 //!     println!("getting connection...");
-//!     app.lock()
-//!         .expect("EClient mutex was poisoned")
-//!         .connect("127.0.0.1", 4002, 0)?;
 //!
-//!     thread::sleep(Duration::new(18600, 0));
+//!     wrapper.lock().expect("Wrapper mutex was poisoned").client = Option::from(app.clone());
 //!
-//!     Ok(())
+//!    //use port 7497 for TWS or 4002 for IB Gateway, depending on the port you have set
+//!    app.lock()
+//!       .expect("EClient mutex was poisoned")
+//!       .connect("127.0.0.1", 4002, 0)?;
+//!
+//!    //4002
+//!    thread::sleep(Duration::new(18600, 0));
+//!
+//!    Ok(())
 //! }
 //! ```     
 pub mod core;

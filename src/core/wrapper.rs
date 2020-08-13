@@ -15,7 +15,7 @@ use crate::core::execution::Execution;
 use crate::core::order::{Order, OrderState, SoftDollarTier};
 
 /// A trait that clients will implement that declares callback functions that get called when the application receives messages from the Trader WorkStation or IB Gateway
-pub trait Wrapper: Send + Sync + 'static {
+pub trait Wrapper: Send + Sync {
     //----------------------------------------------------------------------------------------------
     /// This event is called when there is an error with the
     /// communication or when TWS wants to send a message to the core.

@@ -8,7 +8,6 @@ use crate::core::common::{TagValue, UNSET_DOUBLE, UNSET_INTEGER};
 use crate::core::order::AuctionStrategy::AuctionUnset;
 use crate::core::order::Origin::Customer;
 use crate::core::order_condition::{Condition, OrderConditionEnum};
-use std::collections::HashMap;
 
 //==================================================================================================
 #[repr(i32)]
@@ -725,7 +724,11 @@ impl Display for Order {
             self.order_type,
             self.action,
             self.total_quantity,
-            self.lmt_price,
+            if self.lmt_price == UNSET_DOUBLE {
+                format!("{:E}", self.lmt_price)
+            } else {
+                format!("{:?}", self.lmt_price)
+            },
             self.tif,
             self.what_if,
             self.algo_strategy,

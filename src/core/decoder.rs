@@ -41,11 +41,11 @@ use crate::core::server_versions::{
 };
 use crate::core::wrapper::Wrapper;
 
-static WRAPPER_POISONED_MUTEX: &str = "Wrapper mutex was poisoned";
+const WRAPPER_POISONED_MUTEX: &str = "Wrapper mutex was poisoned";
 //==================================================================================================
 pub fn decode_i32(iter: &mut Iter<String>) -> Result<i32, IBKRApiLibError> {
     let next = iter.next();
-    //info!("{:?}", next);
+
     let val: i32 = next.unwrap().parse().unwrap_or(0);
     Ok(val)
 }
@@ -130,7 +130,7 @@ where
             return Ok(());
         }
 
-        let msg_id = i32::from_str(fields.get(0).unwrap().as_str()).unwrap();
+        let msg_id = i32::from_str(fields.get(0).unwrap().as_str())?;
 
         match FromPrimitive::from_i32(msg_id) {
             Some(IncomingMessageIds::TickPrice) => self.process_tick_price(fields)?,
@@ -2595,7 +2595,7 @@ where
     //----------------------------------------------------------------------------------------------
     pub fn run(&mut self) -> Result<(), IBKRApiLibError> {
         //This is the function that has the message loop.
-        let conn_state_poisoned = "Connection state mutex was poisoned";
+        const CONN_STATE_POISONED: &str = "Connection state mutex was poisoned";
         info!("Starting run...");
         // !self.done &&
         loop {
@@ -2616,7 +2616,7 @@ where
                             .lock()
                             .expect(WRAPPER_POISONED_MUTEX)
                             .connection_closed();
-                        *self.conn_state.lock().expect(conn_state_poisoned) =
+                        *self.conn_state.lock().expect(CONN_STATE_POISONED) =
                             ConnStatus::DISCONNECTED;
                         error!("Error receiving message.  Invalid size.  Disconnected.");
                         return Ok(());
@@ -2627,7 +2627,7 @@ where
                     }
                 }
                 Result::Err(err) => {
-                    if *self.conn_state.lock().expect(conn_state_poisoned).deref() as i32
+                    if *self.conn_state.lock().expect(CONN_STATE_POISONED).deref() as i32
                         != ConnStatus::DISCONNECTED as i32
                     {
                         info!("Error receiving message.  Disconnected: {:?}", err);
@@ -2635,7 +2635,7 @@ where
                             .lock()
                             .expect(WRAPPER_POISONED_MUTEX)
                             .connection_closed();
-                        *self.conn_state.lock().expect(conn_state_poisoned) =
+                        *self.conn_state.lock().expect(CONN_STATE_POISONED) =
                             ConnStatus::DISCONNECTED;
 
                         return Ok(());

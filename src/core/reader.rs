@@ -1,18 +1,19 @@
 //! Reads and processes messages from the TCP socket
 use std::io::Read;
-use std::net::{Shutdown, TcpStream};
+use std::net::Shutdown;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
 use log::*;
 
+use super::streamer::Streamer;
 use crate::core::errors::IBKRApiLibError;
 use crate::core::messages::read_msg;
 
 //==================================================================================================
 pub struct Reader {
-    stream: TcpStream,
+    stream: Box<dyn Streamer + 'static>,
     messages: Sender<String>,
     disconnect_requested: Arc<AtomicBool>,
     is_connected: bool,
@@ -20,7 +21,7 @@ pub struct Reader {
 
 impl Reader {
     pub fn new(
-        stream: TcpStream,
+        stream: Box<impl Streamer + 'static>,
         messages: Sender<String>,
         disconnect_requested: Arc<AtomicBool>,
     ) -> Self {
@@ -52,22 +53,19 @@ impl Reader {
     fn _recv_all_msg(&mut self) -> Result<Vec<u8>, IBKRApiLibError> {
         let mut cont = true;
         let mut allbuf: Vec<u8> = Vec::new();
+        const NUM_BYTES: usize = 4096;
 
         while cont {
-            let mut buf: [u8; 4096] = [0; 4096];
-            //debug!("Getting bytes");
-            //info!("Starting read");
+            let mut buf: [u8; NUM_BYTES] = [0; NUM_BYTES];
+
             let bytes_read = self
                 .stream
                 .read(&mut buf)
-                .expect("Couldnt read from reader..."); //read(&mut buf)?;
-                                                        //debug!("got bytes: {}", bytes_read);
-                                                        //info!("Finished read. Read {}", bytes_read);
+                .expect("Couldnt read from reader...");
             allbuf.extend_from_slice(&buf[0..bytes_read]);
             //logger.debug("len %d raw:%s|", len(buf), buf)
 
-            if bytes_read < 4096 {
-                //debug!("bytes_read: {}", bytes_read);
+            if bytes_read < NUM_BYTES {
                 cont = false;
             }
         }
