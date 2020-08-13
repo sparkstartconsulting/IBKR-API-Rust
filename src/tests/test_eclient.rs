@@ -1,4 +1,3 @@
-//////////////////////////////////////////TESTS /////////////////////////////////////////////////
 #[cfg(test)]
 mod tests {
     use crate::core::client::{ConnStatus, EClient, POISONED_MUTEX};
@@ -878,9 +877,9 @@ mod tests {
         ];
 
         let msg_data = read_msg(buf.as_slice())?;
-        println!("read message: {:?}", read_msg(buf.as_slice())?);
+        //println!("read message: {:?}", read_msg(buf.as_slice())?);
         let fields = read_fields(&msg_data.1);
-        println!("read fields: {:?}", read_fields(&msg_data.1));
+        //println!("read fields: {:?}", read_fields(&msg_data.1));
         assert_eq!(expected.as_ref(), buf.as_slice());
         assert_eq!(
             OutgoingMessageIds::ReqExecutions as u8,
