@@ -4527,10 +4527,13 @@ mod tests {
         streamer::{Streamer, TestStreamer},
         wrapper::Wrapper,
     };
-    use crate::core::{
-        errors::IBKRApiLibError,
-        messages::{read_fields, read_msg, OutgoingMessageIds},
-        order::OrderState,
+    use crate::{
+        core::{
+            errors::IBKRApiLibError,
+            messages::{read_fields, read_msg, OutgoingMessageIds},
+            order::OrderState,
+        },
+        examples::contract_samples::simple_future,
     };
     use std::sync::{Arc, Mutex};
 
@@ -5167,15 +5170,145 @@ mod tests {
         let expected: [u8; 9] = [0, 0, 0, 5, 49, 54, 0, 49, 0];
 
         let msg_data = read_msg(buf.as_slice())?;
-        println!("read message: {:?}", read_msg(buf.as_slice())?);
         let fields = read_fields(&msg_data.1);
-        //println!("read fields: {:?}",read_fields(&msg_data.1));
+
         assert_eq!(expected.as_ref(), buf.as_slice());
         assert_eq!(
             OutgoingMessageIds::ReqAllOpenOrders as u8,
             fields[0].parse::<u8>().unwrap()
         );
         assert_eq!(version, fields[1].parse::<i32>().unwrap());
+
+        Ok(())
+    }
+
+    //------------------------------------------------------------------------------------------------
+    #[test]
+    fn test_req_auto_open_orders() -> Result<(), IBKRApiLibError> {
+        let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
+            wrapper.clone(),
+        )));
+
+        let version = 1;
+        let auto_bind = true;
+        let mut buf = Vec::<u8>::new();
+
+        let mut locked_app = app.lock().expect("EClient mutex was poisoned");
+
+        locked_app.connect_test();
+        locked_app.req_auto_open_orders(auto_bind)?;
+        locked_app.stream.as_mut().unwrap().read_to_end(&mut buf)?;
+
+        let expected: [u8; 11] = [0, 0, 0, 7, 49, 53, 0, 49, 0, 49, 0];
+
+        let msg_data = read_msg(buf.as_slice())?;
+
+        let fields = read_fields(&msg_data.1);
+
+        assert_eq!(expected.as_ref(), buf.as_slice());
+        assert_eq!(
+            OutgoingMessageIds::ReqAutoOpenOrders as u8,
+            fields[0].parse::<u8>().unwrap()
+        );
+        assert_eq!(version, fields[1].parse::<i32>().unwrap());
+
+        Ok(())
+    }
+
+    //------------------------------------------------------------------------------------------------
+    #[test]
+    fn test_req_completed_orders() -> Result<(), IBKRApiLibError> {
+        let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
+            wrapper.clone(),
+        )));
+
+        let version = 1;
+        let api_only = true;
+        let mut buf = Vec::<u8>::new();
+
+        let mut locked_app = app.lock().expect("EClient mutex was poisoned");
+
+        locked_app.connect_test();
+        locked_app.req_completed_orders(api_only)?;
+        locked_app.stream.as_mut().unwrap().read_to_end(&mut buf)?;
+
+        let expected: [u8; 9] = [0, 0, 0, 5, 57, 57, 0, 49, 0];
+
+        let msg_data = read_msg(buf.as_slice())?;
+
+        let fields = read_fields(&msg_data.1);
+
+        assert_eq!(expected.as_ref(), buf.as_slice());
+        assert_eq!(
+            OutgoingMessageIds::ReqCompletedOrders as u8,
+            fields[0].parse::<u8>().unwrap()
+        );
+        assert_eq!(version, fields[1].parse::<i32>().unwrap());
+
+        Ok(())
+    }
+
+    //------------------------------------------------------------------------------------------------
+    #[test]
+    fn test_req_contract_details() -> Result<(), IBKRApiLibError> {
+        let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
+            wrapper.clone(),
+        )));
+
+        let version = 8;
+        let req_id = 102;
+        let mut buf = Vec::<u8>::new();
+
+        let mut locked_app = app.lock().expect("EClient mutex was poisoned");
+
+        locked_app.connect_test();
+        let contract = simple_future();
+        locked_app.req_contract_details(req_id, &contract)?;
+        locked_app.stream.as_mut().unwrap().read_to_end(&mut buf)?;
+
+        let expected: [u8; 50] = [
+            0, 0, 0, 46, 57, 0, 56, 0, 49, 48, 50, 0, 48, 0, 69, 83, 0, 70, 85, 84, 0, 50, 48, 50,
+            48, 48, 57, 0, 48, 0, 0, 0, 71, 76, 79, 66, 69, 88, 0, 0, 85, 83, 68, 0, 0, 0, 48, 0,
+            0, 0,
+        ];
+
+        let msg_data = read_msg(buf.as_slice())?;
+        //println!("read message: {:?}", read_msg(buf.as_slice())?);
+        let fields = read_fields(&msg_data.1);
+        //println!("read fields: {:?}", read_fields(&msg_data.1));
+        assert_eq!(expected.as_ref(), buf.as_slice());
+        assert_eq!(
+            OutgoingMessageIds::ReqContractData as u8,
+            fields[0].parse::<u8>().unwrap()
+        );
+        assert_eq!(version, fields[1].parse::<i32>().unwrap());
+        assert_eq!(req_id, fields[2].parse::<i32>().unwrap());
+        assert_eq!(contract.con_id, fields[3].parse::<i32>().unwrap()); // srv v37 and above
+        assert_eq!(contract.symbol, fields[4]);
+
+        assert_eq!(contract.sec_type, fields[5]);
+        assert_eq!(contract.last_trade_date_or_contract_month, fields[6]);
+        assert_eq!(contract.strike, fields[7].parse::<f64>().unwrap());
+        assert_eq!(contract.right, fields[8]);
+        assert_eq!(contract.multiplier, fields[9]); // srv v15 and above
+
+        assert_eq!(contract.exchange, fields[10]);
+        assert_eq!(contract.primary_exchange, fields[11]);
+
+        assert_eq!(contract.currency, fields[12]);
+        assert_eq!(contract.local_symbol, fields[13]);
+
+        assert_eq!(contract.trading_class, fields[14]);
+        assert_eq!(
+            contract.include_expired as i32,
+            fields[15].parse::<i32>().unwrap()
+        ); // srv v31 and above
+
+        assert_eq!(contract.sec_id_type, fields[16]);
+        assert_eq!(contract.sec_id, fields[17]);
 
         Ok(())
     }
