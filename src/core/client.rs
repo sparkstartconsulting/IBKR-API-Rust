@@ -5130,9 +5130,8 @@ mod tests {
         ];
 
         let msg_data = read_msg(buf.as_slice())?;
-        //println!("read message: {:?}",read_msg(buf.as_slice())?);
+
         let fields = read_fields(&msg_data.1);
-        //println!("read fields: {:?}",read_fields(&msg_data.1));
         assert_eq!(expected.as_ref(), buf.as_slice());
         assert_eq!(
             OutgoingMessageIds::ReqAccountUpdatesMulti as u8,
@@ -5143,6 +5142,40 @@ mod tests {
         assert_eq!(acct_code, fields[3]);
         assert_eq!(model_code, fields[4]);
         assert_eq!(ledger_and_nvl as i32, fields[5].parse::<i32>().unwrap());
+
+        Ok(())
+    }
+
+    //------------------------------------------------------------------------------------------------
+    #[test]
+    fn test_req_all_open_orders() -> Result<(), IBKRApiLibError> {
+        let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
+            wrapper.clone(),
+        )));
+
+        let version = 1;
+
+        let mut buf = Vec::<u8>::new();
+
+        let mut locked_app = app.lock().expect("EClient mutex was poisoned");
+
+        locked_app.connect_test();
+        locked_app.req_all_open_orders()?;
+        locked_app.stream.as_mut().unwrap().read_to_end(&mut buf)?;
+
+        let expected: [u8; 9] = [0, 0, 0, 5, 49, 54, 0, 49, 0];
+
+        let msg_data = read_msg(buf.as_slice())?;
+        println!("read message: {:?}", read_msg(buf.as_slice())?);
+        let fields = read_fields(&msg_data.1);
+        //println!("read fields: {:?}",read_fields(&msg_data.1));
+        assert_eq!(expected.as_ref(), buf.as_slice());
+        assert_eq!(
+            OutgoingMessageIds::ReqAllOpenOrders as u8,
+            fields[0].parse::<u8>().unwrap()
+        );
+        assert_eq!(version, fields[1].parse::<i32>().unwrap());
 
         Ok(())
     }
