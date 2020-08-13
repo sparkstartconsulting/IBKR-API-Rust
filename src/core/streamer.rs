@@ -89,7 +89,7 @@ impl Read for TestStreamer {
             let bytes_read = self
                 .stream
                 .read(&mut buf)
-                .expect("Couldnt read from reader..."); 
+                .expect("Couldnt read from reader...");
             allbuf.extend_from_slice(&buf[0..bytes_read]);
 
             if bytes_read < NUM_BYTES {

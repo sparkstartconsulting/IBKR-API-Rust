@@ -724,7 +724,11 @@ impl Display for Order {
             self.order_type,
             self.action,
             self.total_quantity,
-            self.lmt_price,
+            if self.lmt_price == UNSET_DOUBLE {
+                format!("{:E}", self.lmt_price)
+            } else {
+                format!("{:?}", self.lmt_price)
+            },
             self.tif,
             self.what_if,
             self.algo_strategy,

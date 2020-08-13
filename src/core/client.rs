@@ -48,10 +48,10 @@ pub enum ConnStatus {
 //#[derive(Debug)]
 pub struct EClient<T>
 where
-    T: Wrapper + Send + Sync,
+    T: Wrapper,
 {
     wrapper: Arc<Mutex<T>>,
-    stream: Option<Box<dyn Streamer + 'static>>,
+    stream: Option<Box<dyn Streamer>>,
     host: String,
     port: u32,
     extra_auth: bool,
@@ -63,7 +63,10 @@ where
     disconnect_requested: Arc<AtomicBool>,
 }
 
-impl<T: Wrapper + Send + Sync> EClient<T> {
+impl<T> EClient<T>
+where
+    T: Wrapper + Send + Sync + 'static,
+{
     pub fn new(wrapper: Arc<Mutex<T>>) -> Self {
         EClient {
             wrapper: wrapper,
@@ -90,7 +93,7 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
         Ok(return_val)
     }
 
-    fn set_streamer(&mut self, streamer: Option<Box<dyn Streamer + 'static>>) {
+    fn set_streamer(&mut self, streamer: Option<Box<dyn Streamer>>) {
         self.stream = streamer;
     }
     //----------------------------------------------------------------------------------------------
@@ -115,11 +118,9 @@ impl<T: Wrapper + Send + Sync> EClient<T> {
         info!("Connecting");
         self.disconnect_requested.store(false, Ordering::Release);
         *self.conn_state.lock().expect(POISONED_MUTEX) = ConnStatus::CONNECTING;
-        let tcp_stream = TcpStream::connect(format!("{}:{}", self.host.to_string(), port))?;
+        let tcp_stream = TcpStream::connect(format!("{}:{}", self.host, port))?;
         let streamer = TcpStreamer::new(tcp_stream);
-        self.set_streamer(Option::from(
-            Box::new(streamer.clone()) as Box<dyn Streamer + 'static>
-        ));
+        self.set_streamer(Option::from(Box::new(streamer.clone()) as Box<dyn Streamer>));
         let (tx, rx) = channel::<String>();
         let mut reader = Reader::new(
             Box::new(streamer.clone()),
@@ -5020,9 +5021,7 @@ mod tests {
         fn connect_test(&mut self) {
             *self.conn_state.lock().expect(POISONED_MUTEX) = ConnStatus::CONNECTED;
             let streamer = TestStreamer::new();
-            self.set_streamer(Option::from(
-                Box::new(streamer) as Box<dyn Streamer + 'static>
-            ));
+            self.set_streamer(Option::from(Box::new(streamer) as Box<dyn Streamer>));
         }
     }
 

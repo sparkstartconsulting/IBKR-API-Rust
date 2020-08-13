@@ -61,8 +61,7 @@ impl Reader {
             let bytes_read = self
                 .stream
                 .read(&mut buf)
-                .expect("Couldn't read from reader..."); 
-
+                .expect("Couldnt read from reader...");
             allbuf.extend_from_slice(&buf[0..bytes_read]);
             //logger.debug("len %d raw:%s|", len(buf), buf)
 
@@ -82,6 +81,7 @@ impl Reader {
         // Read messages from the packet until there are no more.
         // When this loop ends, break into the outer loop and grab another packet.
         // Repeat until the connection is closed
+        //
         let _msg = String::new();
         while message_packet.len() > 0 {
             // Read a message from the packet then add it to the message queue below.
