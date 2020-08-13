@@ -183,7 +183,7 @@ where
             }
         });
         *self.conn_state.lock().expect(POISONED_MUTEX) = ConnStatus::CONNECTED;
-        debug!("Connected");
+        info!("Connected");
         self.start_api()?;
         Ok(())
     }
@@ -191,7 +191,6 @@ where
     //----------------------------------------------------------------------------------------------
     /// Checks connection status
     pub fn is_connected(&self) -> bool {
-        //debug!("checking connected...");
         let connected = match *self.conn_state.lock().unwrap().deref() {
             ConnStatus::DISCONNECTED => false,
             ConnStatus::CONNECTED => true,
@@ -5013,6 +5012,7 @@ mod tests {
         }
     }
 
+    //------------------------------------------------------------------------------------------------
     trait ClientConnectForTest {
         fn connect_test(&mut self);
     }
@@ -5022,9 +5022,11 @@ mod tests {
             *self.conn_state.lock().expect(POISONED_MUTEX) = ConnStatus::CONNECTED;
             let streamer = TestStreamer::new();
             self.set_streamer(Option::from(Box::new(streamer) as Box<dyn Streamer>));
+            self.server_version = 151;
         }
     }
 
+    //------------------------------------------------------------------------------------------------
     #[test]
     fn test_req_account_summary() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
@@ -5051,9 +5053,8 @@ mod tests {
         ];
 
         let msg_data = read_msg(buf.as_slice())?;
-        //println!("read message: {:?}",read_msg(buf.as_slice())?);
+
         let fields = read_fields(&msg_data.1);
-        //println!("read fields: {:?}",read_fields(&msg_data.1));
         assert_eq!(expected.as_ref(), buf.as_slice());
         assert_eq!(
             OutgoingMessageIds::ReqAccountSummary as u8,
@@ -5063,6 +5064,85 @@ mod tests {
         assert_eq!(req_id, fields[2].parse::<i32>().unwrap());
         assert_eq!(group_name, fields[3]);
         assert_eq!(tags, fields[4]);
+
+        Ok(())
+    }
+
+    //------------------------------------------------------------------------------------------------
+    #[test]
+    fn test_req_account_updates() -> Result<(), IBKRApiLibError> {
+        let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
+            wrapper.clone(),
+        )));
+
+        let version = 2;
+        let subscribe = true;
+        let acct_code = "D12345";
+        let mut buf = Vec::<u8>::new();
+
+        let mut locked_app = app.lock().expect("EClient mutex was poisoned");
+
+        locked_app.connect_test();
+        locked_app.req_account_updates(subscribe, acct_code)?;
+        locked_app.stream.as_mut().unwrap().read_to_end(&mut buf)?;
+
+        let expected: [u8; 17] = [0, 0, 0, 13, 54, 0, 50, 0, 49, 0, 68, 49, 50, 51, 52, 53, 0];
+
+        let msg_data = read_msg(buf.as_slice())?;
+        let fields = read_fields(&msg_data.1);
+        assert_eq!(expected.as_ref(), buf.as_slice());
+        assert_eq!(
+            OutgoingMessageIds::ReqAcctData as u8,
+            fields[0].parse::<u8>().unwrap()
+        );
+        assert_eq!(version, fields[1].parse::<i32>().unwrap());
+        assert_eq!(subscribe as i32, fields[2].parse::<i32>().unwrap());
+        assert_eq!(acct_code, fields[3]);
+
+        Ok(())
+    }
+
+    //------------------------------------------------------------------------------------------------
+    #[test]
+    fn test_req_account_updates_multi() -> Result<(), IBKRApiLibError> {
+        let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
+            wrapper.clone(),
+        )));
+
+        let version = 1;
+        let req_id = 101;
+        let acct_code = "D12345";
+        let model_code = "ABC";
+        let ledger_and_nvl = true;
+        let mut buf = Vec::<u8>::new();
+
+        let mut locked_app = app.lock().expect("EClient mutex was poisoned");
+
+        locked_app.connect_test();
+        locked_app.req_account_updates_multi(req_id, acct_code, model_code, ledger_and_nvl)?;
+        locked_app.stream.as_mut().unwrap().read_to_end(&mut buf)?;
+
+        let expected: [u8; 26] = [
+            0, 0, 0, 22, 55, 54, 0, 49, 0, 49, 48, 49, 0, 68, 49, 50, 51, 52, 53, 0, 65, 66, 67, 0,
+            49, 0,
+        ];
+
+        let msg_data = read_msg(buf.as_slice())?;
+        //println!("read message: {:?}",read_msg(buf.as_slice())?);
+        let fields = read_fields(&msg_data.1);
+        //println!("read fields: {:?}",read_fields(&msg_data.1));
+        assert_eq!(expected.as_ref(), buf.as_slice());
+        assert_eq!(
+            OutgoingMessageIds::ReqAccountUpdatesMulti as u8,
+            fields[0].parse::<u8>().unwrap()
+        );
+        assert_eq!(version, fields[1].parse::<i32>().unwrap());
+        assert_eq!(req_id, fields[2].parse::<i32>().unwrap());
+        assert_eq!(acct_code, fields[3]);
+        assert_eq!(model_code, fields[4]);
+        assert_eq!(ledger_and_nvl as i32, fields[5].parse::<i32>().unwrap());
 
         Ok(())
     }
