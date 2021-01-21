@@ -5,7 +5,6 @@ use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 // 0.2.6 (the trait)
 
-
 use crate::core::common::TagValue;
 
 //==================================================================================================

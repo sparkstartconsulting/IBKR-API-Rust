@@ -1,8 +1,6 @@
 //! Account summary tags
 use std::fmt::{Display, Error, Formatter};
 
-
-
 use crate::core::account_summary_tags::AccountSummaryTags::*;
 
 //==================================================================================================

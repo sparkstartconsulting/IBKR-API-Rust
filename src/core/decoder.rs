@@ -833,7 +833,6 @@ where
         Ok(())
     }
     fn process_error_message(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
-        print!("{:?}", fields);
         let mut fields_itr = fields.iter();
 
         //throw away message_id

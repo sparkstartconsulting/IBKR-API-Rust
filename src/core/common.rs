@@ -1,6 +1,6 @@
 //! Common types
-use std::fmt::{self, Error, Formatter};
 use std::fmt::Display;
+use std::fmt::{self, Error, Formatter};
 
 use num_derive::FromPrimitive;
 
