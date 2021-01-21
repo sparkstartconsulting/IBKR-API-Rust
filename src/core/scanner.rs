@@ -1,8 +1,6 @@
 //! Types for dealing with scanner data and scanner subscriptions
-use std::fmt::Display;
+use std::fmt::{Display, Error, Formatter};
 
-use serde::export::fmt::Error;
-use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
 use crate::core::contract::ContractDetails;
@@ -127,7 +125,7 @@ impl Display for ScannerSubscription {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         write!(
             f,
-            "nstrument: {}, LocationCode: {}, ScanCode: {}",
+            "Instrument: {}, LocationCode: {}, ScanCode: {}",
             self.instrument, self.location_code, self.scan_code
         )
     }

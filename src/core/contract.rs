@@ -1,9 +1,10 @@
 //! Types related to Contracts
+use std::fmt::{Display, Error, Formatter};
+
 use num_derive::FromPrimitive;
 use serde::{Deserialize, Serialize};
 // 0.2.6 (the trait)
-use serde::export::fmt::{Display, Error};
-use serde::export::Formatter;
+
 
 use crate::core::common::TagValue;
 

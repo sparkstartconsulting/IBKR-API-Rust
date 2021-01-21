@@ -1,11 +1,9 @@
 //! Common types
-use std::fmt;
+use std::fmt::{self, Error, Formatter};
 use std::fmt::Display;
 
 use num_derive::FromPrimitive;
 
-use serde::export::fmt::Error;
-use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
 pub const NO_VALID_ID: i32 = -1;

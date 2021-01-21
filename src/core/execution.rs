@@ -1,8 +1,6 @@
 //! Types related to executions
-use std::fmt::Display;
+use std::fmt::{Display, Error, Formatter};
 
-use serde::export::fmt::Error;
-use serde::export::Formatter;
 use serde::{Deserialize, Serialize};
 
 //==================================================================================================
