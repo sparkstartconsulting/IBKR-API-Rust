@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 //! EClient and supporting structs.  Responsible for connecting to Trader Workstation or IB Gatway and sending requests
 use std::io::Write;
 use std::marker::Sync;
@@ -69,7 +70,7 @@ where
 {
     pub fn new(wrapper: Arc<Mutex<T>>) -> Self {
         EClient {
-            wrapper: wrapper,
+            wrapper,
             stream: None,
             host: "".to_string(),
             port: 0,
@@ -122,11 +123,7 @@ where
         let streamer = TcpStreamer::new(tcp_stream);
         self.set_streamer(Option::from(Box::new(streamer.clone()) as Box<dyn Streamer>));
         let (tx, rx) = channel::<String>();
-        let mut reader = Reader::new(
-            Box::new(streamer.clone()),
-            tx.clone(),
-            self.disconnect_requested.clone(),
-        );
+        let mut reader = Reader::new(Box::new(streamer), tx, self.disconnect_requested.clone());
 
         let mut fields: Vec<String> = Vec::new();
 
@@ -150,13 +147,13 @@ where
 
         //An Interactive Broker's developer's note: "sometimes I get news before the server version, thus the loop"
         while fields.len() != 2 {
-            if fields.len() > 0 {
+            if !fields.is_empty() {
                 decoder.interpret(fields.as_slice())?;
             }
 
             let buf = reader.recv_packet()?;
 
-            if buf.len() > 0 {
+            if !buf.is_empty() {
                 let (_size, msg, _remaining_messages) = read_msg(buf.as_slice())?;
 
                 fields.clear();
@@ -282,9 +279,9 @@ where
 
         let msg = format!(
             "{}{}{}{}",
-            make_field(&mut (Some(OutgoingMessageIds::StartApi).unwrap() as i32))?,
-            make_field(&mut version.to_string())?,
-            make_field(&mut self.client_id.to_string())?,
+            make_field(&(OutgoingMessageIds::StartApi as i32))?,
+            make_field(&version.to_string())?,
+            make_field(&self.client_id.to_string())?,
             opt_capab
         );
 
@@ -351,7 +348,9 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && "" != contract.trading_class {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -434,7 +433,7 @@ where
         // send mktDataOptions parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             // current doc says this part is for "internal use only" -> won't support it
-            if mkt_data_options.len() > 0 {
+            if !mkt_data_options.is_empty() {
                 let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
                     TwsError::UpdateTws.code().to_string(),
@@ -598,11 +597,11 @@ where
     /// Request tick by tick data
     ///
     /// # Arguments
-    /// * req_id	- unique identifier of the request.
-    /// * contract	- the contract for which tick-by-tick data is requested.
-    /// * tick_type	- TickByTickType data type: "Last", "AllLast", "BidAsk" or "MidPoint".
-    /// * number_of_ticks	- number of ticks.
-    /// * ignore_size	- ignore size flag.
+    /// * req_id - unique identifier of the request.
+    /// * contrac - the contract for which tick-by-tick data is requested.
+    /// * tick_type - TickByTickType data type: "Last", "AllLast", "BidAsk" or "MidPoint".
+    /// * number_of_ticks - number of ticks.
+    /// * ignore_size - ignore size flag.
     pub fn req_tick_by_tick_data(
         &mut self,
         req_id: i32,
@@ -676,7 +675,7 @@ where
     /// Cancel tick by tick data
     ///
     /// # Arguments
-    /// * req_id	- The identifier of the original request.
+    /// * req_id - The identifier of the original request.
     pub fn cancel_tick_by_tick_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
@@ -743,7 +742,9 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && "" != contract.trading_class {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -838,20 +839,20 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if "" != contract.trading_class {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support trading_class parameter in calculateImpliedVolatility."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support trading_class parameter in calculateImpliedVolatility."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 3;
@@ -1002,25 +1003,25 @@ where
         contract: &Contract,
         exercise_action: i32,
         exercise_quantity: i32,
-        account: &String,
+        account: &str,
         over_ride: i32,
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if !contract.trading_class.is_empty() {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support con_id, multiplier, trading_class parameter in exercise_options."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support con_id, multiplier, trading_class parameter in exercise_options."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 2;
@@ -1053,7 +1054,7 @@ where
         }
         msg.push_str(&make_field(&exercise_action)?);
         msg.push_str(&make_field(&exercise_quantity)?);
-        msg.push_str(&make_field(account)?);
+        msg.push_str(&make_field(&account.to_string())?);
         msg.push_str(&make_field(&over_ride)?);
 
         self.send_request(msg.as_str())?;
@@ -1084,20 +1085,20 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
-            if contract.delta_neutral_contract.is_some() {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    NO_VALID_ID,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support delta-neutral orders."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL
+            && contract.delta_neutral_contract.is_some()
+        {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                NO_VALID_ID,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support delta-neutral orders."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SCALE_ORDERS2
@@ -1188,7 +1189,7 @@ where
 
                 return Err(err);
             }
-            if contract.combo_legs.len() > 0
+            if !contract.combo_legs.is_empty()
                 && contract.combo_legs.iter().any(|x| x.exempt_code != -1)
             {
                 let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -1299,7 +1300,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE
             && contract.sec_type == "BAG"
-            && order.order_combo_legs.len() > 0
+            && !order.order_combo_legs.is_empty()
             && order
                 .order_combo_legs
                 .iter()
@@ -1368,7 +1369,7 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_ALGO_ID && order.algo_id != "" {
+        if self.server_version() < MIN_SERVER_VER_ALGO_ID && !order.algo_id.is_empty() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -1746,7 +1747,7 @@ where
         }
 
         if self.server_version() >= MIN_SERVER_VER_DELTA_NEUTRAL_OPEN_CLOSE
-            && order.delta_neutral_order_type != ""
+            && !order.delta_neutral_order_type.is_empty()
         {
             msg.push_str(&make_field(&order.delta_neutral_open_close)?);
             msg.push_str(&make_field(&order.delta_neutral_short_sale)?);
@@ -1885,11 +1886,11 @@ where
 
             msg.push_str(&make_field(&order.conditions.len())?);
 
-            if order.conditions.len() > 0 {
+            if !order.conditions.is_empty() {
                 for cond in &order.conditions {
                     msg.push_str(&make_field(&(cond.get_type() as i32))?);
                     let vals = cond.make_fields()?;
-                    let vals_string = vals.iter().map(|val| val.clone()).collect::<String>();
+                    let vals_string = vals.iter().cloned().collect::<String>();
                     msg.push_str(vals_string.as_ref());
                 }
 
@@ -2265,7 +2266,7 @@ where
     /// * req_id - Request's identifier
     /// * account - If an account Id is provided, only the account's positions belonging to the
     ///             specified model will be delivered
-    /// * modelCode	- The code of the model's positions we are interested in.
+    /// * modelCode - The code of the model's positions we are interested in.
     pub fn req_positions_multi(
         &mut self,
         req_id: i32,
@@ -2618,7 +2619,7 @@ where
     /// underlying. The contract details will be received via the contractDetails()
     /// function on the EWrapper.
     ///
-    ///    
+    ///
     /// # Arguments
     /// * req_id - The ID of the data request. Ensures that responses are
     ///            matched to requests if several requests are in process.
@@ -2630,52 +2631,50 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
-        if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE {
-            if contract.sec_id_type != "" || contract.sec_id != "" {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support sec_id_type and secId parameters."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE
+            && (!contract.sec_id_type.is_empty() || !contract.sec_id.is_empty())
+        {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support sec_id_type and secId parameters."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if contract.trading_class != "" {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support trading_class parameter in req_contract_details."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support trading_class parameter in req_contract_details."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_LINKING {
-            if contract.primary_exchange != "" {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support primary_exchange parameter in req_contract_details."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_LINKING && !contract.primary_exchange.is_empty() {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support primary_exchange parameter in req_contract_details."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 8;
@@ -2703,7 +2702,7 @@ where
             msg.push_str(&make_field(&contract.exchange)?);
             msg.push_str(&make_field(&contract.primary_exchange)?);
         } else if self.server_version() >= MIN_SERVER_VER_LINKING {
-            if contract.primary_exchange != ""
+            if !contract.primary_exchange.is_empty()
                 && (contract.exchange == "BEST" || contract.exchange == "SMART")
             {
                 msg.push_str(&make_field(&format!(
@@ -2790,20 +2789,20 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if &contract.trading_class != "" || *&contract.con_id > 0 {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support con_id and trading_class parameters in req_mkt_depth."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && (!contract.trading_class.is_empty() || contract.con_id > 0)
+        {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support con_id and trading_class parameters in req_mkt_depth."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SMART_DEPTH && is_smart_depth {
@@ -2821,7 +2820,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_MKT_DEPTH_PRIM_EXCHANGE
-            && contract.primary_exchange != ""
+            && !contract.primary_exchange.is_empty()
         {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -2875,7 +2874,7 @@ where
         // send mkt_depth_options parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             // current doc says this part if for "internal use only" -> won't support it
-            if mkt_depth_options.len() > 0 {
+            if !mkt_depth_options.is_empty() {
                 let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
                     TwsError::Unsupported.code().to_string(),
@@ -3114,20 +3113,20 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if &contract.trading_class != "" || contract.con_id > 0 {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support con_id and trading_class parameters in req_historical_data."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && (!contract.trading_class.is_empty() || contract.con_id > 0)
+        {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support con_id and trading_class parameters in req_historical_data."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 6;
@@ -3223,14 +3222,14 @@ where
     /// Returns the timestamp of earliest available historical data for a contract and data type.
     ///
     /// # Arguments
-    /// * req_id	- an identifier for the request
-    /// * contract	- contract object for which head timestamp is being requested
-    /// * what_to_show	- type of data for head timestamp - "BID", "ASK", "TRADES", etc
-    /// * use_rth	- use regular trading hours only, 1 for yes or 0 for no
-    /// * format_date	set to 1 to obtain the bars' time as yyyyMMdd HH:mm:ss, set to 2 to obtain it like system time format in seconds
+    /// * req_id - an identifier for the request
+    /// * contract - contract object for which head timestamp is being requested
+    /// * what_to_show - type of data for head timestamp - "BID", "ASK", "TRADES", etc
+    /// * use_rth - use regular trading hours only, 1 for yes or 0 for no
+    /// * format_date - set to 1 to obtain the bars' time as `yyyyMMdd HH:mm:ss`, set to 2 to obtain it like system time format in seconds
     ///
     /// Note that formatData parameter affects intraday bars only
-    /// 1-day bars always return with date in YYYYMMDD format
+    /// 1-day bars always return with date in `YYYYMMDD` format
     pub fn req_head_time_stamp(
         &mut self,
         req_id: i32,
@@ -3406,9 +3405,9 @@ where
     /// # Arguments
     /// * req_id - id of the request
     /// * contract - Contract object that is subject of query
-    /// * start_date_time,i.e.	"20170701 12:01:00". Uses TWS timezone specified at login.
-    /// * end_date_time,i.e.	"20170701 13:01:00". In TWS timezone. Exactly one of start time and end time has to be defined.
-    /// * number_of_ticks - Number of distinct data points. Max currently 1000 per request.
+    /// * start_date_time,i.e.`"20170701 12:01:00"`. Uses TWS timezone specified at login.
+    /// * end_date_time,i.e.`"20170701 13:01:00"`. In TWS timezone. Exactly one of start time and end time has to be defined.
+    /// * number_of_ticks - Number of distinct data points. Max currently 1,000 per request.
     /// * what_to_show - (Bid_Ask, Midpoint, Trades) Type of data requested.
     /// * use_rth - Data from regular trading hours (1), or all available hours (0)
     /// * ignore_size - A filter only used when the source price is Bid_Ask
@@ -3648,20 +3647,20 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if !contract.trading_class.is_empty() {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    NO_VALID_ID,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support con_id and trading_class parameter in req_real_time_bars."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                NO_VALID_ID,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support con_id and trading_class parameter in req_real_time_bars."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 3;
@@ -3953,11 +3952,11 @@ where
     ///
     /// * req_id - id of the request
     /// * con_id - contract id
-    /// * provider_codes - a '+'-separated list of provider codes
-    /// * start_date_time	- marks the (exclusive) start of the date range. The format is yyyy-MM-dd HH:mm:ss.0
-    /// * end_date_time	- marks the (inclusive) end of the date range. The format is yyyy-MM-dd HH:mm:ss.0
-    /// * total_results	- the maximum number of headlines to fetch (1 - 300)
-    /// * historical_news_options	reserved for internal use. Should be defined as null.
+    /// * provider_codes - a `'+'`-separated list of provider codes
+    /// * start_date_time - marks the (exclusive) start of the date range. The format is `yyyy-MM-dd HH:mm:ss.0`
+    /// * end_date_time - marks the (inclusive) end of the date range. The format is `yyyy-MM-dd HH:mm:ss.0`
+    /// * total_results - the maximum number of headlines to fetch (1–300)
+    /// * historical_news_options - reserved for internal use. Should be defined as null.
     pub fn req_historical_news(
         &mut self,
         req_id: i32,
@@ -4094,10 +4093,10 @@ where
     ///
     /// # Arguments
     /// * req_id - The requestId specified in subscribe_to_group_events().
-    /// * contract_info	is an encoded value designating a unique IB contract. Possible values include:
-    /// 1. none - empty selection
-    /// 2. contract_id - any non-combination contract. Examples 8314 for IBM SMART; 8314 for IBM ARCA
-    /// 3. combo - if any combo is selected Note: This request from the API does not get a TWS response unless an error occurs.
+    /// * contract_info - is an encoded value designating a unique IB contract. Possible values include:
+    ///   1. none - empty selection
+    ///   2. contract_id - any non-combination contract. Examples 8314 for IBM SMART; 8314 for IBM ARCA
+    ///   3. combo - if any combo is selected Note: This request from the API does not get a TWS response unless an error occurs.
 
     pub fn update_display_group(
         &mut self,

@@ -86,7 +86,7 @@ pub fn decode_f64_show_unset(iter: &mut Iter<String>) -> Result<f64, IBKRApiLibE
 pub fn decode_string(iter: &mut Iter<String>) -> Result<String, IBKRApiLibError> {
     let next = iter.next();
     //info!("{:?}", next);
-    let val = next.unwrap().parse().unwrap_or("".to_string());
+    let val = next.unwrap().parse().unwrap_or_else(|_| "".to_string());
     Ok(val)
 }
 
@@ -111,14 +111,14 @@ where
     T: Wrapper + Sync,
 {
     pub fn new(
-        the_wrapper: Arc<Mutex<T>>,
+        wrapper: Arc<Mutex<T>>,
         msg_queue: Receiver<String>,
         server_version: i32,
         conn_state: Arc<Mutex<ConnStatus>>,
     ) -> Self {
         Decoder {
-            wrapper: the_wrapper,
-            msg_queue: msg_queue,
+            wrapper,
+            msg_queue,
             server_version,
             conn_state,
         }
@@ -581,16 +581,17 @@ where
         //throw away version
         fields_itr.next();
 
-        let mut commission_report = CommissionReport::default();
-        commission_report.exec_id = fields_itr.next().unwrap().to_string();
-        commission_report.commission = decode_f64(&mut fields_itr)?;
-        commission_report.currency = fields_itr.next().unwrap().to_string();
+        let commission_report = CommissionReport {
+            exec_id: fields_itr.next().unwrap().to_string(),
+            commission: decode_f64(&mut fields_itr)?,
+            currency: fields_itr.next().unwrap().to_string(),
 
-        commission_report.realized_pnl = decode_f64(&mut fields_itr)?;
+            realized_pnl: decode_f64(&mut fields_itr)?,
 
-        commission_report.yield_ = decode_f64(&mut fields_itr)?;
+            yield_: decode_f64(&mut fields_itr)?,
 
-        commission_report.yield_redemption_date = decode_string(&mut fields_itr)?;
+            yield_redemption_date: decode_string(&mut fields_itr)?,
+        };
 
         self.wrapper
             .lock()
@@ -780,11 +781,11 @@ where
 
         let req_id = decode_i32(&mut fields_itr)?;
 
-        let mut delta_neutral_contract = DeltaNeutralContract::default();
-
-        delta_neutral_contract.con_id = decode_i32(&mut fields_itr)?;
-        delta_neutral_contract.delta = decode_f64(&mut fields_itr)?;
-        delta_neutral_contract.price = decode_f64(&mut fields_itr)?;
+        let delta_neutral_contract = DeltaNeutralContract {
+            con_id: decode_i32(&mut fields_itr)?,
+            delta: decode_f64(&mut fields_itr)?,
+            price: decode_f64(&mut fields_itr)?,
+        };
 
         self.wrapper
             .lock()
@@ -870,31 +871,37 @@ where
         let order_id = decode_i32(&mut fields_itr)?;
 
         // decode contract fields
-        let mut contract = Contract::default();
-        contract.con_id = decode_i32(&mut fields_itr)?; // ver 5 field
-        contract.symbol = decode_string(&mut fields_itr)?;
-        contract.sec_type = decode_string(&mut fields_itr)?;
-        contract.last_trade_date_or_contract_month = decode_string(&mut fields_itr)?;
-        contract.strike = decode_f64(&mut fields_itr)?;
-        contract.right = decode_string(&mut fields_itr)?;
+        let mut contract = Contract {
+            con_id: decode_i32(&mut fields_itr)?, // ver 5 field
+            symbol: decode_string(&mut fields_itr)?,
+            sec_type: decode_string(&mut fields_itr)?,
+            last_trade_date_or_contract_month: decode_string(&mut fields_itr)?,
+            strike: decode_f64(&mut fields_itr)?,
+            right: decode_string(&mut fields_itr)?,
+            exchange: decode_string(&mut fields_itr)?,
+            currency: decode_string(&mut fields_itr)?,
+            local_symbol: decode_string(&mut fields_itr)?,
+            ..Default::default()
+        };
+
         if version >= 9 {
             contract.multiplier = decode_string(&mut fields_itr)?;
         }
-        contract.exchange = decode_string(&mut fields_itr)?;
-        contract.currency = decode_string(&mut fields_itr)?;
-        contract.local_symbol = decode_string(&mut fields_itr)?;
+
         if version >= 10 {
             contract.trading_class = decode_string(&mut fields_itr)?;
         }
 
         // decode execution fields
-        let mut execution = Execution::default();
-        execution.order_id = order_id;
-        execution.exec_id = decode_string(&mut fields_itr)?;
-        execution.time = decode_string(&mut fields_itr)?;
-        execution.acct_number = decode_string(&mut fields_itr)?;
-        execution.exchange = decode_string(&mut fields_itr)?;
-        execution.side = decode_string(&mut fields_itr)?;
+        let mut execution = Execution {
+            order_id,
+            exec_id: decode_string(&mut fields_itr)?,
+            time: decode_string(&mut fields_itr)?,
+            acct_number: decode_string(&mut fields_itr)?,
+            exchange: decode_string(&mut fields_itr)?,
+            side: decode_string(&mut fields_itr)?,
+            ..Default::default()
+        };
 
         if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
             execution.shares = decode_f64(&mut fields_itr)?;
@@ -920,7 +927,7 @@ where
             execution.ev_rule = decode_string(&mut fields_itr)?;
 
             let tmp_ev_mult = (&mut fields_itr).peekable().peek().unwrap().as_str();
-            if tmp_ev_mult != "" {
+            if !tmp_ev_mult.is_empty() {
                 execution.ev_multiplier = decode_f64(&mut fields_itr)?;
             } else {
                 execution.ev_multiplier = 1.0;
@@ -967,13 +974,13 @@ where
         fields_itr.next();
 
         let family_codes_count = decode_i32(&mut fields_itr)?;
-        let mut family_codes: Vec<FamilyCode> = vec![];
-        for _ in 0..family_codes_count {
-            let mut fam_code = FamilyCode::default();
-            fam_code.account_id = decode_string(&mut fields_itr)?;
-            fam_code.family_code_str = decode_string(&mut fields_itr)?;
-            family_codes.push(fam_code);
-        }
+        let family_codes: Vec<FamilyCode> = vec![
+            FamilyCode {
+                account_id: decode_string(&mut fields_itr)?,
+                family_code_str: decode_string(&mut fields_itr)?,
+            };
+            family_codes_count as _
+        ];
 
         self.wrapper
             .lock()
@@ -1026,13 +1033,13 @@ where
         let req_id = decode_i32(&mut fields_itr)?;
         let num_points = decode_i32(&mut fields_itr)?;
 
-        let mut histogram = vec![];
-        for _ in 0..num_points {
-            let mut data_point = HistogramData::default();
-            data_point.price = decode_f64(&mut fields_itr)?;
-            data_point.count = decode_i32(&mut fields_itr)?;
-            histogram.push(data_point);
-        }
+        let histogram = vec![
+            HistogramData {
+                price: decode_f64(&mut fields_itr)?,
+                count: decode_i32(&mut fields_itr)?,
+            };
+            num_points as _
+        ];
 
         self.wrapper
             .lock()
@@ -1060,18 +1067,20 @@ where
         let bar_count = decode_i32(&mut fields_itr)?;
 
         for _ in 0..bar_count {
-            let mut bar = BarData::default();
-            bar.date = decode_string(&mut fields_itr)?;
-            bar.open = decode_f64(&mut fields_itr)?;
-            bar.high = decode_f64(&mut fields_itr)?;
-            bar.low = decode_f64(&mut fields_itr)?;
-            bar.close = decode_f64(&mut fields_itr)?;
-            bar.volume = if self.server_version < MIN_SERVER_VER_SYNT_REALTIME_BARS {
-                decode_i32(&mut fields_itr)? as i64
-            } else {
-                decode_i64(&mut fields_itr)?
+            let mut bar = BarData {
+                date: decode_string(&mut fields_itr)?,
+                open: decode_f64(&mut fields_itr)?,
+                high: decode_f64(&mut fields_itr)?,
+                low: decode_f64(&mut fields_itr)?,
+                close: decode_f64(&mut fields_itr)?,
+                volume: if self.server_version < MIN_SERVER_VER_SYNT_REALTIME_BARS {
+                    decode_i32(&mut fields_itr)? as i64
+                } else {
+                    decode_i64(&mut fields_itr)?
+                },
+                average: decode_f64(&mut fields_itr)?,
+                ..Default::default()
             };
-            bar.average = decode_f64(&mut fields_itr)?;
 
             if self.server_version < MIN_SERVER_VER_SYNT_REALTIME_BARS {
                 decode_string(&mut fields_itr)?; //has_gaps
@@ -1102,15 +1111,17 @@ where
 
         let req_id = decode_i32(&mut fields_itr)?;
 
-        let mut bar = BarData::default();
-        bar.bar_count = decode_i32(&mut fields_itr)?;
-        bar.date = decode_string(&mut fields_itr)?;
-        bar.open = decode_f64(&mut fields_itr)?;
-        bar.close = decode_f64(&mut fields_itr)?;
-        bar.high = decode_f64(&mut fields_itr)?;
-        bar.low = decode_f64(&mut fields_itr)?;
-        bar.average = decode_f64(&mut fields_itr)?;
-        bar.volume = decode_i64(&mut fields_itr)?;
+        let bar = BarData {
+            bar_count: decode_i32(&mut fields_itr)?,
+            date: decode_string(&mut fields_itr)?,
+            open: decode_f64(&mut fields_itr)?,
+            close: decode_f64(&mut fields_itr)?,
+            high: decode_f64(&mut fields_itr)?,
+            low: decode_f64(&mut fields_itr)?,
+            average: decode_f64(&mut fields_itr)?,
+            volume: decode_i64(&mut fields_itr)?,
+        };
+
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
@@ -1173,8 +1184,10 @@ where
         let mut ticks = vec![];
 
         for _ in 0..tick_count {
-            let mut historical_tick = HistoricalTick::default();
-            historical_tick.time = decode_i32(&mut fields_itr)?;
+            let mut historical_tick = HistoricalTick {
+                time: decode_i32(&mut fields_itr)?,
+                ..Default::default()
+            };
             fields_itr.next(); // for consistency
             historical_tick.price = decode_f64(&mut fields_itr)?;
             historical_tick.size = decode_i32(&mut fields_itr)?;
@@ -1206,12 +1219,15 @@ where
         let mut ticks = vec![];
 
         for _ in 0..tick_count {
-            let mut historical_tick_bid_ask = HistoricalTickBidAsk::default();
-            historical_tick_bid_ask.time = decode_i32(&mut fields_itr)?;
+            let mut historical_tick_bid_ask = HistoricalTickBidAsk {
+                time: decode_i32(&mut fields_itr)?,
+                ..Default::default()
+            };
             let mask = decode_i32(&mut fields_itr)?;
-            let mut tick_attrib_bid_ask = TickAttribBidAsk::default();
-            tick_attrib_bid_ask.ask_past_high = mask & 1 != 0;
-            tick_attrib_bid_ask.bid_past_low = mask & 2 != 0;
+            let tick_attrib_bid_ask = TickAttribBidAsk {
+                ask_past_high: mask & 1 != 0,
+                bid_past_low: mask & 2 != 0,
+            };
             historical_tick_bid_ask.tick_attrib_bid_ask = tick_attrib_bid_ask;
             historical_tick_bid_ask.price_bid = decode_f64(&mut fields_itr)?;
             historical_tick_bid_ask.price_ask = decode_f64(&mut fields_itr)?;
@@ -1242,12 +1258,15 @@ where
         let mut ticks = vec![];
 
         for _ in 0..tick_count {
-            let mut historical_tick_last = HistoricalTickLast::default();
-            historical_tick_last.time = decode_i32(&mut fields_itr)?;
+            let mut historical_tick_last = HistoricalTickLast {
+                time: decode_i32(&mut fields_itr)?,
+                ..Default::default()
+            };
             let mask = decode_i32(&mut fields_itr)?;
-            let mut tick_attrib_last = TickAttribLast::default();
-            tick_attrib_last.past_limit = mask & 1 != 0;
-            tick_attrib_last.unreported = mask & 2 != 0;
+            let tick_attrib_last = TickAttribLast {
+                past_limit: mask & 1 != 0,
+                unreported: mask & 2 != 0,
+            };
             historical_tick_last.tick_attrib_last = tick_attrib_last;
             historical_tick_last.price = decode_f64(&mut fields_itr)?;
             historical_tick_last.size = decode_i32(&mut fields_itr)?;
@@ -1372,14 +1391,13 @@ where
         let market_rule_id = decode_i32(&mut fields_itr)?;
 
         let price_increments_count = decode_i32(&mut fields_itr)?;
-        let mut price_increments = vec![];
-
-        for _ in 0..price_increments_count {
-            let mut prc_inc = PriceIncrement::default();
-            prc_inc.low_edge = decode_f64(&mut fields_itr)?;
-            prc_inc.increment = decode_f64(&mut fields_itr)?;
-            price_increments.push(prc_inc);
-        }
+        let price_increments = vec![
+            PriceIncrement {
+                low_edge: decode_f64(&mut fields_itr)?,
+                increment: decode_f64(&mut fields_itr)?,
+            };
+            price_increments_count as _
+        ];
 
         self.wrapper
             .lock()
@@ -1399,9 +1417,11 @@ where
         let depth_mkt_data_descriptions_count = decode_i32(&mut fields_itr)?;
 
         for _ in 0..depth_mkt_data_descriptions_count {
-            let mut desc = DepthMktDataDescription::default();
-            desc.exchange = decode_string(&mut fields_itr)?;
-            desc.sec_type = decode_string(&mut fields_itr)?;
+            let mut desc = DepthMktDataDescription {
+                exchange: decode_string(&mut fields_itr)?,
+                sec_type: decode_string(&mut fields_itr)?,
+                ..Default::default()
+            };
             if self.server_version >= MIN_SERVER_VER_SERVICE_DATA_TYPE {
                 desc.listing_exch = decode_string(&mut fields_itr)?;
                 desc.service_data_type = decode_string(&mut fields_itr)?;
@@ -1469,14 +1489,14 @@ where
         //throw away message_id
         fields_itr.next();
 
-        let mut news_providers = vec![];
         let news_providers_count = decode_i32(&mut fields_itr)?;
-        for _ in 0..news_providers_count {
-            let mut provider = NewsProvider::default();
-            provider.code = decode_string(&mut fields_itr)?;
-            provider.name = decode_string(&mut fields_itr)?;
-            news_providers.push(provider);
-        }
+        let news_providers = vec![
+            NewsProvider {
+                code: decode_string(&mut fields_itr)?,
+                name: decode_string(&mut fields_itr)?,
+            };
+            news_providers_count as _
+        ];
 
         self.wrapper
             .lock()
@@ -1693,13 +1713,15 @@ where
         let version = decode_i32(&mut fields_itr)?;
 
         // read contract fields
-        let mut contract = Contract::default();
-        contract.con_id = decode_i32(&mut fields_itr)?; // ver 6 field
-        contract.symbol = decode_string(&mut fields_itr)?;
-        contract.sec_type = decode_string(&mut fields_itr)?;
-        contract.last_trade_date_or_contract_month = decode_string(&mut fields_itr)?;
-        contract.strike = decode_f64(&mut fields_itr)?;
-        contract.right = decode_string(&mut fields_itr)?;
+        let mut contract = Contract {
+            con_id: decode_i32(&mut fields_itr)?, // ver 6 field
+            symbol: decode_string(&mut fields_itr)?,
+            sec_type: decode_string(&mut fields_itr)?,
+            last_trade_date_or_contract_month: decode_string(&mut fields_itr)?,
+            strike: decode_f64(&mut fields_itr)?,
+            right: decode_string(&mut fields_itr)?,
+            ..Default::default()
+        };
 
         if version >= 7 {
             contract.multiplier = decode_string(&mut fields_itr)?;
@@ -1759,17 +1781,19 @@ where
         let account = decode_string(&mut fields_itr)?;
 
         // decode contract fields
-        let mut contract = Contract::default();
-        contract.con_id = decode_i32(&mut fields_itr)?;
-        contract.symbol = decode_string(&mut fields_itr)?;
-        contract.sec_type = decode_string(&mut fields_itr)?;
-        contract.last_trade_date_or_contract_month = decode_string(&mut fields_itr)?;
-        contract.strike = decode_f64(&mut fields_itr)?;
-        contract.right = decode_string(&mut fields_itr)?;
-        contract.multiplier = decode_string(&mut fields_itr)?;
-        contract.exchange = decode_string(&mut fields_itr)?;
-        contract.currency = decode_string(&mut fields_itr)?;
-        contract.local_symbol = decode_string(&mut fields_itr)?;
+        let mut contract = Contract {
+            con_id: decode_i32(&mut fields_itr)?,
+            symbol: decode_string(&mut fields_itr)?,
+            sec_type: decode_string(&mut fields_itr)?,
+            last_trade_date_or_contract_month: decode_string(&mut fields_itr)?,
+            strike: decode_f64(&mut fields_itr)?,
+            right: decode_string(&mut fields_itr)?,
+            multiplier: decode_string(&mut fields_itr)?,
+            exchange: decode_string(&mut fields_itr)?,
+            currency: decode_string(&mut fields_itr)?,
+            local_symbol: decode_string(&mut fields_itr)?,
+            ..Default::default()
+        };
         if version >= 2 {
             contract.trading_class = decode_string(&mut fields_itr)?;
         }
@@ -1818,18 +1842,20 @@ where
         let account = decode_string(&mut fields_itr)?;
 
         // decode contract fields
-        let mut contract = Contract::default();
-        contract.con_id = decode_i32(&mut fields_itr)?;
-        contract.symbol = decode_string(&mut fields_itr)?;
-        contract.sec_type = decode_string(&mut fields_itr)?;
-        contract.last_trade_date_or_contract_month = decode_string(&mut fields_itr)?;
-        contract.strike = decode_f64(&mut fields_itr)?;
-        contract.right = decode_string(&mut fields_itr)?;
-        contract.multiplier = decode_string(&mut fields_itr)?;
-        contract.exchange = decode_string(&mut fields_itr)?;
-        contract.currency = decode_string(&mut fields_itr)?;
-        contract.local_symbol = decode_string(&mut fields_itr)?;
-        contract.trading_class = decode_string(&mut fields_itr)?;
+        let contract = Contract {
+            con_id: decode_i32(&mut fields_itr)?,
+            symbol: decode_string(&mut fields_itr)?,
+            sec_type: decode_string(&mut fields_itr)?,
+            last_trade_date_or_contract_month: decode_string(&mut fields_itr)?,
+            strike: decode_f64(&mut fields_itr)?,
+            right: decode_string(&mut fields_itr)?,
+            multiplier: decode_string(&mut fields_itr)?,
+            exchange: decode_string(&mut fields_itr)?,
+            currency: decode_string(&mut fields_itr)?,
+            local_symbol: decode_string(&mut fields_itr)?,
+            trading_class: decode_string(&mut fields_itr)?,
+            ..Default::default()
+        };
 
         let position = decode_f64(&mut fields_itr)?;
         let avg_cost = decode_f64(&mut fields_itr)?;
@@ -1878,15 +1904,16 @@ where
 
         let req_id = decode_i32(&mut fields_itr)?;
 
-        let mut bar = RealTimeBar::default();
-        bar.date_time = decode_string(&mut fields_itr)?;
-        bar.open = decode_f64(&mut fields_itr)?;
-        bar.high = decode_f64(&mut fields_itr)?;
-        bar.low = decode_f64(&mut fields_itr)?;
-        bar.close = decode_f64(&mut fields_itr)?;
-        bar.volume = decode_i64(&mut fields_itr)?;
-        bar.wap = decode_f64(&mut fields_itr)?;
-        bar.count = decode_i32(&mut fields_itr)?;
+        let bar = RealTimeBar {
+            date_time: decode_string(&mut fields_itr)?,
+            open: decode_f64(&mut fields_itr)?,
+            high: decode_f64(&mut fields_itr)?,
+            low: decode_f64(&mut fields_itr)?,
+            close: decode_f64(&mut fields_itr)?,
+            volume: decode_i64(&mut fields_itr)?,
+            wap: decode_f64(&mut fields_itr)?,
+            count: decode_i32(&mut fields_itr)?,
+        };
 
         self.wrapper
             .lock()
@@ -1965,9 +1992,9 @@ where
 
         for _ in 0..number_of_elements {
             let mut data = ScanData::default();
-            data.contract = ContractDetails::default();
 
             data.rank = decode_i32(&mut fields_itr)?;
+            data.contract = ContractDetails::default();
             data.contract.contract.con_id = decode_i32(&mut fields_itr)?; // ver 3 field
             data.contract.contract.symbol = decode_string(&mut fields_itr)?;
             data.contract.contract.sec_type = decode_string(&mut fields_itr)?;
@@ -1984,6 +2011,7 @@ where
             data.benchmark = decode_string(&mut fields_itr)?;
             data.projection = decode_string(&mut fields_itr)?;
             data.legs = decode_string(&mut fields_itr)?;
+
             self.wrapper
                 .lock()
                 .expect(WRAPPER_POISONED_MUTEX)
@@ -2098,14 +2126,14 @@ where
 
         let count = decode_i32(&mut fields_itr)?;
 
-        let mut smart_components = vec![];
-        for _ in 0..count {
-            let mut smart_component = SmartComponent::default();
-            smart_component.bit_number = decode_i32(&mut fields_itr)?;
-            smart_component.exchange = decode_string(&mut fields_itr)?;
-            smart_component.exchange_letter = decode_string(&mut fields_itr)?;
-            smart_components.push(smart_component)
-        }
+        let smart_components = vec![
+            SmartComponent {
+                bit_number: decode_i32(&mut fields_itr)?,
+                exchange: decode_string(&mut fields_itr)?,
+                exchange_letter: decode_string(&mut fields_itr)?,
+            };
+            count as _
+        ];
 
         self.wrapper
             .lock()
@@ -2571,21 +2599,21 @@ where
         is_bond: bool,
         read_date: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if read_date != "" {
+        if !read_date.is_empty() {
             let splitted = read_date.split_whitespace().collect::<Vec<&str>>();
-            if splitted.len() > 0 {
+            if !splitted.is_empty() {
                 if is_bond {
-                    contract.maturity = splitted.get(0).unwrap_or_else(|| &"").to_string();
+                    contract.maturity = splitted.get(0).unwrap_or(&"").to_string();
                 } else {
                     contract.contract.last_trade_date_or_contract_month =
-                        splitted.get(0).unwrap_or_else(|| &"").to_string();
+                        splitted.get(0).unwrap_or(&"").to_string();
                 }
             }
             if splitted.len() > 1 {
-                contract.last_trade_time = splitted.get(1).unwrap_or_else(|| &"").to_string();
+                contract.last_trade_time = splitted.get(1).unwrap_or(&"").to_string();
             }
             if is_bond && splitted.len() > 2 {
-                contract.time_zone_id = splitted.get(2).unwrap_or_else(|| &"").to_string();
+                contract.time_zone_id = splitted.get(2).unwrap_or(&"").to_string();
             }
         }
         Ok(())
@@ -2636,12 +2664,10 @@ where
                             .connection_closed();
                         *self.conn_state.lock().expect(CONN_STATE_POISONED) =
                             ConnStatus::DISCONNECTED;
-
-                        return Ok(());
                     } else {
                         error!("Disconnected...");
-                        return Ok(());
                     }
+                    return Ok(());
                 }
             }
         }

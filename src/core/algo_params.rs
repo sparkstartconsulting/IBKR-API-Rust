@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 //! Utility functions that illustrate setting fields related to algo parameters
 use crate::core::common::TagValue;
 use crate::core::order::Order;

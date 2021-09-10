@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 //! Types related to executions
 use std::fmt::{Display, Error, Formatter};
 

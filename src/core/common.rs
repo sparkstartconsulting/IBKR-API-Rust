@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 //! Common types
 use std::fmt::Display;
 use std::fmt::{self, Error, Formatter};
