@@ -39,7 +39,7 @@ impl Reader {
         let buf = self._recv_all_msg()?;
         // receiving 0 bytes outside a timeout means the connection is either
         // closed or broken
-        if buf.len() == 0 && !self.disconnect_requested.load(Ordering::Acquire) {
+        if buf.is_empty() && !self.disconnect_requested.load(Ordering::Acquire) {
             info!("socket either closed or broken, disconnecting");
             self.stream.shutdown(Shutdown::Both)?;
             self.is_connected = false;
@@ -81,7 +81,7 @@ impl Reader {
         // Repeat until the connection is closed
         //
         let _msg = String::new();
-        while message_packet.len() > 0 {
+        while !message_packet.is_empty() {
             // Read a message from the packet then add it to the message queue below.
             let (_size, msg, remaining_messages) = read_msg(message_packet.as_slice())?;
 
@@ -110,7 +110,7 @@ impl Reader {
                 return;
             }
             let result = self.process_reader_msgs();
-            if !result.is_err() {
+            if result.is_ok() {
                 continue;
             }
             error!("{:?}", result);

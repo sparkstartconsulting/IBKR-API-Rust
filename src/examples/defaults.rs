@@ -589,8 +589,7 @@ impl Wrapper for DefaultWrapper {
                 .map(|x| x.as_str())
                 .collect::<Vec<&str>>(),
             strikes
-                .iter()
-                .map(|x| x.clone())
+                .iter().cloned()
                 .collect::<Vec<BigDecimal>>()
         );
     }
