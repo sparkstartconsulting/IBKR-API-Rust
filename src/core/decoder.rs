@@ -1991,30 +1991,34 @@ where
         let number_of_elements = decode_i32(&mut fields_itr)?;
 
         for _ in 0..number_of_elements {
-            let data = ScanData {
-                contract: ContractDetails {
-                    contract: Contract {
-                        con_id: decode_i32(&mut fields_itr)?, // ver 3 field
-                        symbol: decode_string(&mut fields_itr)?,
-                        sec_type: decode_string(&mut fields_itr)?,
-                        last_trade_date_or_contract_month: decode_string(&mut fields_itr)?,
-                        strike: decode_f64(&mut fields_itr)?,
-                        right: decode_string(&mut fields_itr)?,
-                        exchange: decode_string(&mut fields_itr)?,
-                        currency: decode_string(&mut fields_itr)?,
-                        local_symbol: decode_string(&mut fields_itr)?,
-                        trading_class: decode_string(&mut fields_itr)?,
-                        ..Default::default()
-                    },
-                    market_name: decode_string(&mut fields_itr)?,
+            let mut data = ScanData {
+                rank: decode_i32(&mut fields_itr)?,
+                ..Default::default()
+            };
+
+            data.contract = ContractDetails {
+                contract: Contract {
+                    con_id: decode_i32(&mut fields_itr)?, // ver 3 field
+                    symbol: decode_string(&mut fields_itr)?,
+                    sec_type: decode_string(&mut fields_itr)?,
+                    last_trade_date_or_contract_month:
+                        decode_string(&mut fields_itr)?,
+                    strike: decode_f64(&mut fields_itr)?,
+                    right: decode_string(&mut fields_itr)?,
+                    exchange: decode_string(&mut fields_itr)?,
+                    currency: decode_string(&mut fields_itr)?,
+                    local_symbol: decode_string(&mut fields_itr)?,
                     ..Default::default()
                 },
-                rank: decode_i32(&mut fields_itr)?,
-                distance: decode_string(&mut fields_itr)?,
-                benchmark: decode_string(&mut fields_itr)?,
-                projection: decode_string(&mut fields_itr)?,
-                legs: decode_string(&mut fields_itr)?,
+                market_name: decode_string(&mut fields_itr)?,
+                ..Default::default()
             };
+
+            data.contract.contract.trading_class = decode_string(&mut fields_itr)?;
+            data.distance = decode_string(&mut fields_itr)?;
+            data.benchmark = decode_string(&mut fields_itr)?;
+            data.projection = decode_string(&mut fields_itr)?;
+            data.legs = decode_string(&mut fields_itr)?;
 
             self.wrapper
                 .lock()
