@@ -1,7 +1,7 @@
+#![allow(clippy::too_many_arguments)]
 //! Types for dealing with scanner data and scanner subscriptions
-use std::fmt::{Display, Error, Formatter};
-
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Error, Formatter};
 
 use crate::core::contract::ContractDetails;
 

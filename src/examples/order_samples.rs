@@ -1,5 +1,5 @@
+#![allow(clippy::too_many_arguments)]
 //! Examples of populating fields of various order types
-
 use num_traits::FromPrimitive;
 
 use crate::core::common::TagValue;
@@ -15,13 +15,14 @@ use crate::core::order_condition::{
 /// Products: FUT, STK *///
 //==================================================================================================
 pub fn at_auction(action: &str, quantity: f64, price: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.tif = "AUC".to_string();
-    order.order_type = "MTL".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = price;
-    order
+    Order {
+        action: action.to_string(),
+        tif: "AUC".to_string(),
+        order_type: "MTL".to_string(),
+        total_quantity: quantity,
+        lmt_price: price,
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
@@ -29,13 +30,14 @@ pub fn at_auction(action: &str, quantity: f64, price: f64) -> Order {
 /// may be used to increase the price range over which the limit order is eligible to execute. The market sees only the limit price.
 /// Products: STK
 pub fn discretionary(action: &str, quantity: f64, price: f64, discretionary_amount: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LMT".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = price;
-    order.discretionary_amt = discretionary_amount;
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: price,
+        discretionary_amt: discretionary_amount,
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
@@ -44,11 +46,12 @@ pub fn discretionary(action: &str, quantity: f64, price: f64, discretionary_amou
 /// lower/higher than the current displayed bid/ask.
 /// Products: BOND, CFD, EFP, CASH, FUND, FUT, FOP, OPT, STK, WAR
 pub fn market_order(action: &str, quantity: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MKT".to_string();
-    order.total_quantity = quantity;
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MKT".to_string(),
+        total_quantity: quantity,
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
@@ -56,39 +59,42 @@ pub fn market_order(action: &str, quantity: f64) -> Order {
 /// of sudden or unexpected changes in share or other prices and provides investors with a trigger price to set an order in motion.
 /// Investors may be waiting for excessive strength (or weakness) to cease, which might be represented by a specific price point.
 /// MIT orders can be used to determine whether or not to enter the market once a specific price level has been achieved. This order
-/// is held in the system until the trigger price is touched, and is then submitted as a market order. An MIT order is similar to a
+/// is held in the system until the trigger price is touched, and is then submitted as a market  An MIT order is similar to a
 /// stop order, except that an MIT sell order is placed above the current market price, and a stop sell order is placed below
 /// Products: BOND, CFD, CASH, FUT, FOP, OPT, STK, WAR
 pub fn market_if_touched(action: &str, quantity: f64, price: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MIT".to_string();
-    order.total_quantity = quantity;
-    order.aux_price = price;
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MIT".to_string(),
+        total_quantity: quantity,
+        aux_price: price,
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
 /// A Market-on-Close (MOC) order is a market order that is submitted to execute as close to the closing price as possible.
 /// Products: CFD, FUT, STK, WAR
 pub fn market_on_close(action: &str, quantity: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MOC".to_string();
-    order.total_quantity = quantity;
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MOC".to_string(),
+        total_quantity: quantity,
+        ..Default::default()
+    }
 }
 //==================================================================================================
 /// A Market-on-Open (MOO) order combines a market order with the OPG time in force to create an order that is automatically
 /// submitted at the market's open and fills at the market price.
 /// Products: CFD, STK, OPT, WAR
 pub fn market_on_open(action: &str, quantity: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MKT".to_string();
-    order.total_quantity = quantity;
-    order.tif = "OPG".to_string();
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MKT".to_string(),
+        total_quantity: quantity,
+        tif: "OPG".to_string(),
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
@@ -97,11 +103,12 @@ pub fn market_on_open(action: &str, quantity: f64) -> Order {
 /// execute only when the midpoprice:is:i32 better than the limit price. Standard MPM orders are completely anonymous.
 /// Products: STK
 pub fn midpoint_match(action: &str, quantity: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MKT".to_string();
-    order.total_quantity = quantity;
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MKT".to_string(),
+        total_quantity: quantity,
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
@@ -109,13 +116,14 @@ pub fn midpoint_match(action: &str, quantity: f64) -> Order {
 /// the NBBO or better. Set an optional price cap to define the highest price (for a buy order) or the lowest price (for a sell
 /// order) you are willing to accept. Requires TWS 975+. Smart-routing to US stocks only.
 pub fn midprice(action: &str, quantity: f64, price_cap: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MIDPRICE".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = price_cap; // optional
-                                 //midprice]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MIDPRICE".to_string(),
+        total_quantity: quantity,
+        lmt_price: price_cap, // optional
+        //midprice]
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
@@ -123,18 +131,19 @@ pub fn midprice(action: &str, quantity: f64, price_cap: f64) -> Order {
 /// relative to the national best bid (NBB). Depending on the width of the quote, this order may be passive or aggressive.
 /// The trader creates the order by entering a limit price which defines the worst limit price that they are willing to accept.
 /// Next, the trader enters an offset amount which computes the active limit price as follows:
-///     Sell order price = Bid price + offset amount
-///     Buy order price = Ask price - offset amount
+///     Sell order price: Bid price + offset amount
+///     Buy order price: Ask price - offset amount
 /// Products: STK
 pub fn pegged_to_market(action: &str, quantity: f64, market_offset: f64) -> Order {
     //pegged_market]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "PEG MKT".to_string();
-    order.total_quantity = quantity;
-    order.aux_price = market_offset; //Offset price
-                                     //pegged_market]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "PEG MKT".to_string(),
+        total_quantity: quantity,
+        aux_price: market_offset, //Offset price
+        //pegged_market]
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
@@ -144,7 +153,7 @@ pub fn pegged_to_market(action: &str, quantity: f64, market_offset: f64) -> Orde
 /// price for the call. To determine the change in price, the stock reference price is subtracted from the current NBBO midpoint.
 /// The Stock Reference Price can be defined by the user, or defaults to the NBBO midpoat:the:i32 time of the order if no reference price
 /// is entered. You may also enter a high/low stock price range which cancels the order when reached. The delta times the change in stock
-/// price will be rounded to the nearest penny in favor of the order.
+/// price will be rounded to the nearest penny in favor of the
 /// Products: OPT
 pub fn pegged_to_stock(
     action: &str,
@@ -154,20 +163,21 @@ pub fn pegged_to_stock(
     starting_price: f64,
 ) -> Order {
     //pegged_stock]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "PEG STK".to_string();
-    order.total_quantity = quantity;
-    order.delta = delta;
-    order.stock_ref_price = stock_reference_price;
-    order.starting_price = starting_price;
-    //pegged_stock]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "PEG STK".to_string(),
+        total_quantity: quantity,
+        delta,
+        stock_ref_price: stock_reference_price,
+        starting_price,
+        //pegged_stock]
+        ..Default::default()
+    }
 }
 
 /// Relative (a.k.a. Pegged-to-Primary) orders provide a means for traders to seek a more aggressive price than the National Best Bid
 /// and Offer (NBBO). By acting as liquidity providers, and placing more aggressive bids and offers than the current best bids and offers,
-/// traders increase their odds of filling their order. Quotes are automatically adjusted as the markets move, to remain aggressive.
+/// traders increase their odds of filling their  Quotes are automatically adjusted as the markets move, to remain aggressive.
 /// For a buy order, your bid is pegged to the NBB by a more aggressive offset, and if the NBB moves up, your bid will also move up.
 /// If the NBB moves down, there will be no adjustment because your bid will become even more aggressive and execute. For sales, your
 /// offer is pegged to the NBO by a more aggressive offset, and if the NBO moves down, your offer will also move down. If the NBO moves up,
@@ -183,14 +193,15 @@ pub fn relative_pegged_to_primary(
     offset_amount: f64,
 ) -> Order {
     //relative_pegged_primary]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "REL".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = price_cap;
-    order.aux_price = offset_amount;
-    //relative_pegged_primary]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "REL".to_string(),
+        total_quantity: quantity,
+        lmt_price: price_cap,
+        aux_price: offset_amount,
+        //relative_pegged_primary]
+        ..Default::default()
+    }
 }
 
 /// Sweep-to-fill orders are useful when a trader values speed of execution over price. A sweep-to-fill order identifies the best price
@@ -201,14 +212,15 @@ pub fn relative_pegged_to_primary(
 //==================================================================================================
 pub fn sweep_to_fill(action: &str, quantity: f64, price: f64) -> Order {
     //sweep_to_fill]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LMT".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = price;
-    order.sweep_to_fill = true;
-    //sweep_to_fill]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: price,
+        sweep_to_fill: true,
+        //sweep_to_fill]
+        ..Default::default()
+    }
 }
 
 /// For option orders routed to the Boston Options Exchange (BOX) you may elect to participate in the BOX's price improvement auction in
@@ -228,14 +240,15 @@ pub fn auction_limit(
     auction_strategy: AuctionStrategy,
 ) -> Order {
     //auction_limit]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LMT".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = price;
-    order.auction_strategy = auction_strategy;
-    //auction_limit]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: price,
+        auction_strategy,
+        //auction_limit]
+        ..Default::default()
+    }
 }
 
 /// For option orders routed to the Boston Options Exchange (BOX) you may elect to participate in the BOX's price improvement auction in pennies.
@@ -258,14 +271,15 @@ pub fn auction_pegged_to_stock(
     delta: f64,
 ) -> Order {
     //auction_pegged_stock]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "PEG STK".to_string();
-    order.total_quantity = quantity;
-    order.delta = delta;
-    order.starting_price = starting_price;
-    //auction_pegged_stock]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "PEG STK".to_string(),
+        total_quantity: quantity,
+        delta,
+        starting_price,
+        //auction_pegged_stock]
+        ..Default::default()
+    }
 }
 
 /// For option orders routed to the Boston Options Exchange (BOX) you may elect to participate in the BOX's price improvement auction in pennies.
@@ -283,13 +297,14 @@ pub fn auction_pegged_to_stock(
 //==================================================================================================
 pub fn auction_relative(action: &str, quantity: f64, offset: f64) -> Order {
     //auction_relative]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "REL".to_string();
-    order.total_quantity = quantity;
-    order.aux_price = offset;
-    //auction_relative]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "REL".to_string(),
+        total_quantity: quantity,
+        aux_price: offset,
+        //auction_relative]
+        ..Default::default()
+    }
 }
 
 /// The block attribute is used for large volume option orders on ISE that consist of at least 50 contracts. To execute large-volume
@@ -298,14 +313,15 @@ pub fn auction_relative(action: &str, quantity: f64, offset: f64) -> Order {
 //==================================================================================================
 pub fn block(action: &str, quantity: f64, price: f64) -> Order {
     //block]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LMT".to_string();
-    order.total_quantity = quantity; //Large volumes!
-    order.lmt_price = price;
-    order.block_order = true;
-    //block]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity, //Large volumes!
+        lmt_price: price,
+        block_order: true,
+        //block]
+        ..Default::default()
+    }
 }
 
 /// A Box Top order executes as a market order at the current best price. If the order is only partially filled, the remainder is submitted as
@@ -315,12 +331,13 @@ pub fn block(action: &str, quantity: f64, price: f64) -> Order {
 //==================================================================================================
 pub fn box_top(action: &str, quantity: f64) -> Order {
     //boxtop]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "BOX TOP".to_string();
-    order.total_quantity = quantity;
-    //boxtop]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "BOX TOP".to_string(),
+        total_quantity: quantity,
+        //boxtop]
+        ..Default::default()
+    }
 }
 
 /// A Limit order is an order to buy or sell at a specified price or better. The Limit order ensures that if the order fills,
@@ -329,14 +346,15 @@ pub fn box_top(action: &str, quantity: f64) -> Order {
 //==================================================================================================
 pub fn limit_order(action: &str, quantity: f64, limit_price: f64) -> Order {
     //limitorder]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LMT".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = limit_price;
-    order.transmit = true;
-    //limitorder]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: limit_price,
+        transmit: true,
+        //limitorder]
+        ..Default::default()
+    }
 }
 
 /// Forex orders can be placed in demonination of second currency in pair using cashQty field
@@ -349,14 +367,14 @@ pub fn limit_order_with_cash_qty(
     limit_price: f64,
     cash_qty: f64,
 ) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LMT".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = limit_price;
-    order.cash_qty = cash_qty;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: limit_price,
+        cash_qty,
+        ..Default::default()
+    }
 }
 
 /// A Limit if Touched is an order to buy (or sell) a contract at a specified price or better, below (or above) the market. This order is
@@ -371,14 +389,15 @@ pub fn limit_if_touched(
     trigger_price: f64,
 ) -> Order {
     //limitiftouched]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LIT".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = limit_price;
-    order.aux_price = trigger_price;
-    //limitiftouched]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "LIT".to_string(),
+        total_quantity: quantity,
+        lmt_price: limit_price,
+        aux_price: trigger_price,
+        //limitiftouched]
+        ..Default::default()
+    }
 }
 
 /// A Limit-on-close (LOC) order will be submitted at the close and will execute if the closing price is at or better than the submitted
@@ -386,13 +405,13 @@ pub fn limit_if_touched(
 /// Products: CFD, FUT, STK, WAR
 //==================================================================================================
 pub fn limit_on_close(action: &str, quantity: f64, limit_price: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LOC".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = limit_price;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "LOC".to_string(),
+        total_quantity: quantity,
+        lmt_price: limit_price,
+        ..Default::default()
+    }
 }
 
 /// A Limit-on-Open (LOO) order combines a limit order with the OPG time in force to create an order that is submitted at the market's open,
@@ -400,14 +419,14 @@ pub fn limit_on_close(action: &str, quantity: f64, limit_price: f64) -> Order {
 /// Products: CFD, STK, OPT, WAR
 //==================================================================================================
 pub fn limit_on_open(action: &str, quantity: f64, limit_price: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.tif = "OPG".to_string();
-    order.order_type = "LMT".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = limit_price;
-
-    order
+    Order {
+        action: action.to_string(),
+        tif: "OPG".to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: limit_price,
+        ..Default::default()
+    }
 }
 
 /// Passive Relative orders provide a means for traders to seek a less aggressive price than the National Best Bid and Offer (NBBO) while
@@ -422,13 +441,13 @@ pub fn limit_on_open(action: &str, quantity: f64, limit_price: f64) -> Order {
 /// Products: STK, WAR
 //==================================================================================================
 pub fn passive_relative(action: &str, quantity: f64, offset: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "PASSV REL".to_string();
-    order.total_quantity = quantity;
-    order.aux_price = offset;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "PASSV REL".to_string(),
+        total_quantity: quantity,
+        aux_price: offset,
+        ..Default::default()
+    }
 }
 
 /// A pegged-to-midpoorder:provides:i32 a means for traders to seek a price at the midpoof:the:i32 National Best Bid and Offer (NBBO).
@@ -439,19 +458,20 @@ pub fn passive_relative(action: &str, quantity: f64, offset: f64) -> Order {
 //==================================================================================================
 pub fn pegged_to_midpoint(action: &str, quantity: f64, offset: f64, limit_price: f64) -> Order {
     //pegged_midpoint]
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "PEG MID".to_string();
-    order.total_quantity = quantity;
-    order.aux_price = offset;
-    order.lmt_price = limit_price;
-    //pegged_midpoint]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "PEG MID".to_string(),
+        total_quantity: quantity,
+        aux_price: offset,
+        lmt_price: limit_price,
+        //pegged_midpoint]
+        ..Default::default()
+    }
 }
 
 /// Bracket orders are designed to help limit your loss and lock in a profit by "bracketing" an order with two opposite-side orders.
-/// A BUY order is bracketed by a high-side sell limit order and a low-side sell stop order. A SELL order is bracketed by a high-side buy
-/// stop order and a low side buy limit order.
+/// A BUY order is bracketed by a high-side sell limit order and a low-side sell stop  A SELL order is bracketed by a high-side buy
+/// stop order and a low side buy limit
 /// Products: CFD, BAG, FOP, CASH, FUT, OPT, STK, WAR
 //==================================================================================================
 pub fn bracket_order(
@@ -462,37 +482,44 @@ pub fn bracket_order(
     take_profit_limit_price: f64,
     stop_loss_price: f64,
 ) -> (Order, Order, Order) {
-    // This will be our main or "parent" order
-    let mut parent = Order::default();
-    parent.order_id = parent_order_id;
-    parent.action = action.to_string();
-    parent.order_type = "LMT".to_string();
-    parent.total_quantity = quantity;
-    parent.lmt_price = limit_price;
-    // The parent and children orders will need this attribute set to False to prevent accidental executions.
-    // The LAST CHILD will have it set to True,
-    parent.transmit = false;
+    // This will be our main or "parent" ..Default::default()
 
-    let mut take_profit = Order::default();
-    take_profit.order_id = parent.order_id + 1;
-    take_profit.action = (if action == "BUY" { "SELL" } else { "BUY" }).to_string();
-    take_profit.order_type = "LMT".to_string();
-    take_profit.total_quantity = quantity;
-    take_profit.lmt_price = take_profit_limit_price;
-    take_profit.parent_id = parent_order_id;
-    take_profit.transmit = false;
+    let parent = Order {
+        order_id: parent_order_id,
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: limit_price,
+        // The parent and children orders will need this attribute set to False to prevent accidental executions.
+        // The LAST CHILD will have it set to True,
+        transmit: false,
+        ..Default::default()
+    };
 
-    let mut stop_loss = Order::default();
-    stop_loss.order_id = parent.order_id + 2;
-    stop_loss.action = (if action == "BUY" { "SELL" } else { "BUY" }).to_string();
-    stop_loss.order_type = "STP".to_string();
-    // stop trigger price
-    stop_loss.aux_price = stop_loss_price;
-    stop_loss.total_quantity = quantity;
-    stop_loss.parent_id = parent_order_id;
-    // In this case, the low side order will be the last child being sent. Therefore, it needs to set this attribute to True
-    // to activate all its predecessors
-    stop_loss.transmit = true;
+    let take_profit = Order {
+        order_id: parent.order_id + 1,
+        action: (if action == "BUY" { "SELL" } else { "BUY" }).to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: take_profit_limit_price,
+        parent_id: parent_order_id,
+        transmit: false,
+        ..Default::default()
+    };
+
+    let stop_loss = Order {
+        order_id: parent.order_id + 2,
+        action: (if action == "BUY" { "SELL" } else { "BUY" }).to_string(),
+        order_type: "STP".to_string(),
+        // stop trigger price
+        aux_price: stop_loss_price,
+        total_quantity: quantity,
+        parent_id: parent_order_id,
+        // In this case, the low side order will be the last child being sent. Therefore, it needs to set this attribute to True
+        // to activate all its predecessors
+        transmit: true,
+        ..Default::default()
+    };
 
     (parent, take_profit, stop_loss)
 }
@@ -503,26 +530,26 @@ pub fn bracket_order(
 /// at which the filled portion of the order executed.
 //==================================================================================================
 pub fn market_to_limit(action: &str, quantity: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MTL".to_string();
-    order.total_quantity = quantity;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MTL".to_string(),
+        total_quantity: quantity,
+        ..Default::default()
+    }
 }
 
 /// This order type is useful for futures traders using Globex. A Market with Protection order is a market order that will be cancelled and
 /// resubmitted as a limit order if the entire order does not immediately execute at the market price. The limit price is set by Globex to be
-/// close to the current market price, slightly higher for a sell order and lower for a buy order.
+/// close to the current market price, slightly higher for a sell order and lower for a buy
 /// Products: FUT, FOP
 //==================================================================================================
 pub fn market_with_protection(action: &str, quantity: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MKT PRT".to_string();
-    order.total_quantity = quantity;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MKT PRT".to_string(),
+        total_quantity: quantity,
+        ..Default::default()
+    }
 }
 
 /// A stop order is an instruction to submit a buy or sell market order if and when the user-specified stop trigger price is attained or
@@ -533,13 +560,13 @@ pub fn market_with_protection(action: &str, quantity: f64) -> Order {
 /// Products: CFD, BAG, CASH, FUT, FOP, OPT, STK, WAR
 //==================================================================================================
 pub fn stop(action: &str, quantity: f64, stop_price: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "STP".to_string();
-    order.aux_price = stop_price;
-    order.total_quantity = quantity;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "STP".to_string(),
+        aux_price: stop_price,
+        total_quantity: quantity,
+        ..Default::default()
+    }
 }
 
 /// A stop-Limit order is an instruction to submit a buy or sell limit order when the user-specified stop trigger price is attained or
@@ -548,17 +575,17 @@ pub fn stop(action: &str, quantity: f64, stop_price: f64) -> Order {
 /// Products: CFD, CASH, FUT, FOP, OPT, STK, WAR
 //==================================================================================================
 pub fn stop_limit(action: &str, quantity: f64, limit_price: f64, stop_price: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "STP LMT".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = limit_price;
-    order.aux_price = stop_price;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "STP LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: limit_price,
+        aux_price: stop_price,
+        ..Default::default()
+    }
 }
 
-/// A stop with Protection order combines the functionality of a stop limit order with a market with protection order. The order is set
+/// A stop with Protection order combines the functionality of a stop limit order with a market with protection  The order is set
 /// to trigger at a specified stop price. When the stop price is penetrated, the order is triggered as a market with protection order,
 /// which means that it will fill within a specified protected price range equal to the trigger price +/- the exchange-defined protection
 /// porange:i32. Any portion of the order that does not fill within this protected range is submitted as a limit order at the exchange-defined
@@ -566,13 +593,13 @@ pub fn stop_limit(action: &str, quantity: f64, limit_price: f64, stop_price: f64
 /// Products: FUT
 //==================================================================================================
 pub fn stop_with_protection(action: &str, quantity: f64, stop_price: f64) -> Order {
-    let mut order = Order::default();
-    order.total_quantity = quantity;
-    order.action = action.to_string();
-    order.order_type = "STP PRT".to_string();
-    order.aux_price = stop_price;
-
-    order
+    Order {
+        total_quantity: quantity,
+        action: action.to_string(),
+        order_type: "STP PRT".to_string(),
+        aux_price: stop_price,
+        ..Default::default()
+    }
 }
 
 /// A sell trailing stop order sets the stop price at a fixed amount below the market price with an attached "trailing" amount. As the
@@ -588,14 +615,14 @@ pub fn trailing_stop(
     trailing_percent: f64,
     trail_stop_price: f64,
 ) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "TRAIL".to_string();
-    order.total_quantity = quantity;
-    order.trailing_percent = trailing_percent;
-    order.trail_stop_price = trail_stop_price;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "TRAIL".to_string(),
+        total_quantity: quantity,
+        trailing_percent,
+        trail_stop_price,
+        ..Default::default()
+    }
 }
 
 /// A trailing stop limit order is designed to allow an investor to specify a limit on the maximum possible loss, without setting a limit
@@ -614,15 +641,15 @@ pub fn trailing_stop_limit(
     trailing_amount: f64,
     trail_stop_price: f64,
 ) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "TRAIL LIMIT".to_string();
-    order.total_quantity = quantity;
-    order.trail_stop_price = trail_stop_price;
-    order.lmt_price_offset = lmt_price_offset;
-    order.aux_price = trailing_amount;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "TRAIL LIMIT".to_string(),
+        total_quantity: quantity,
+        trail_stop_price,
+        lmt_price_offset,
+        aux_price: trailing_amount,
+        ..Default::default()
+    }
 }
 
 /// Create combination orders that include options, stock and futures legs (stock legs can be included if the order is routed
@@ -637,12 +664,16 @@ pub fn combo_limit_order(
     limit_price: f64,
     non_guaranteed: bool,
 ) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LMT".to_string();
-    order.tif = "GTC".to_string();
-    order.total_quantity = quantity;
-    order.lmt_price = limit_price;
+    let mut order = Order {
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        tif: "GTC".to_string(),
+        total_quantity: quantity,
+        lmt_price: limit_price,
+
+        ..Default::default()
+    };
+
     if non_guaranteed {
         order
             .smart_combo_routing_params
@@ -659,10 +690,13 @@ pub fn combo_limit_order(
 /// Products: OPT, STK, FUT
 //==================================================================================================
 pub fn combo_market_order(action: &str, quantity: f64, non_guaranteed: bool) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MKT".to_string();
-    order.total_quantity = quantity;
+    let mut order = Order {
+        action: action.to_string(),
+        order_type: "MKT".to_string(),
+        total_quantity: quantity,
+        ..Default::default()
+    };
+
     if non_guaranteed {
         order
             .smart_combo_routing_params
@@ -684,16 +718,16 @@ pub fn limit_order_for_combo_with_leg_prices(
     leg_prices: Vec<f64>,
     non_guaranteed: bool,
 ) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "LMT".to_string();
-    order.total_quantity = quantity;
-
-    for price in leg_prices {
-        let mut combo_leg = OrderComboLeg::default();
-        combo_leg.price = price;
-        order.order_combo_legs.push(combo_leg)
-    }
+    let mut order = Order {
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        order_combo_legs: leg_prices
+            .iter()
+            .map(|&price| OrderComboLeg { price })
+            .collect::<Vec<_>>(),
+        ..Default::default()
+    };
 
     if non_guaranteed {
         order
@@ -716,11 +750,14 @@ pub fn relative_limit_combo(
     limit_price: f64,
     non_guaranteed: bool,
 ) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.total_quantity = quantity;
-    order.order_type = "REL + LMT".to_string();
-    order.lmt_price = limit_price;
+    let mut order = Order {
+        action: action.to_string(),
+        total_quantity: quantity,
+        order_type: "REL + LMT".to_string(),
+        lmt_price: limit_price,
+        ..Default::default()
+    };
+
     if non_guaranteed {
         order
             .smart_combo_routing_params
@@ -737,10 +774,14 @@ pub fn relative_limit_combo(
 /// Products: OPT, STK, FUT
 //==================================================================================================
 pub fn relative_market_combo(action: &str, quantity: f64, non_guaranteed: bool) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.total_quantity = quantity;
-    order.order_type = "REL + MKT".to_string();
+    let mut order = Order {
+        action: action.to_string(),
+        total_quantity: quantity,
+        order_type: "REL + MKT".to_string(),
+
+        ..Default::default()
+    };
+
     if non_guaranteed {
         order
             .smart_combo_routing_params
@@ -784,22 +825,25 @@ pub fn volatility(
     volatility_percent: f64,
     volatility_type: i32,
 ) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "VOL".to_string();
-    order.total_quantity = quantity;
-    order.volatility = volatility_percent; //Expressed in percentage (40%)
-    order.volatility_type = volatility_type; // 1=daily, 2=annual
-                                             //volatility]
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "VOL".to_string(),
+        total_quantity: quantity,
+        volatility: volatility_percent, //Expressed in percentage (40%)
+        volatility_type,                // 1=daily, 2=annual
+        //volatility]
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
 pub fn market_fhedge(parent_order_id: i32, action: &str) -> Order {
     // FX Hedge orders can only have a quantity of 0
     let mut order = market_order(action, 0.0);
+
     order.parent_id = parent_order_id;
     order.hedge_type = "F".to_string();
+
     order
 }
 
@@ -817,31 +861,32 @@ pub fn pegged_to_benchmark(
     reference_contract_lower_range: f64,
     reference_contract_upper_range: f64,
 ) -> Order {
-    let mut order = Order::default();
-    order.order_type = "PEG BENCH".to_string();
-    // BUY or SELL
-    order.action = action.to_string();
-    order.total_quantity = quantity;
-    // Beginning with price...
-    order.starting_price = starting_price;
-    // increase/decrease price..
-    order.is_pegged_change_amount_decrease = pegged_change_amount_decrease;
-    // by... (and likewise for price moving in opposite direction)
-    order.pegged_change_amount = pegged_change_amount;
-    // whenever there is a price change of...
-    order.reference_change_amount = reference_change_amount;
-    // in the reference contract...
-    order.reference_contract_id = reference_con_id;
-    // being traded at...
-    order.reference_exchange_id = reference_exchange.parse().unwrap();
-    //starting reference price is...
-    order.stock_ref_price = stock_reference_price;
-    // Keep order active as long as reference contract trades between...
-    order.stock_range_lower = reference_contract_lower_range;
-    // and...
-    order.stock_range_upper = reference_contract_upper_range;
-    //pegged_benchmark]
-    order
+    Order {
+        order_type: "PEG BENCH".to_string(),
+        // BUY or SELL
+        action: action.to_string(),
+        total_quantity: quantity,
+        // Beginning with price...
+        starting_price,
+        // increase/decrease price..
+        is_pegged_change_amount_decrease: pegged_change_amount_decrease,
+        // by... (and likewise for price moving in opposite direction)
+        pegged_change_amount,
+        // whenever there is a price change of...
+        reference_change_amount,
+        // in the reference contract...
+        reference_contract_id: reference_con_id,
+        // being traded at...
+        reference_exchange_id: reference_exchange.parse().unwrap(),
+        //starting reference price is...
+        stock_ref_price: stock_reference_price,
+        // Keep order active as long as reference contract trades between...
+        stock_range_lower: reference_contract_lower_range,
+        // and...
+        stock_range_upper: reference_contract_upper_range,
+        //pegged_benchmark]
+        ..Default::default()
+    }
 }
 
 //==================================================================================================
@@ -861,10 +906,11 @@ pub fn attach_adjustable_to_stop(
         parent.total_quantity,
         attached_order_stop_price,
     );
+
     order.parent_id = parent.order_id;
     // When trigger price is penetrated
     order.trigger_price = trigger_price;
-    // The parent order will be turned into a STP order
+    // The parent order will be turned into a STP ..Default::default()
     order.adjusted_order_type = "STP".to_string();
     // With the given STP price
     order.adjusted_stop_price = adjust_stop_price;
@@ -880,7 +926,7 @@ pub fn attach_adjustable_to_stop_limit(
     adjusted_stop_price: f64,
     adjusted_stop_limit_price: f64,
 ) -> Order {
-    // Attached order is a conventional STP order
+    // Attached order is a conventional STP ..Default::default()
     let mut order = stop(
         if parent.action == "BUY" {
             "SELL"
@@ -893,7 +939,7 @@ pub fn attach_adjustable_to_stop_limit(
     order.parent_id = parent.order_id;
     // When trigger price is penetrated
     order.trigger_price = trigger_price;
-    // The parent order will be turned into a STP LMT order
+    // The parent order will be turned into a STP LMT ..Default::default()
     order.adjusted_order_type = "STP LMT".to_string();
     // With the given stop price
     order.adjusted_stop_price = adjusted_stop_price;
@@ -912,7 +958,7 @@ pub fn attach_adjustable_to_trail(
     adjusted_trail_amount: f64,
     trail_unit: i32,
 ) -> Order {
-    // Attached order is a conventional STP order
+    // Attached order is a conventional STP ..Default::default()
     let mut order = stop(
         if parent.action == "BUY" {
             "SELL"
@@ -925,7 +971,7 @@ pub fn attach_adjustable_to_trail(
     order.parent_id = parent.order_id;
     // When trigger price is penetrated
     order.trigger_price = trigger_price;
-    // The parent order will be turned into a TRAIL order
+    // The parent order will be turned into a TRAIL ..Default::default()
     order.adjusted_order_type = "TRAIL".to_string();
     // With a stop price of...
     order.adjusted_stop_price = adjusted_stop_price;

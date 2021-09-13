@@ -521,9 +521,7 @@ mod tests {
     #[test]
     fn test_req_account_summary() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
-        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
-            wrapper,
-        )));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(wrapper)));
 
         let version = 2;
         let req_id = 100;
@@ -563,9 +561,7 @@ mod tests {
     #[test]
     fn test_req_account_updates() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
-        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
-            wrapper,
-        )));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(wrapper)));
 
         let version = 2;
         let subscribe = true;
@@ -598,9 +594,7 @@ mod tests {
     #[test]
     fn test_req_account_updates_multi() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
-        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
-            wrapper,
-        )));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(wrapper)));
 
         let version = 1;
         let req_id = 101;
@@ -641,9 +635,7 @@ mod tests {
     #[test]
     fn test_req_all_open_orders() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
-        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
-            wrapper,
-        )));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(wrapper)));
 
         let version = 1;
 
@@ -674,9 +666,7 @@ mod tests {
     #[test]
     fn test_req_auto_open_orders() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
-        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
-            wrapper,
-        )));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(wrapper)));
 
         let version = 1;
         let auto_bind = true;
@@ -708,9 +698,7 @@ mod tests {
     #[test]
     fn test_req_completed_orders() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
-        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
-            wrapper,
-        )));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(wrapper)));
 
         let version = 1;
         let api_only = true;
@@ -742,9 +730,7 @@ mod tests {
     #[test]
     fn test_req_contract_details() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
-        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
-            wrapper,
-        )));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(wrapper)));
 
         let version = 8;
         let req_id = 102;
@@ -804,9 +790,7 @@ mod tests {
     #[test]
     fn test_req_current_time() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
-        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
-            wrapper,
-        )));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(wrapper)));
 
         let version = 2;
 
@@ -838,9 +822,7 @@ mod tests {
     #[test]
     fn test_req_executions() -> Result<(), IBKRApiLibError> {
         let wrapper = Arc::new(Mutex::new(DummyTestWrapper::new()));
-        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(
-            wrapper,
-        )));
+        let app = Arc::new(Mutex::new(EClient::<DummyTestWrapper>::new(wrapper)));
 
         let version = 3;
         let req_id = 102;

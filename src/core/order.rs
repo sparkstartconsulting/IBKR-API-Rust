@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 //! Types related to orders
 use std::fmt::{Display, Error, Formatter};
 

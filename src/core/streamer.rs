@@ -66,6 +66,12 @@ impl TestStreamer {
     }
 }
 
+impl Default for TestStreamer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Streamer for TestStreamer {
     fn shutdown(&mut self, _how: Shutdown) -> io::Result<()> {
         Ok(())

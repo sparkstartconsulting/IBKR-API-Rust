@@ -28,6 +28,13 @@ impl DefaultWrapper {
         DefaultWrapper {}
     }
 }
+
+impl Default for DefaultWrapper {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Wrapper for DefaultWrapper {
     fn error(&mut self, req_id: i32, error_code: i32, error_string: &str) {
         error!(
@@ -194,7 +201,7 @@ impl Wrapper for DefaultWrapper {
         account_name: &str,
     ) {
         info!(
-            "update_portfolio -- contract: {}, position: {}, market_price: {}, market_value: {}, 
+            "update_portfolio -- contract: {}, position: {}, market_price: {}, market_value: {},
              average_cost: {}, unrealized_pnl: {},  realized_pnl: {},  account_name: {}",
             contract,
             position,
@@ -588,9 +595,7 @@ impl Wrapper for DefaultWrapper {
                 .iter()
                 .map(|x| x.as_str())
                 .collect::<Vec<&str>>(),
-            strikes
-                .iter().cloned()
-                .collect::<Vec<BigDecimal>>()
+            strikes.iter().cloned().collect::<Vec<BigDecimal>>()
         );
     }
 

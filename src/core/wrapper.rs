@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 //! Clients implement the Wrapper trait in this module to receive data and notifications from Trader WorkStation or IB Gateway
 use std::collections::HashSet;
 use std::marker::{Send, Sync};
@@ -213,7 +214,7 @@ pub trait Wrapper: Send + Sync {
     //----------------------------------------------------------------------------------------------
     /// Returns the order book.
     ///
-    /// # Arguments       
+    /// # Arguments
     /// * req_id -  the request id
     /// * position -  the order book's row being updated
     /// * operation - how to refresh the row:
@@ -450,7 +451,7 @@ pub trait Wrapper: Send + Sync {
     ///                 in IB. Possible values include:
     ///                 none = empty selection
     ///                 contractID@exchange = any non-combination contract.
-    ///                
+    ///
     ///                 //Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
     ///                 //combo = if any combo is selected.
     fn display_group_updated(&mut self, req_id: i32, contract_info: &str);

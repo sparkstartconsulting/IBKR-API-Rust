@@ -842,7 +842,7 @@ impl From<OrderConditionEnum> for VolumeCondition {
 }
 
 //----------------------------------------------------------------------------------------------
-pub fn create_condition<'a>(cond_type: ConditionType) -> OrderConditionEnum {
+pub fn create_condition(cond_type: ConditionType) -> OrderConditionEnum {
     match cond_type {
         ConditionType::Execution => OrderConditionEnum::Execution(ExecutionCondition::default()),
         ConditionType::Margin => OrderConditionEnum::Margin(MarginCondition::default()),

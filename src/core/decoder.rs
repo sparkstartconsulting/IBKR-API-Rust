@@ -1,45 +1,45 @@
 //! Receives messages from Reader, decodes messages, and feeds them to Wrapper
-use std::collections::HashSet;
-
-use std::marker::Sync;
-use std::ops::Deref;
-use std::slice::Iter;
-use std::str::FromStr;
-use std::string::ToString;
-use std::sync::mpsc::Receiver;
-use std::sync::{Arc, Mutex};
+use crate::core::{
+    client::ConnStatus,
+    common::{
+        BarData, CommissionReport, DepthMktDataDescription, FamilyCode, HistogramData,
+        HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement,
+        RealTimeBar, SmartComponent, TagValue, TickAttrib, TickAttribBidAsk, TickAttribLast,
+        TickType, MAX_MSG_LEN, NO_VALID_ID, UNSET_DOUBLE, UNSET_INTEGER,
+    },
+    contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract},
+    errors::{IBKRApiLibError, TwsError},
+    execution::Execution,
+    messages::{read_fields, IncomingMessageIds},
+    order::{Order, OrderState, SoftDollarTier},
+    order_decoder::OrderDecoder,
+    scanner::ScanData,
+    server_versions::{
+        MIN_SERVER_VER_AGG_GROUP, MIN_SERVER_VER_FRACTIONAL_POSITIONS,
+        MIN_SERVER_VER_LAST_LIQUIDITY, MIN_SERVER_VER_MARKET_CAP_PRICE,
+        MIN_SERVER_VER_MARKET_RULES, MIN_SERVER_VER_MD_SIZE_MULTIPLIER,
+        MIN_SERVER_VER_MODELS_SUPPORT, MIN_SERVER_VER_ORDER_CONTAINER, MIN_SERVER_VER_PAST_LIMIT,
+        MIN_SERVER_VER_PRE_OPEN_BID_ASK, MIN_SERVER_VER_REALIZED_PNL,
+        MIN_SERVER_VER_REAL_EXPIRATION_DATE, MIN_SERVER_VER_SERVICE_DATA_TYPE,
+        MIN_SERVER_VER_SMART_DEPTH, MIN_SERVER_VER_SYNT_REALTIME_BARS,
+        MIN_SERVER_VER_UNDERLYING_INFO, MIN_SERVER_VER_UNREALIZED_PNL,
+    },
+    wrapper::Wrapper,
+};
 
 use bigdecimal::BigDecimal;
 use float_cmp::*;
 use log::*;
-use num_traits::float::FloatCore;
-use num_traits::FromPrimitive;
-
-use crate::core::client::ConnStatus;
-use crate::core::common::{
-    BarData, CommissionReport, DepthMktDataDescription, FamilyCode, HistogramData, HistoricalTick,
-    HistoricalTickBidAsk, HistoricalTickLast, NewsProvider, PriceIncrement, RealTimeBar,
-    SmartComponent, TagValue, TickAttrib, TickAttribBidAsk, TickAttribLast, TickType, MAX_MSG_LEN,
-    NO_VALID_ID, UNSET_DOUBLE, UNSET_INTEGER,
+use num_traits::{float::FloatCore, FromPrimitive};
+use std::{
+    collections::HashSet,
+    marker::Sync,
+    ops::Deref,
+    slice::Iter,
+    str::FromStr,
+    string::ToString,
+    sync::{mpsc::Receiver, Arc, Mutex},
 };
-use crate::core::contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract};
-use crate::core::errors::{IBKRApiLibError, TwsError};
-use crate::core::execution::Execution;
-use crate::core::messages::{read_fields, IncomingMessageIds};
-use crate::core::order::{Order, OrderState, SoftDollarTier};
-use crate::core::order_decoder::OrderDecoder;
-use crate::core::scanner::ScanData;
-use crate::core::server_versions::{
-    MIN_SERVER_VER_AGG_GROUP, MIN_SERVER_VER_FRACTIONAL_POSITIONS, MIN_SERVER_VER_LAST_LIQUIDITY,
-    MIN_SERVER_VER_MARKET_CAP_PRICE, MIN_SERVER_VER_MARKET_RULES,
-    MIN_SERVER_VER_MD_SIZE_MULTIPLIER, MIN_SERVER_VER_MODELS_SUPPORT,
-    MIN_SERVER_VER_ORDER_CONTAINER, MIN_SERVER_VER_PAST_LIMIT, MIN_SERVER_VER_PRE_OPEN_BID_ASK,
-    MIN_SERVER_VER_REALIZED_PNL, MIN_SERVER_VER_REAL_EXPIRATION_DATE,
-    MIN_SERVER_VER_SERVICE_DATA_TYPE, MIN_SERVER_VER_SMART_DEPTH,
-    MIN_SERVER_VER_SYNT_REALTIME_BARS, MIN_SERVER_VER_UNDERLYING_INFO,
-    MIN_SERVER_VER_UNREALIZED_PNL,
-};
-use crate::core::wrapper::Wrapper;
 
 const WRAPPER_POISONED_MUTEX: &str = "Wrapper mutex was poisoned";
 //==================================================================================================
@@ -1991,26 +1991,30 @@ where
         let number_of_elements = decode_i32(&mut fields_itr)?;
 
         for _ in 0..number_of_elements {
-            let mut data = ScanData::default();
-
-            data.rank = decode_i32(&mut fields_itr)?;
-            data.contract = ContractDetails::default();
-            data.contract.contract.con_id = decode_i32(&mut fields_itr)?; // ver 3 field
-            data.contract.contract.symbol = decode_string(&mut fields_itr)?;
-            data.contract.contract.sec_type = decode_string(&mut fields_itr)?;
-            data.contract.contract.last_trade_date_or_contract_month =
-                decode_string(&mut fields_itr)?;
-            data.contract.contract.strike = decode_f64(&mut fields_itr)?;
-            data.contract.contract.right = decode_string(&mut fields_itr)?;
-            data.contract.contract.exchange = decode_string(&mut fields_itr)?;
-            data.contract.contract.currency = decode_string(&mut fields_itr)?;
-            data.contract.contract.local_symbol = decode_string(&mut fields_itr)?;
-            data.contract.market_name = decode_string(&mut fields_itr)?;
-            data.contract.contract.trading_class = decode_string(&mut fields_itr)?;
-            data.distance = decode_string(&mut fields_itr)?;
-            data.benchmark = decode_string(&mut fields_itr)?;
-            data.projection = decode_string(&mut fields_itr)?;
-            data.legs = decode_string(&mut fields_itr)?;
+            let data = ScanData {
+                contract: ContractDetails {
+                    contract: Contract {
+                        con_id: decode_i32(&mut fields_itr)?, // ver 3 field
+                        symbol: decode_string(&mut fields_itr)?,
+                        sec_type: decode_string(&mut fields_itr)?,
+                        last_trade_date_or_contract_month: decode_string(&mut fields_itr)?,
+                        strike: decode_f64(&mut fields_itr)?,
+                        right: decode_string(&mut fields_itr)?,
+                        exchange: decode_string(&mut fields_itr)?,
+                        currency: decode_string(&mut fields_itr)?,
+                        local_symbol: decode_string(&mut fields_itr)?,
+                        trading_class: decode_string(&mut fields_itr)?,
+                        ..Default::default()
+                    },
+                    market_name: decode_string(&mut fields_itr)?,
+                    ..Default::default()
+                },
+                rank: decode_i32(&mut fields_itr)?,
+                distance: decode_string(&mut fields_itr)?,
+                benchmark: decode_string(&mut fields_itr)?,
+                projection: decode_string(&mut fields_itr)?,
+                legs: decode_string(&mut fields_itr)?,
+            };
 
             self.wrapper
                 .lock()
@@ -2153,14 +2157,14 @@ where
 
         let count = decode_i32(&mut fields_itr)?;
 
-        let mut tiers = vec![];
-        for _ in 0..count {
-            let mut tier = SoftDollarTier::default();
-            tier.name = decode_string(&mut fields_itr)?;
-            tier.val = decode_string(&mut fields_itr)?;
-            tier.display_name = decode_string(&mut fields_itr)?;
-            tiers.push(tier);
-        }
+        let tiers = vec![
+            SoftDollarTier {
+                name: decode_string(&mut fields_itr)?,
+                val: decode_string(&mut fields_itr)?,
+                display_name: decode_string(&mut fields_itr)?,
+            };
+            count as _
+        ];
 
         self.wrapper
             .lock()
@@ -2177,16 +2181,21 @@ where
         fields_itr.next();
 
         let req_id = decode_i32(&mut fields_itr)?;
-
         let count = decode_i32(&mut fields_itr)?;
         let mut contract_descriptions = vec![];
+
         for _ in 0..count {
-            let mut con_desc = ContractDescription::default();
-            con_desc.contract.con_id = decode_i32(&mut fields_itr)?;
-            con_desc.contract.symbol = decode_string(&mut fields_itr)?;
-            con_desc.contract.sec_type = decode_string(&mut fields_itr)?;
-            con_desc.contract.primary_exchange = decode_string(&mut fields_itr)?;
-            con_desc.contract.currency = decode_string(&mut fields_itr)?;
+            let mut con_desc = ContractDescription {
+                contract: Contract {
+                    con_id: decode_i32(&mut fields_itr)?,
+                    symbol: decode_string(&mut fields_itr)?,
+                    sec_type: decode_string(&mut fields_itr)?,
+                    primary_exchange: decode_string(&mut fields_itr)?,
+                    currency: decode_string(&mut fields_itr)?,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
 
             let derivative_sec_types_cnt = decode_i32(&mut fields_itr)?;
             con_desc.derivative_sec_types = vec![];
@@ -2194,12 +2203,15 @@ where
                 let deriv_sec_type = decode_string(&mut fields_itr)?;
                 con_desc.derivative_sec_types.push(deriv_sec_type);
             }
-            contract_descriptions.push(con_desc)
+
+            contract_descriptions.push(con_desc);
         }
+
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
             .symbol_samples(req_id, contract_descriptions);
+
         Ok(())
     }
 
@@ -2223,9 +2235,10 @@ where
                 let price = decode_f64(&mut fields_itr)?;
                 let size = decode_i32(&mut fields_itr)?;
                 let mask = decode_i32(&mut fields_itr)?;
-                let mut tick_attrib_last = TickAttribLast::default();
-                tick_attrib_last.past_limit = mask & 1 != 0;
-                tick_attrib_last.unreported = mask & 2 != 0;
+                let tick_attrib_last = TickAttribLast {
+                    past_limit: mask & 1 != 0,
+                    unreported: mask & 2 != 0,
+                };
                 let exchange = decode_string(&mut fields_itr)?;
                 let special_conditions = decode_string(&mut fields_itr)?;
                 self.wrapper
@@ -2250,9 +2263,10 @@ where
                 let bid_size = decode_i32(&mut fields_itr)?;
                 let ask_size = decode_i32(&mut fields_itr)?;
                 let mask = decode_i32(&mut fields_itr)?;
-                let mut tick_attrib_bid_ask = TickAttribBidAsk::default();
-                tick_attrib_bid_ask.bid_past_low = mask & 1 != 0;
-                tick_attrib_bid_ask.ask_past_high = mask & 2 != 0;
+                let tick_attrib_bid_ask = TickAttribBidAsk {
+                    bid_past_low: mask & 1 != 0,
+                    ask_past_high: mask & 2 != 0,
+                };
                 self.wrapper
                     .lock()
                     .expect(WRAPPER_POISONED_MUTEX)

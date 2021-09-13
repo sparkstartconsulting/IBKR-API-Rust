@@ -202,7 +202,7 @@ pub fn make_message(msg: &str) -> Result<Vec<u8>, IBKRApiLibError> {
 
     buffer.extend_from_slice(&i32::to_be_bytes(msg.len() as i32));
 
-    buffer.write(msg.as_ascii_str().unwrap().as_bytes())?;
+    buffer.write_all(msg.as_ascii_str().unwrap().as_bytes())?;
     let tmp = buffer.clone();
     //debug!("Message after create: {:?}", buffer);
 
@@ -213,7 +213,7 @@ pub fn make_message(msg: &str) -> Result<Vec<u8>, IBKRApiLibError> {
 }
 
 //==================================================================================================
-pub fn read_msg<'a>(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibError> {
+pub fn read_msg(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibError> {
     // first the size prefix and then the corresponding msg payload ""
 
     if buf.len() < 4 {
