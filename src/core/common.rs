@@ -1344,9 +1344,7 @@ pub enum MarketDataTypeEnum {
     Realtime,
     Frozen,
     Delayed,
-    DelayedFrozen, //public static MktDataType get( int ordinal) {
-                   //return getEnum( ordinal, values() );
-                   //}
+    DelayedFrozen,
 }
 
 impl Display for MarketDataTypeEnum {

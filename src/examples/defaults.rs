@@ -1,4 +1,5 @@
-//! Example implementation of the Wrapper callback trait.  Just logs callback methods
+//! Example implementation of the Wrapper callback trait.  Just logs callback
+//! methods
 use std::collections::HashSet;
 
 use std::time::{Duration, UNIX_EPOCH};
@@ -20,7 +21,8 @@ use crate::core::order::{Order, OrderState, SoftDollarTier};
 use crate::core::wrapper::Wrapper;
 
 //==================================================================================================
-/// Example implementation of the Wrapper callback trait.  Just logs callback methods
+/// Example implementation of the Wrapper callback trait.  Just logs callback
+/// methods
 pub struct DefaultWrapper {}
 
 impl DefaultWrapper {

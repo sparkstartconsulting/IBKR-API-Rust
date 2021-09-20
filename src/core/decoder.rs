@@ -833,6 +833,7 @@ where
             .display_group_updated(req_id, contract_info.as_ref());
         Ok(())
     }
+
     fn process_error_message(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
@@ -2001,8 +2002,7 @@ where
                     con_id: decode_i32(&mut fields_itr)?, // ver 3 field
                     symbol: decode_string(&mut fields_itr)?,
                     sec_type: decode_string(&mut fields_itr)?,
-                    last_trade_date_or_contract_month:
-                        decode_string(&mut fields_itr)?,
+                    last_trade_date_or_contract_month: decode_string(&mut fields_itr)?,
                     strike: decode_f64(&mut fields_itr)?,
                     right: decode_string(&mut fields_itr)?,
                     exchange: decode_string(&mut fields_itr)?,

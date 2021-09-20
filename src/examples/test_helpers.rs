@@ -12,7 +12,7 @@ use crate::{
     core::{
         account_summary_tags::AccountSummaryTags,
         order::{Order, OrderState, SoftDollarTier},
-        order_condition::TriggerMethod,
+        order_condition::{OrderConditionEnum, TriggerMethod},
         wrapper::Wrapper,
     },
     core::{algo_params::fill_arrival_price_params, streamer::Streamer},
@@ -34,7 +34,8 @@ const CLIENT_POISONED_MUTEX: &str = "Client mutex was poisoned";
 const CLIENT_IS_NONE: &str = "Client must be assigned!";
 
 //==================================================================================================
-/// Example implementation of the Wrapper callback trait.  Just logs callback methods
+/// Example implementation of the Wrapper callback trait.  Just logs callback
+/// methods
 //#[derive(Debug)]
 pub struct TestWrapper<T: Streamer + 'static> {
     pub client: Option<Arc<Mutex<EClient<TestWrapper<T>>>>>,
@@ -60,29 +61,29 @@ impl<T: Streamer> TestWrapper<T> {
     //----------------------------------------------------------------------------------------------
     pub fn start_requests(&mut self) -> Result<(), IBKRApiLibError> {
         self.order_operations_req()?; //tested ok
-                                      //self.what_if_order_operations()?; //tested ok
-                                      //self.account_operations_req()?; //tested ok
-                                      //self.market_data_type_operations()?; //tested ok
-                                      //self.tick_data_operations_req(); //tested ok
-                                      //self.market_depth_operations_req(); //tested ok
-                                      //self.real_time_bars_operations_req(); // Tested ok
-                                      //self.historical_data_operations_req(); // Tested ok
-                                      //self.options_operations_req(); tested ok
-                                      // self.market_scanners_perations_req(); testd ok
-                                      //self.fundamentals_operations_req(); //retest with research data subscription
-                                      //self.contract_operations()?; //tested ok
-                                      //self.tick_by_tick_operations_req(); //tested ok
-                                      // self.historical_ticks_operations(); //tested ok
-                                      //self.histogram_operations_req(); //tested ok
-                                      // self.continuous_futures_operations_req(); //tested ok
-                                      //self.pnl_operations_req()?; //tested ok
-                                      // self.market_rule_operations(); //testd ok
-                                      // self.reroute_cfd_operations(); //tested ok
-                                      //self.financial_advisor_operations(); need financial advisor account to test
-                                      //self.news_operations_req()?; // tested ok
-                                      //self.bulletins_operations_req()?; //tested ok
-                                      //self.miscelaneous_operations(); //tested ok
-                                      //self.linking_operations(); //tested ok
+        //self.what_if_order_operations()?; //tested ok
+        //self.account_operations_req()?; //tested ok
+        //self.market_data_type_operations()?; //tested ok
+        //self.tick_data_operations_req(); //tested ok
+        //self.market_depth_operations_req(); //tested ok
+        //self.real_time_bars_operations_req(); // tested ok
+        //self.historical_data_operations_req(); // Tested ok
+        //self.options_operations_req(); tested ok
+        //self.market_scanners_operations_req()?; // tested ok
+        //self.fundamentals_operations_req(); //retest with research data subscription
+        //self.contract_operations()?; //tested ok
+        //self.tick_by_tick_operations_req()?; //tested ok
+        //self.historical_ticks_operations(); //tested ok
+        //self.histogram_operations_req(); //tested ok
+        //self.continuous_futures_operations_req(); //tested ok
+        //self.pnl_operations_req()?; //tested ok
+        //self.market_rule_operations(); //testd ok
+        //self.reroute_cfd_operations(); //tested ok
+        //self.financial_advisor_operations(); need financial advisor account to test
+        //self.news_operations_req()?; // tested ok
+        //self.bulletins_operations_req()?; //tested ok
+        //self.miscelaneous_operations(); //tested ok
+        //self.linking_operations(); //tested ok
         Ok(())
     }
 
@@ -181,7 +182,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .req_open_orders()?;
 
-        // Placing/ modifying an order - remember to ALWAYS increment the
+        // Placing/modifying an order - remember to ALWAYS increment the
         // nextValidId after placing an order so it can be used for the next one!
         // Note if there are multiple clients connected to an account, the
         // order ID must also be greater than all order IDs returned for orders
@@ -580,7 +581,8 @@ impl<T: Streamer> TestWrapper<T> {
                 &order_samples::volatility("SELL", 1.0, 5.0, 2),
             )?;
 
-        //Interactive Broker's has a 50 messages per second limit, so sleep for 1 sec and continue placing orders
+        //Interactive Broker's has a 50 messages per second limit, so sleep for 1 sec
+        // and continue placing orders
         thread::sleep(Duration::from_secs(1));
 
         self.algo_samples()?;
@@ -594,34 +596,43 @@ impl<T: Streamer> TestWrapper<T> {
         // self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::usstock().borrow(), order_samples::AtAuction("BUY", 100, 30.0))
-        // self.client'.as_ref()
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::usstock().borrow(), order_samples::AtAuction("BUY", 100,
+        // 30.0)) self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::OptionAtBOX(), order_samples::AuctionLimit("SELL", 10, 30.0, 2))
-        // self.client'.as_ref()
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::OptionAtBOX(), order_samples::AuctionLimit("SELL", 10,
+        // 30.0, 2)) self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::OptionAtBOX(), order_samples::AuctionPeggedToStock("BUY", 10, 30, 0.5))
-        // self.client'.as_ref()
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::OptionAtBOX(), order_samples::AuctionPeggedToStock("BUY",
+        // 10, 30, 0.5)) self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::OptionAtBOX(), order_samples::AuctionRelative("SELL", 10, 0.6))
-        // self.client'.as_ref()
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::OptionAtBOX(), order_samples::AuctionRelative("SELL", 10,
+        // 0.6)) self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::simple_future(), order_samples::MarketWithProtection("BUY", 1))
-        // self.client'.as_ref()
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::simple_future(),
+        // order_samples::MarketWithProtection("BUY", 1)) self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::usstock().borrow(), order_samples::PassiveRelative("BUY", 1, 0.5))
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::usstock().borrow(), order_samples::PassiveRelative("BUY",
+        // 1, 0.5))
         //
         // 208813720 (GOOG)
         // self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::usstock().borrow(),
-        // order_samples::PeggedToBenchmark("SELL", 100, 33, True, 0.1, 1, 208813720, "ISLAND", 750, 650, 800))
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::usstock().borrow(), order_samples::
+        // PeggedToBenchmark("SELL", 100, 33, True, 0.1, 1, 208813720, "ISLAND", 750,
+        // 650, 800))
         //
         // STOP ADJUSTABLE ORDERS
         // Order stpParent = order_samples::Stop("SELL", 100, 30)
@@ -629,31 +640,39 @@ impl<T: Streamer> TestWrapper<T> {
         // self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order(stpParent.OrderId, &contract_samples::EuropeanStock(), stpParent)
+        // .expect(CLIENT_POISONED_MUTEX).place_order(stpParent.OrderId,
+        // &contract_samples::EuropeanStock(), stpParent) self.client'.as_ref()
+        // .expect(CLIENT_IS_NONE)
+        // .lock()
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::EuropeanStock(),
+        // order_samples::AttachAdjustableToStop(stpParent, 35, 32, 33))
         // self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToStop(stpParent, 35, 32, 33))
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::EuropeanStock(),
+        // order_samples::AttachAdjustableToStopLimit(stpParent, 35, 33, 32, 33))
         // self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToStopLimit(stpParent, 35, 33, 32, 33))
-        // self.client'.as_ref()
-        // .expect(CLIENT_IS_NONE)
-        // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToTrail(stpParent, 35, 32, 32, 1, 0))
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::EuropeanStock(),
+        // order_samples::AttachAdjustableToTrail(stpParent, 35, 32, 32, 1, 0))
         //
         // Order lmtParent = order_samples::limit_order("BUY", 100, 30)
         // lmtParent.OrderId = self.next_order_id()
         // self.client'.as_ref()
         // .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order(lmtParent.OrderId, &contract_samples::EuropeanStock(), lmtParent)
-        // Attached TRAIL adjusted can only be attached to LMT parent orders.
-        // self.client'.as_ref()
-        // .expect(CLIENT_IS_NONE)
+        // .expect(CLIENT_POISONED_MUTEX).place_order(lmtParent.OrderId,
+        // &contract_samples::EuropeanStock(), lmtParent) Attached TRAIL
+        // adjusted can only be attached to LMT parent orders. self.client'.
+        // as_ref() .expect(CLIENT_IS_NONE)
         // .lock()
-        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(), &contract_samples::EuropeanStock(), order_samples::AttachAdjustableToTrailAmount(lmtParent, 34, 32, 33, 0.008))
+        // .expect(CLIENT_POISONED_MUTEX).place_order( self.next_order_id(),
+        // &contract_samples::EuropeanStock(),
+        // order_samples::AttachAdjustableToTrailAmount(lmtParent, 34, 32, 33, 0.008))
         //        self.algo_samples();
 
         // self.oca_sample()?;
@@ -745,37 +764,34 @@ impl<T: Streamer> TestWrapper<T> {
         let mut mkt = order_samples::market_order("BUY", 100.0);
         // Order will become active if conditioning criteria is met
         mkt.conditions
-            .push(crate::core::order_condition::OrderConditionEnum::Price(
-                order_samples::price_condition(
-                    crate::core::order_condition::TriggerMethod::Default as i32,
-                    208813720,
-                    "SMART",
-                    600.0,
-                    false,
-                    false,
-                ),
-            ));
+            .push(OrderConditionEnum::Price(order_samples::price_condition(
+                TriggerMethod::Default as i32,
+                208813720,
+                "SMART",
+                600.0,
+                false,
+                false,
+            )));
+        mkt.conditions.push(OrderConditionEnum::Execution(
+            order_samples::execution_condition("EUR.USD", "CASH", "IDEALPRO", true),
+        ));
         mkt.conditions
-            .push(crate::core::order_condition::OrderConditionEnum::Execution(
-                order_samples::execution_condition("EUR.USD", "CASH", "IDEALPRO", true),
-            ));
+            .push(OrderConditionEnum::Margin(order_samples::margin_condition(
+                30.0, true, false,
+            )));
+        mkt.conditions.push(OrderConditionEnum::PercentChange(
+            order_samples::percentage_change_condition(15.0, 208813720, "SMART", true, true),
+        ));
         mkt.conditions
-            .push(crate::core::order_condition::OrderConditionEnum::Margin(
-                order_samples::margin_condition(30.0, true, false),
-            ));
-        mkt.conditions.push(
-            crate::core::order_condition::OrderConditionEnum::PercentChange(
-                order_samples::percentage_change_condition(15.0, 208813720, "SMART", true, true),
-            ),
-        );
+            .push(OrderConditionEnum::Time(order_samples::time_condition(
+                "20160118 23:59:59",
+                true,
+                false,
+            )));
         mkt.conditions
-            .push(crate::core::order_condition::OrderConditionEnum::Time(
-                order_samples::time_condition("20160118 23:59:59", true, false),
-            ));
-        mkt.conditions
-            .push(crate::core::order_condition::OrderConditionEnum::Volume(
-                order_samples::volume_condition(208813720, "SMART", true, 100000, true),
-            ));
+            .push(OrderConditionEnum::Volume(order_samples::volume_condition(
+                208813720, "SMART", true, 100000, true,
+            )));
         let next_id = self.next_order_id();
         self.client
             .as_ref()
@@ -788,21 +804,20 @@ impl<T: Streamer> TestWrapper<T> {
                 mkt.borrow(),
             )?;
 
-        // Conditions can make the order active or cancel it. Only LMT orders can be conditionally canceled.
+        // Conditions can make the order active or cancel it. Only LMT orders can be
+        // conditionally canceled.
         let mut lmt = order_samples::limit_order("BUY", 100.0, 20.0);
         // The active order will be cancelled if conditioning criteria is met
         lmt.conditions_cancel_order = true;
         lmt.conditions
-            .push(crate::core::order_condition::OrderConditionEnum::Price(
-                order_samples::price_condition(
-                    TriggerMethod::Last as i32,
-                    208813720,
-                    "SMART",
-                    600.0,
-                    false,
-                    false,
-                ),
-            ));
+            .push(OrderConditionEnum::Price(order_samples::price_condition(
+                TriggerMethod::Last as i32,
+                208813720,
+                "SMART",
+                600.0,
+                false,
+                false,
+            )));
 
         let next_id = self.next_order_id();
         self.client
@@ -1028,8 +1043,8 @@ impl<T: Streamer> TestWrapper<T> {
         //     order,
         // )?;
 
-        // // The Time Zone in "StartTime" and "EndTime" attributes is ignored and always defaulted to GMT
-        // let next_id = self.next_order_id();
+        // // The Time Zone in "StartTime" and "EndTime" attributes is ignored and
+        // always defaulted to GMT let next_id = self.next_order_id();
         // let order = &mut base_order.clone();
         // fill_accumulate_distribute_params(
         //     order,
@@ -1228,7 +1243,8 @@ impl<T: Streamer> TestWrapper<T> {
         //     order.borrow(),
         // )?;
 
-        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ error_string:Specified algorithm is not allowed for this order.
+        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ error_string:Specified algorithm is not allowed
+        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ for this order.
         // let next_id = self.next_order_id();
         // let order = &mut base_order.clone();
         // fill_jefferies_vwapparams(
@@ -1255,7 +1271,8 @@ impl<T: Streamer> TestWrapper<T> {
         //     order.borrow(),
         // )?;
 
-        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ error_string:Specified algorithm is not allowed for this order.
+        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ error_string:Specified algorithm is not allowed
+        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ for this order.
         // let next_id = self.next_order_id();
         // let order = &mut base_order.clone();
         // fill_csfbinline_params(
@@ -1282,7 +1299,8 @@ impl<T: Streamer> TestWrapper<T> {
         //     order.borrow(),
         // )?;
 
-        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ error_string:Specified algorithm is not allowed for this order.
+        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ error_string:Specified algorithm is not allowed
+        //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ for this order.
         // let next_id = self.next_order_id();
         // fill_qbalgo_in_line_params(S
         //     order,
@@ -1531,7 +1549,8 @@ impl<T: Streamer> TestWrapper<T> {
                 vec![],
             )?;
 
-        // Requesting RTVolume (Time & Sales), shortable and Fundamental Ratios generic ticks
+        // Requesting RTVolume (Time & Sales), shortable and Fundamental Ratios generic
+        // ticks
         self.client
             .as_ref()
             .expect(CLIENT_IS_NONE)
@@ -1546,7 +1565,8 @@ impl<T: Streamer> TestWrapper<T> {
                 vec![],
             )?;
 
-        // Without the API news subscription this will generate an "invalid tick type" error
+        // Without the API news subscription this will generate an "invalid tick type"
+        // error
         self.client
             .as_ref()
             .expect(CLIENT_IS_NONE)
@@ -1723,7 +1743,8 @@ impl<T: Streamer> TestWrapper<T> {
                 vec![],
             )?;
 
-        // Requests description of map of single letter exchange codes to full exchange names
+        // Requests description of map of single letter exchange codes to full exchange
+        // names
         self.client
             .as_ref()
             .expect(CLIENT_IS_NONE)
@@ -1830,9 +1851,10 @@ impl<T: Streamer> TestWrapper<T> {
 
         Ok(())
     }
+
     //----------------------------------------------------------------------------------------------
     #[allow(dead_code)]
-    fn market_scanners_perations_req(&mut self) -> Result<(), IBKRApiLibError> {
+    fn market_scanners_operations_req(&mut self) -> Result<(), IBKRApiLibError> {
         // Requesting list of valid scanner parameters which can be used in TWS
         self.client
             .as_ref()
@@ -1872,13 +1894,16 @@ impl<T: Streamer> TestWrapper<T> {
                 scanner_subscription_samples::hot_usstk_by_volume(),
                 vec![],
                 tagvalues,
-            ); // requires TWS v973 +
-        if let IBKRApiLibError::ApiError(err) = result.unwrap_err() {
-            self.error(
-                err.req_id,
-                err.code.as_str().parse().unwrap(),
-                err.description.as_ref(),
-            )
+            ); // requires TWS v973+
+
+        if result.is_err() {
+            if let IBKRApiLibError::ApiError(err) = result.unwrap_err() {
+                self.error(
+                    err.req_id,
+                    err.code.as_str().parse().unwrap(),
+                    err.description.as_ref(),
+                )
+            }
         }
 
         let aaplcon_idtag = vec![TagValue::new(

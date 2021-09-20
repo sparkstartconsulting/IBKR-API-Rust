@@ -440,7 +440,8 @@ pub fn future_combo_contract() -> Contract {
 //==================================================================================================
 pub fn smart_future_combo_contract() -> Contract {
     Contract {
-        symbol: "WTI".to_string(), // WTI,COIL spread. Symbol can be defined as first leg symbol ("WTI") or currency ("USD")
+        symbol: "WTI".to_string(), /* WTI,COIL spread. Symbol can be defined as first leg symbol
+                                    * ("WTI") or currency ("USD") */
         sec_type: "BAG".to_string(),
         currency: "USD".to_string(),
         exchange: "SMART".to_string(),

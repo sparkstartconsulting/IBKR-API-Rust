@@ -1,5 +1,6 @@
 #![allow(clippy::too_many_arguments)]
-//! Clients implement the Wrapper trait in this module to receive data and notifications from Trader WorkStation or IB Gateway
+//! Clients implement the Wrapper trait in this module to receive data and
+//! notifications from Trader WorkStation or IB Gateway
 use std::collections::HashSet;
 use std::marker::{Send, Sync};
 
@@ -15,7 +16,9 @@ use crate::core::contract::{Contract, ContractDescription, ContractDetails, Delt
 use crate::core::execution::Execution;
 use crate::core::order::{Order, OrderState, SoftDollarTier};
 
-/// A trait that clients will implement that declares callback functions that get called when the application receives messages from the Trader WorkStation or IB Gateway
+/// A trait that clients will implement that declares callback functions that
+/// get called when the application receives messages from the Trader
+/// WorkStation or IB Gateway.
 pub trait Wrapper: Send + Sync {
     //----------------------------------------------------------------------------------------------
     /// This event is called when there is an error with the
@@ -29,13 +32,13 @@ pub trait Wrapper: Send + Sync {
     fn connect_ack(&mut self);
 
     //----------------------------------------------------------------------------------------------
-    /// TWS sends a market_data_type(type) callback to the API, where
-    /// type is set to Frozen or RealTime, to announce that market data has been
-    /// switched between frozen and real-time. This notification occurs only
-    /// when market data switches between real-time and frozen. The
-    /// market_data_type() callback accepts a req_id parameter and is sent per
-    /// every subscription because different contracts can generally trade on a
-    /// different schedule.
+    /// TWS sends a `market_data_type(type)` callback to the API, where
+    /// type is set to `Frozen` or `RealTime`, to announce that market data has
+    /// been switched between frozen and real-time. This notification occurs
+    /// only when market data switches between real-time and frozen. The
+    /// `market_data_type()` callback accepts a `req_id` parameter and is sent
+    /// per every subscription because different contracts can generally
+    /// trade on a different schedule.
     fn market_data_type(&mut self, req_id: i32, market_data_type: i32);
 
     //----------------------------------------------------------------------------------------------
@@ -61,19 +64,21 @@ pub trait Wrapper: Send + Sync {
     /// market data call back for Exchange for Physical
     ///
     /// # Arguments
-    /// * req_id - The request's identifier.
-    /// * tick_type - The type of tick being received.
-    /// * basis_points - Annualized basis points, which is representative of
-    ///                the financing rate that can be directly compared to broker rates.
-    /// * formatted_basis_points - Annualized basis points as a formatted string
-    ///                          that depicts them in percentage form.
-    /// * implied_future - The implied Futures price.
-    /// * hold_days -  The number of hold days until the lastTradeDate of the EFP.
-    /// * future_last_trade_date -   The expiration date of the single stock future.
-    /// * dividend_impact - The dividend impact upon the annualized basis points
-    ///                     interest rate.
-    /// * dividends_to_last_trade_date - The dividends expected until the expiration
-    ///                                  of the single stock future.
+    /// * `req_id` - The request's identifier.
+    /// * `tick_type` - The type of tick being received.
+    /// * `basis_points` - Annualized basis points, which is representative of
+    ///   the financing rate that can be directly compared to broker rates.
+    /// * `formatted_basis_points` - Annualized basis points as a formatted
+    ///   string that depicts them in percentage form.
+    /// * `implied_future` - The implied Futures price.
+    /// * `hold_days` -  The number of hold days until the lastTradeDate of the
+    ///   EFP.
+    /// * `future_last_trade_date` -   The expiration date of the single stock
+    ///   future.
+    /// * `dividend_impact` - The dividend impact upon the annualized basis
+    ///   points interest rate.
+    /// * `dividends_to_last_trade_date` - The dividends expected until the
+    ///   expiration of the single stock future.
     fn tick_efp(
         &mut self,
         req_id: i32,
@@ -92,25 +97,56 @@ pub trait Wrapper: Send + Sync {
     /// also fired after reconnecting to TWS if the core has any open orders.
     ///
     /// # Arguments
-    /// * order_id - The order ID that was specified previously in the
-    ///            call to placeOrder()
-    /// * status - The order status. Possible values include:
-    ///     * PendingSubmit - indicates that you have transmitted the order, but have not  yet received confirmation that it has been accepted by the order destination. NOTE: This order status is not sent by TWS and should be explicitly set by the API developer when an order is submitted.
-    ///     * PendingCancel - indicates that you have sent a request to cancel the order but have not yet received cancel confirmation from the order destination. At this point, your order is not confirmed canceled. You may still receive an execution while your cancellation request is pending. NOTE: This order status is not sent by TWS and should be explicitly set by the API developer when an order is canceled.
-    ///     * PreSubmitted - indicates that a simulated order type has been accepted by the IB system and that this order has yet to be elected. The order is held in the IB system until the election criteria are met. At that time the order is transmitted to the order destination as specified.
-    ///     * Submitted - indicates that your order has been accepted at the order destination and is working.
-    ///     * Cancelled - indicates that the balance of your order has been confirmed canceled by the IB system. This could occur unexpectedly when IB or the destination has rejected your order.
-    ///     * Filled - indicates that the order has been completely filled.
-    ///     * Inactive - indicates that the order has been accepted by the system (simulated orders) or an exchange (native orders) but that currently the order is inactive due to system, exchange or other issues.
-    /// * filled - Specifies the number of shares that have been executed.
-    ///          For more information about partial fills, see Order Status for Partial Fills.
-    /// * remaining -   Specifies the number of shares still outstanding.
-    /// * avg_fill_price - The average price of the shares that have been executed. This parameter is valid only if the filled parameter value is greater than zero. Otherwise, the price parameter will be zero.
-    /// * perm_id -  The TWS id used to identify orders. Remains the same over TWS sessions.
-    /// * parent_id - The order ID of the parent order, used for bracket and auto trailing stop orders.
-    /// * lastFilledPrice - The last price of the shares that have been executed. This parameter is valid only if the filled parameter value is greater than zero. Otherwise, the price parameter will be zero.
-    /// * client_id - The ID of the core (or TWS) that placed the order. Note that TWS orders have a fixed client_id and order_id of 0 that distinguishes them from API orders.
-    /// * why_held - This field is used to identify an order held when TWS is trying to locate shares for a short sell. The value used to indicate this is 'locate'.
+    /// * `order_id` - The order ID that was specified previously in the call to
+    ///   [`place_order()`](crate::core::client::EClient::place_order).
+    /// * `status` - The order status. Possible values include:
+    ///     * `PendingSubmit` - indicates that you have transmitted the order,
+    ///       but have not  yet received confirmation that it has been accepted
+    ///       by the order destination. NOTE: This order status is not sent by
+    ///       TWS and should be explicitly set by the API developer when an
+    ///       order is submitted.
+    ///     * `PendingCancel` - indicates that you have sent a request to cancel
+    ///       the order but have not yet received cancel confirmation from the
+    ///       order destination. At this point, your order is not confirmed
+    ///       canceled. You may still receive an execution while your
+    ///       cancellation request is pending. NOTE: This order status is not
+    ///       sent by TWS and should be explicitly set by the API developer when
+    ///       an order is canceled.
+    ///     * `PreSubmitted` - indicates that a simulated order type has been
+    ///       accepted by the IB system and that this order has yet to be
+    ///       elected. The order is held in the IB system until the election
+    ///       criteria are met. At that time the order is transmitted to the
+    ///       order destination as specified.
+    ///     * `Submitted` - indicates that your order has been accepted at the
+    ///       order destination and is working.
+    ///     * `Cancelled` - indicates that the balance of your order has been
+    ///       confirmed canceled by the IB system. This could occur unexpectedly
+    ///       when IB or the destination has rejected your order.
+    ///     * `Filled` - indicates that the order has been completely filled.
+    ///     * `Inactive` - indicates that the order has been accepted by the
+    ///       system (simulated orders) or an exchange (native orders) but that
+    ///       currently the order is inactive due to system, exchange or other
+    ///       issues.
+    /// * `filled` - Specifies the number of shares that have been executed. For
+    ///   more information about partial fills, see Order Status for Partial
+    ///   Fills.
+    /// * `remaining` - Specifies the number of shares still outstanding.
+    /// * `avg_fill_price` - The average price of the shares that have been
+    ///   executed. This parameter is valid only if the filled parameter value
+    ///   is greater than zero. Otherwise, the price parameter will be zero.
+    /// * `perm_id` -  The TWS id used to identify orders. Remains the same over
+    ///   TWS sessions.
+    /// * `parent_id` - The order ID of the parent order, used for bracket and
+    ///   auto trailing stop orders.
+    /// * `last_filled_price` - The last price of the shares that have been
+    ///   executed. This parameter is valid only if the filled parameter value
+    ///   is greater than zero. Otherwise, the price parameter will be zero.
+    /// * `client_id` - The ID of the core (or TWS) that placed the order. Note
+    ///   that TWS orders have a fixed client_id and order_id of 0 that
+    ///   distinguishes them from API orders.
+    /// * `why_held` - This field is used to identify an order held when TWS is
+    ///   trying to locate shares for a short sell. The value used to indicate
+    ///   this is 'locate'.
     fn order_status(
         &mut self,
         order_id: i32,
@@ -130,12 +166,12 @@ pub trait Wrapper: Send + Sync {
     /// This function is called to feed in open orders.
     ///
     /// # Arguments
-    /// * order_id - The order ID assigned by TWS. Use to cancel or
-    ///           update TWS order.
-    /// * contract - The Contract class attributes describe the contract.
-    /// * order - The Order class gives the details of the open order.
-    /// * order_state - The orderState class includes attributes Used
-    ///               for both pre and post trade margin and commission data.
+    /// * `order_id - The order ID assigned by TWS. Use to cancel or update TWS
+    ///   order.
+    /// * `contract` - The Contract class attributes describe the contract.
+    /// * `order` - The Order class gives the details of the open order.
+    /// * `order_state` - The orderState class includes attributes Used for both
+    ///   pre and post trade margin and commission data.
     fn open_order(
         &mut self,
         order_id: i32,
@@ -154,13 +190,15 @@ pub trait Wrapper: Send + Sync {
     fn connection_closed(&mut self);
 
     //----------------------------------------------------------------------------------------------
-    /// This function is called only when req_account_updates on
-    /// EClient object has been called.
+    /// This function is called only when
+    /// [`EClient::req_account_updates()`](crate::core::client::EClient::
+    /// req_account_updates) has been called.
     fn update_account_value(&mut self, key: &str, val: &str, currency: &str, account_name: &str);
 
     //----------------------------------------------------------------------------------------------
-    /// This function is called only when req_account_updates on
-    /// EClient object has been called.
+    /// This function is called only when
+    /// [`EClient::req_account_updates()`](crate::core::client::EClient::
+    /// req_account_updates) has been called.
     fn update_portfolio(
         &mut self,
         contract: Contract,
@@ -177,8 +215,8 @@ pub trait Wrapper: Send + Sync {
     fn update_account_time(&mut self, time_stamp: &str);
 
     //----------------------------------------------------------------------------------------------
-    /// This is called after a batch update_account_value() and
-    /// update_portfolio() is sent.
+    /// This is called after a batch [`update_account_value()`] and
+    ///[`update_portfolio()`] is sent.
     fn account_download_end(&mut self, account_name: &str);
 
     //----------------------------------------------------------------------------------------------
@@ -218,9 +256,12 @@ pub trait Wrapper: Send + Sync {
     /// * req_id -  the request id
     /// * position -  the order book's row being updated
     /// * operation - how to refresh the row:
-    ///     * 0 = insert (insert this new order into the row identified by 'position')
-    ///     * 1 = update (update the existing order in the row identified by 'position')
-    ///     * 2 = delete (delete the existing order at the row identified by 'position').
+    ///     * 0 = insert (insert this new order into the row identified by
+    ///       'position')
+    ///     * 1 = update (update the existing order in the row identified by
+    ///       'position')
+    ///     * 2 = delete (delete the existing order at the row identified by
+    ///       'position').
     /// * side
     ///     * 0 for ask
     ///     * 1 for bid
@@ -243,10 +284,10 @@ pub trait Wrapper: Send + Sync {
     /// * req_id -  the request id
     /// * position -  the order book's row being updated
     /// * market_maker - the exchange holding the order
-    /// * operation - how to refresh the row:
-    ///       0 = insert (insert this new order into the row identified by 'position')
-    ///       1 = update (update the existing order in the row identified by 'position')
-    ///       2 = delete (delete the existing order at the row identified by 'position').
+    /// * operation - how to refresh the row: 0 = insert (insert this new order
+    ///   into the row identified by 'position') 1 = update (update the existing
+    ///   order in the row identified by 'position') 2 = delete (delete the
+    ///   existing order at the row identified by 'position').
     /// * side
     ///     * 0 for ask
     ///     * 1 for bid
@@ -293,12 +334,12 @@ pub trait Wrapper: Send + Sync {
     ///
     /// # Arguments
     /// * fa_data - one of:
-    ///     * Groups: offer traders a way to create a group of accounts and apply
-    ///              a single allocation method to all accounts in the group.
+    ///     * Groups: offer traders a way to create a group of accounts and
+    ///       apply a single allocation method to all accounts in the group.
     ///     * Profiles: let you allocate shares on an account-by-account basis
-    ///               using a predefined calculation value.
-    ///     * Account Aliases: let you easily identify the accounts by meaningful
-    ///               names rather than account numbers.
+    ///       using a predefined calculation value.
+    ///     * Account Aliases: let you easily identify the accounts by
+    ///       meaningful names rather than account numbers.
     ///     * faXmlData -  the xml-formatted configuration
     fn receive_fa(&mut self, fa_data: FaDataType, cxml: &str);
 
@@ -315,7 +356,8 @@ pub trait Wrapper: Send + Sync {
     fn historical_data_end(&mut self, req_id: i32, start: &str, end: &str);
 
     //----------------------------------------------------------------------------------------------
-    /// Provides the xml-formatted parameters available to create a market scanner.
+    /// Provides the xml-formatted parameters available to create a market
+    /// scanner.
     ///
     /// # Arguments
     /// * xml -   the xml-formatted string with the available parameters.
@@ -368,11 +410,11 @@ pub trait Wrapper: Send + Sync {
 
     //----------------------------------------------------------------------------------------------
     /// Upon accepting a Delta-Neutral RFQ(request for quote), the
-    /// server sends a delta_neutral_validation() message with the DeltaNeutralContract
-    /// structure. If the delta and price fields are empty in the original
-    /// request, the confirmation will contain the current values from the
-    /// server. These values are locked when the RFQ is processed and remain
-    /// locked until the RFQ is canceled.
+    /// server sends a delta_neutral_validation() message with the
+    /// DeltaNeutralContract structure. If the delta and price fields are
+    /// empty in the original request, the confirmation will contain the
+    /// current values from the server. These values are locked when the RFQ
+    /// is processed and remain locked until the RFQ is canceled.
     fn delta_neutral_validation(
         &mut self,
         req_id: i32,
@@ -433,10 +475,10 @@ pub trait Wrapper: Send + Sync {
     ///
     /// # Arguments
     /// * req_id - The requestId specified in query_display_groups().
-    /// * groups - A list of integers representing visible group ID's separated by
-    ///            the | character, and sorted by most used group first. This list will
-    ///            not change during TWS session (in other words, user cannot add a
-    ///            new group; sorting can change though).
+    /// * groups - A list of integers representing visible group ID's separated
+    ///   by the | character, and sorted by most used group first. This list
+    ///   will not change during TWS session (in other words, user cannot add a
+    ///   new group; sorting can change though).
     fn display_group_list(&mut self, req_id: i32, groups: &str);
 
     //----------------------------------------------------------------------------------------------
@@ -447,13 +489,12 @@ pub trait Wrapper: Send + Sync {
     ///
     /// # Arguments
     /// * req_id - The requestId specified in subscribe_to_group_events().
-    /// * contract_info - The encoded value that uniquely represents the contract
-    ///                 in IB. Possible values include:
-    ///                 none = empty selection
-    ///                 contractID@exchange = any non-combination contract.
+    /// * contract_info - The encoded value that uniquely represents the
+    ///   contract in IB. Possible values include: none = empty selection
+    ///   contractID@exchange = any non-combination contract.
     ///
-    ///                 //Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM @ARCA.
-    ///                 //combo = if any combo is selected.
+    ///                 //Examples: 8314@SMART for IBM SMART; 8314@ARCA for IBM
+    /// @ARCA.                 //combo = if any combo is selected.
     fn display_group_updated(&mut self, req_id: i32, contract_info: &str);
 
     //----------------------------------------------------------------------------------------------
@@ -521,9 +562,10 @@ pub trait Wrapper: Send + Sync {
     /// * underlying_con_id - The conID of the underlying security
     /// * trading_class -  the option trading class
     /// * multiplier -    the option multiplier
-    /// * expirations - a list of the expiries for the options of this underlying on this exchange
-    /// * strikes - a list of the possible strikes for options of this underlying on this exchange
-    ///
+    /// * expirations - a list of the expiries for the options of this
+    ///   underlying on this exchange
+    /// * strikes - a list of the possible strikes for options of this
+    ///   underlying on this exchange
     fn security_definition_option_parameter(
         &mut self,
         req_id: i32,
@@ -536,17 +578,20 @@ pub trait Wrapper: Send + Sync {
     );
 
     //----------------------------------------------------------------------------------------------
-    /// Called when all callbacks to security_definition_option_parameter are complete
+    /// Called when all callbacks to security_definition_option_parameter are
+    /// complete
     ///
-    /// * req_id - the ID used in the call to security_definition_option_parameter
+    /// * req_id - the ID used in the call to
+    ///   security_definition_option_parameter
     fn security_definition_option_parameter_end(&mut self, req_id: i32);
 
     //----------------------------------------------------------------------------------------------
     /// Called when receives Soft Dollar Tier configuration information
     ///
-    /// * req_id - The request ID used in the call to EEClient::req_soft_dollar_tiers
+    /// * req_id - The request ID used in the call to
+    ///   EEClient::req_soft_dollar_tiers
     /// * tiers - Stores a list of SoftDollarTier that contains all Soft Dollar
-    ///          Tiers information
+    ///   Tiers information
     fn soft_dollar_tiers(&mut self, req_id: i32, tiers: Vec<SoftDollarTier>);
 
     //----------------------------------------------------------------------------------------------
@@ -611,7 +656,8 @@ pub trait Wrapper: Send + Sync {
     fn historical_news_end(&mut self, request_id: i32, has_more: bool);
 
     //----------------------------------------------------------------------------------------------
-    /// returns earliest available data of a type of data for a particular contract
+    /// returns earliest available data of a type of data for a particular
+    /// contract
     fn head_timestamp(&mut self, req_id: i32, head_timestamp: &str);
 
     //----------------------------------------------------------------------------------------------
@@ -631,7 +677,8 @@ pub trait Wrapper: Send + Sync {
     fn reroute_mkt_depth_req(&mut self, req_id: i32, con_id: i32, exchange: &str);
 
     //----------------------------------------------------------------------------------------------
-    /// returns minimum price increment structure for a particular market rule ID
+    /// returns minimum price increment structure for a particular market rule
+    /// ID
     fn market_rule(&mut self, market_rule_id: i32, price_increments: Vec<PriceIncrement>);
 
     //----------------------------------------------------------------------------------------------
@@ -708,8 +755,8 @@ pub trait Wrapper: Send + Sync {
     /// # Arguments
     /// * contract - The Contract class attributes describe the contract.
     /// * order - The Order class gives the details of the completed order.
-    /// * orderState: OrderState - The orderState class includes completed order status details.
-    ///
+    /// * orderState: OrderState - The orderState class includes completed order
+    ///   status details.
     fn completed_order(&mut self, contract: Contract, order: Order, order_state: OrderState);
 
     //----------------------------------------------------------------------------------------------

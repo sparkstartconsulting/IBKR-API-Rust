@@ -473,6 +473,7 @@ impl<'a> OrderDecoder<'a> {
         self.order.block_order = decode_bool(fields_iter)?;
         Ok(())
     }
+
     //----------------------------------------------------------------------------------------------
 
     fn decode_sweep_to_fill(

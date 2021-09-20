@@ -50,6 +50,7 @@ impl TwsError {
             TwsError::SslFail => SSL_FAIL.0,
         }
     }
+
     pub fn message(&self) -> &'static str {
         match *self {
             TwsError::AlreadyConnected => ALREADY_CONNECTED.1,

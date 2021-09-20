@@ -31,7 +31,8 @@ pub fn fill_scale_params(
     base_order.scale_profit_offset = scale_profit_offset; // Create profit taking order Profit Offset
     base_order.scale_auto_reset = scale_auto_reset; // Restore size after taking profit
     base_order.scale_init_position = scale_init_position; // Initial Position
-    base_order.scale_init_fill_qty = scale_init_fill_qty; // Filled initial Component Size
+    base_order.scale_init_fill_qty = scale_init_fill_qty; // Filled initial
+                                                          // Component Size
 }
 
 //==================================================================================================
@@ -48,33 +49,36 @@ pub fn fill_arrival_price_params(
 ) {
     base_order.algo_strategy = "ArrivalPx".to_string();
 
-    base_order.algo_params.push(TagValue::new(
-        "maxPctVol".to_string(),
-        max_pct_vol.to_string(),
-    ));
-    base_order.algo_params.push(TagValue::new(
-        "riskAversion".to_string(),
-        risk_aversion.to_string(),
-    ));
-    base_order.algo_params.push(TagValue::new(
-        "startTime".to_string(),
-        start_time.to_string(),
-    ));
-    base_order
-        .algo_params
-        .push(TagValue::new("endTime".to_string(), end_time.to_string()));
-    base_order.algo_params.push(TagValue::new(
-        "forceCompletion".to_string(),
-        force_completion.to_string(),
-    ));
-    base_order.algo_params.push(TagValue::new(
-        "allowPastEndTime".to_string(),
-        allow_past_time.to_string(),
-    ));
-    base_order.algo_params.push(TagValue::new(
-        "monetaryValue".to_string(),
-        monetary_value.to_string(),
-    ));
+    base_order.algo_params.extend([
+        TagValue::new(
+            "maxPctVol".to_string(),
+            max_pct_vol.to_string(),
+        ),
+        TagValue::new(
+            "riskAversion".to_string(),
+            risk_aversion.to_string(),
+        ),
+        TagValue::new(
+            "startTime".to_string(),
+            start_time.to_string(),
+        ),
+        TagValue::new(
+            "endTime".to_string(),
+            end_time.to_string(),
+        ),
+        TagValue::new(
+            "forceCompletion".to_string(),
+            force_completion.to_string(),
+        ),
+        TagValue::new(
+            "allowPastEndTime".to_string(),
+            allow_past_time.to_string(),
+        ),
+        TagValue::new(
+            "monetaryValue".to_string(),
+            monetary_value.to_string(),
+        )
+    ]);
 }
 
 //==================================================================================================
@@ -635,7 +639,8 @@ pub fn fill_qbalgo_in_line_params(
         .algo_params
         .push(TagValue::new("endTime".to_string(), end_time.to_string()));
     //This example uses end_time instead of duration
-    //base_order.algo_params.push(TagValue::new("Duration".to_string(), str(duration.to_string())
+    //base_order.algo_params.push(TagValue::new("Duration".to_string(),
+    // str(duration.to_string())
     base_order.algo_params.push(TagValue::new(
         "benchmark".to_string(),
         benchmark.to_string(),

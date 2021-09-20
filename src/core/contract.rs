@@ -141,7 +141,8 @@ pub struct Contract {
     pub multiplier: String,
     pub exchange: String,
     pub primary_exchange: String,
-    // pick an actual (ie non - aggregate) exchange that the contract trades on.DO NOT SET TO SMART.
+    // pick an actual (ie non - aggregate) exchange that the contract trades on.DO NOT SET TO
+    // SMART.
     pub currency: String,
     pub local_symbol: String,
     pub trading_class: String,

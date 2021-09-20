@@ -1,5 +1,6 @@
 #![allow(clippy::too_many_arguments)]
-//! EClient and supporting structs.  Responsible for connecting to Trader Workstation or IB Gatway and sending requests
+//! EClient and supporting structs.  Responsible for connecting to Trader
+//! Workstation or IB Gatway and sending requests
 use std::io::Write;
 use std::marker::Sync;
 use std::net::Shutdown;
@@ -83,6 +84,7 @@ where
             disconnect_requested: Arc::new(AtomicBool::new(false)),
         }
     }
+
     fn send_request(&mut self, request: &str) -> Result<(), IBKRApiLibError> {
         let bytes = make_message(request)?;
         self.send_bytes(bytes.as_slice())?;
@@ -97,6 +99,7 @@ where
     pub(crate) fn set_streamer(&mut self, streamer: Option<Box<dyn Streamer>>) {
         self.stream = streamer;
     }
+
     //----------------------------------------------------------------------------------------------
     /// Establishes a connection to TWS or IB Gateway
     pub fn connect(
@@ -145,7 +148,8 @@ where
             self.conn_state.clone(),
         );
 
-        //An Interactive Broker's developer's note: "sometimes I get news before the server version, thus the loop"
+        //An Interactive Broker's developer's note: "sometimes I get news before the
+        // server version, thus the loop"
         while fields.len() != 2 {
             if !fields.is_empty() {
                 decoder.interpret(fields.as_slice())?;
@@ -200,7 +204,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Get the server version (important for checking feature flags for different versions)
+    /// Get the server version (important for checking feature flags for
+    /// different versions)
     pub fn server_version(&self) -> i32 {
         self.server_version
     }
@@ -267,7 +272,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Initiates the message exchange between the client application and the TWS/IB Gateway
+    /// Initiates the message exchange between the client application and the
+    /// TWS/IB Gateway
     fn start_api(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -291,27 +297,28 @@ where
 
     //##############################################################################################
     //################################### Market Data
-    //##############################################################################################
+    //#############################################################################
+    //################################### #################
     /// Call this function to request market data. The market data
     /// will be returned by the tick_price and tick_size wrapper events.
     ///
     /// # Arguments
-    /// * req_id - The request id. Must be a unique value. When the
-    ///            market data returns, it will be identified by this tag. This is
-    ///            also used when canceling the market data.
-    /// * contract - This structure contains a description of the
-    ///              Contract for which market data is being requested.
-    /// * generic_tick_list - A commma delimited list of generic tick types.
-    ///                       Tick types can be found in the Generic Tick Types page.
-    ///                       Prefixing w/ 'mdoff' indicates that top mkt data shouldn't tick.
-    ///                       You can specify the news source by postfixing w/ ':<source>.
-    ///                       Example: "mdoff, 292: FLY + BRF"
-    /// * snapshot - Check to return a single snapshot of Market data and
-    ///                    have the market data subscription cancel. Do not enter any
-    ///                    generic_tick_list values if you use snapshots.
-    /// * regulatory_snapshot - With the US Value Snapshot Bundle for stocks,
-    ///                         regulatory snapshots are available for 0.01 USD each.
-    /// * mkt_data_options - For internal use only. Use default value XYZ.
+    /// * `req_id` - The request ID. Must be a unique value. When the market
+    ///   data returns, it will be identified by this tag. This is also used
+    ///   when canceling the market data.
+    /// * `contract` - This structure contains a description of the Contract for
+    ///   which market data is being requested.
+    /// * `generic_tick_list` - A commma delimited list of generic tick types.
+    ///   Tick types can be found in the Generic Tick Types page. Prefixing with
+    ///   `"mdoff"` indicates that top market data shouldn't tick. You can
+    ///   specify the news source by postfixing with `"":<source>"`. Example:
+    ///   `"mdoff, 292: FLY + BRF"`
+    /// * `snapshot` - Check to return a single snapshot of Market data and have
+    ///   the market data subscription cancel. Do not enter any
+    ///   generic_tick_list values if you use snapshots.
+    /// * `regulatory_snapshot` - With the US Value Snapshot Bundle for stocks,
+    ///   regulatory snapshots are available for 0.01 USD each.
+    /// * `mkt_data_options` - For internal use only. Use default value XYZ.
     pub fn req_mkt_data(
         &mut self,
         req_id: i32,
@@ -388,7 +395,8 @@ where
             msg.push_str(&make_field(&contract.exchange)?);
             msg.push_str(&make_field(&contract.primary_exchange)?); // srv v14 and above
             msg.push_str(&make_field(&contract.currency)?);
-            msg.push_str(&make_field(&contract.local_symbol)?); //  srv v2 and above
+            msg.push_str(&make_field(&contract.local_symbol)?); //  srv v2 and
+                                                                // above
         }
 
         if self.server_version() >= MIN_SERVER_VER_TRADING_CLASS {
@@ -455,7 +463,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// After calling this function, market data for the specified id will stop flowing.
+    /// After calling this function, market data for the specified id will stop
+    /// flowing.
     ///
     /// # Arguments
     /// * req_id - The ID that was specified in the call to req_mkt_data()
@@ -517,12 +526,13 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Returns the mapping of single letter codes to exchange names given the mapping identifier.
-    /// # Arguments
-    /// * req_id - The request id. Must be a unique value. When the
-    ///            market data returns, it will be identified by this tag. This is
-    ///            also used when canceling the market data.
-    /// * bbo_exchange - mapping identifier received from Wrapper::tick_req_params
+    /// Returns the mapping of single letter codes to exchange names given the
+    /// mapping identifier. # Arguments
+    /// * req_id - The request id. Must be a unique value. When the market data
+    ///   returns, it will be identified by this tag. This is also used when
+    ///   canceling the market data.
+    /// * bbo_exchange - mapping identifier received from
+    ///   Wrapper::tick_req_params
     pub fn req_smart_components(
         &mut self,
         req_id: i32,
@@ -558,12 +568,13 @@ where
 
     //----------------------------------------------------------------------------------------------
     /// Requests details about a given market rule
-    /// The market rule for an instrument on a particular exchange provides details about how the
-    /// minimum price increment changes with price
+    /// The market rule for an instrument on a particular exchange provides
+    /// details about how the minimum price increment changes with price
     ///
-    /// A list of market rule ids can be obtained by invoking req_contract_details on a particular contract.
-    /// The returned market rule ID list will provide the market rule ID for the instrument in the correspond valid exchange list in contractDetails.
-    /// # Arguments
+    /// A list of market rule ids can be obtained by invoking
+    /// req_contract_details on a particular contract. The returned market
+    /// rule ID list will provide the market rule ID for the instrument in the
+    /// correspond valid exchange list in contractDetails. # Arguments
     /// * market_rule_id -  the id of market rule
     pub fn req_market_rule(&mut self, market_rule_id: i32) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
@@ -599,7 +610,8 @@ where
     /// # Arguments
     /// * req_id - unique identifier of the request.
     /// * contrac - the contract for which tick-by-tick data is requested.
-    /// * tick_type - TickByTickType data type: "Last", "AllLast", "BidAsk" or "MidPoint".
+    /// * tick_type - TickByTickType data type: "Last", "AllLast", "BidAsk" or
+    ///   "MidPoint".
     /// * number_of_ticks - number of ticks.
     /// * ignore_size - ignore size flag.
     pub fn req_tick_by_tick_data(
@@ -675,7 +687,7 @@ where
     /// Cancel tick by tick data
     ///
     /// # Arguments
-    /// * req_id - The identifier of the original request.
+    /// * `req_id` - The identifier of the original request.
     pub fn cancel_tick_by_tick_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
@@ -710,14 +722,14 @@ where
 
     /// Call this function to calculate volatility for a supplied
     /// option price and underlying price. Result will be delivered
-    /// via Wrapper::tick_option_computation
+    /// via `[Wrapper::tick_option_computation()`]
     ///
     /// # Arguments
-    /// * req_id - The request id.
-    /// * contract - Describes the contract.
-    /// * option_price - The price of the option.
-    /// * under_price - Price of the underlying.
-    /// * impl_vol_options - Implied volatility options.
+    /// * `req_id - The request ID.
+    /// * `contract` - Describes the contract.
+    /// * `option_price` - The price of the option.
+    /// * `under_price` - Price of the underlying.
+    /// * `impl_vol_options` - Implied volatility options.
     pub fn calculate_implied_volatility(
         &mut self,
         req_id: i32,
@@ -808,13 +820,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Call this function to calculate option price and greek values for a supplied volatility and underlying price.
+    /// Call this function to calculate option price and greek values for a
+    /// supplied volatility and underlying price.
     ///
     /// # Arguments
-    /// * req_id - The request id.
-    /// * contract - Describes the contract.
-    /// * volatility - The volatility.
-    /// * under_price - Price of the underlying.
+    /// * `req_id` - The request ID.
+    /// * `contract` - Describes the contract.
+    /// * `volatility` - The volatility.
+    /// * `under_price` - Price of the underlying.
     pub fn calculate_option_price(
         &mut self,
         req_id: i32,
@@ -940,7 +953,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Call this function to cancel a request to calculate the option implied volatility.
+    /// Call this function to cancel a request to calculate the option implied
+    /// volatility.
     ///
     /// # Arguments
     /// * req_id - The original request id.
@@ -983,18 +997,20 @@ where
     ///
     /// # Arguments
     /// * req_id - The ticker id. multipleust be a unique value.
-    /// * contract - This structure contains a description of the contract to be exercised
-    /// * exercise_action - Specifies whether you want the option to lapse or be exercised. Values are:
+    /// * contract - This structure contains a description of the contract to be
+    ///   exercised
+    /// * exercise_action - Specifies whether you want the option to lapse or be
+    ///   exercised. Values are:
     ///     * 1 = exercise
     ///     * 2 = lapse.
     /// * exercise_quantity - The quantity you want to exercise.
     /// * account - destination account
     /// * override - Specifies whether your setting will override the system's
-    ///              natural action. For example, if your action is "exercise" and the
-    ///              option is not in-the-money, by natural action the option would not
-    ///              exercise. If you have override set to "yes" the natural action would
-    ///              be overridden and the out-of-the money option would be exercised.
-    ///              Values are:
+    ///   natural action. For example, if your action is "exercise" and the
+    ///   option is not in-the-money, by natural action the option would not
+    ///   exercise. If you have override set to "yes" the natural action would
+    ///   be overridden and the out-of-the money option would be exercised.
+    ///   Values are:
     ///      * 0 = no
     ///      * 1 = yes.
     pub fn exercise_options(
@@ -1070,10 +1086,10 @@ where
     ///
     /// # Arguments
     /// * order_id - The order id. You must specify a unique value. When the
-    ///              order status returns, it will be identified by this tag.
-    ///              This tag is also used when canceling the order.
-    /// * contract - This structure contains a description of the
-    ///              contract which is being traded.
+    ///   order status returns, it will be identified by this tag. This tag is
+    ///   also used when canceling the order.
+    /// * contract - This structure contains a description of the contract which
+    ///   is being traded.
     /// * order - This structure contains the details of the order.
     ///
     /// Note: Each client MUST connect with a unique client_id.
@@ -1677,8 +1693,8 @@ where
         //    # <account_code1>/<number_shares1>,<account_code2>/<number_shares2>,...N
         //    # E.g.
         //    #      To allocate 20 shares of a 100 share order to account 'U101' && the
-        //    #      residual 80 to account 'U203' enter the following share allocation string:
-        //    #      U101/20,U203/80
+        //    #      residual 80 to account 'U203' enter the following share allocation
+        // string:    #      U101/20,U203/80
         //    #####################################################################
 
         // send deprecated sharesAllocation field
@@ -1953,7 +1969,8 @@ where
     //----------------------------------------------------------------------------------------------
     /// Call this function to cancel an order.
     /// # Arguments
-    /// * order_id - The order ID that was specified previously when placing the order
+    /// * order_id - The order ID that was specified previously when placing the
+    ///   order
     pub fn cancel_order(&mut self, order_id: i32) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -1977,9 +1994,9 @@ where
     /// open_order() and order_status() functions on the Wrapper.
     ///
     /// Note:  The client with a client_id of 0 will also receive the TWS-owned
-    ///        open orders. These orders will be associated with the client and a new
-    ///        order_id will be generated. This association will persist over multiple
-    ///        API and TWS sessions
+    ///        open orders. These orders will be associated with the client and
+    /// a new        order_id will be generated. This association will
+    /// persist over multiple        API and TWS sessions
     pub fn req_open_orders(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -2005,9 +2022,9 @@ where
     /// Note: This request can only be made from a client with client_id of 0.
     ///
     /// # Arguments
-    /// * b_auto_bind - If set to TRUE, newly created TWS orders will be implicitly
-    ///                 associated with the client.If set to FALSE, no association will be
-    ///                 made.
+    /// * b_auto_bind - If set to TRUE, newly created TWS orders will be
+    ///   implicitly associated with the client.If set to FALSE, no association
+    ///   will be made.
     pub fn req_auto_open_orders(&mut self, b_auto_bind: bool) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -2073,10 +2090,11 @@ where
 
     //----------------------------------------------------------------------------------------------
     /// Call this function to request from TWS the next valid ID that
-    /// can be used when placing an order.  After calling this function, the
-    /// next_valid_id() Wrapper event will be triggered, and the id returned is the next
-    /// valid ID. That ID will reflect any autobinding that has occurred (which
-    /// generates new IDs and increments the next valid ID therein).
+    /// can be used when placing an order. After calling this function, the
+    /// `next_valid_id()` Wrapper event will be triggered, and the id returned
+    /// is the next valid ID. That ID will reflect any autobinding that has
+    /// occurred (which generates new IDs and increments the next valid ID
+    /// therein).
     ///
     /// # Arguments
     /// * num_ids - deprecated
@@ -2107,9 +2125,10 @@ where
     ///
     /// # Arguments
     /// * subscribe - If set to TRUE, the client will start receiving account
-    ///               and Portfoliolio updates. If set to FALSE, the client will stop
-    ///               receiving this information.
-    /// * acct_code - The account code for which to receive account and portfolio updates.
+    ///   and Portfoliolio updates. If set to FALSE, the client will stop
+    ///   receiving this information.
+    /// * acct_code - The account code for which to receive account and
+    ///   portfolio updates.
     pub fn req_account_updates(
         &mut self,
         subscribe: bool,
@@ -2141,19 +2160,20 @@ where
 
     //----------------------------------------------------------------------------------------------
     /// Requests a specific account's summary.
-    /// This method will subscribe to the account summary as presented in the TWS' Account Summary tab.
-    /// The data is returned at Wrapper::account_summary
-    /// https://www.interactivebrokers.com/en/software/tws/accountwindowtop.htm.
+    /// This method will subscribe to the account summary as presented in the
+    /// TWS' Account Summary tab. The data is returned at
+    /// Wrapper::account_summary https://www.interactivebrokers.com/en/software/tws/accountwindowtop.htm.
     /// Note:   This request is designed for an FA managed account but can be
     ///         used for any multi-account structure.
     ///
     /// # Arguments
-    /// * req_id - The ID of the data request. Ensures that responses are matched
-    ///            to requests If several requests are in process.
+    /// * req_id - The ID of the data request. Ensures that responses are
+    ///   matched to requests If several requests are in process.
     /// * group_name - Set to All to return account summary data for all
-    ///                accounts, or set to a specific Advisor Account Group name that has
-    ///                already been created in TWS Global Configuration.
-    /// * tags- A comma-separated list of account tags.  See the AccountSummaryTags enum for valid values
+    ///   accounts, or set to a specific Advisor Account Group name that has
+    ///   already been created in TWS Global Configuration.
+    /// * tags- A comma-separated list of account tags.  See the
+    ///   AccountSummaryTags enum for valid values
     pub fn req_account_summary(
         &mut self,
         req_id: i32,
@@ -2259,13 +2279,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests position subscription for account and/or model Initially all positions are returned,
-    /// and then updates are returned for any position changes in real time.
+    /// Requests position subscription for account and/or model Initially all
+    /// positions are returned, and then updates are returned for any
+    /// position changes in real time.
     ///
     /// # Arguments
     /// * req_id - Request's identifier
-    /// * account - If an account Id is provided, only the account's positions belonging to the
-    ///             specified model will be delivered
+    /// * account - If an account Id is provided, only the account's positions
+    ///   belonging to the specified model will be delivered
     /// * modelCode - The code of the model's positions we are interested in.
     pub fn req_positions_multi(
         &mut self,
@@ -2347,8 +2368,8 @@ where
     /// * req_id - identifier to tag the request
     /// * account - account values can be requested for a particular account
     /// * model_code - values can also be requested for a model
-    /// * ledger_and_nvl - returns light-weight request; only currency positions as opposed to
-    ///                    account values and currency positions
+    /// * ledger_and_nvl - returns light-weight request; only currency positions
+    ///   as opposed to account values and currency positions
     pub fn req_account_updates_multi(
         &mut self,
         req_id: i32,
@@ -2497,7 +2518,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests profit and loss for account and/or model for a specific contract.
+    /// Requests profit and loss for account and/or model for a specific
+    /// contract.
     ///
     /// # Arguments
     /// * req_id - identifier to tag the request
@@ -2580,10 +2602,9 @@ where
     ///
     /// # Arguments
     /// * req_id - The ID of the data request. Ensures that responses are
-    ///            matched to requests if several requests are in process.
-    /// * exec_filter - This object contains attributes that
-    ///                 describe the filter criteria used to determine which execution
-    ///                 reports are returned.
+    ///   matched to requests if several requests are in process.
+    /// * exec_filter - This object contains attributes that describe the filter
+    ///   criteria used to determine which execution reports are returned.
     ///
     /// NOTE: Time format must be 'yyyymmdd-hh:mm:ss' Eg: '20030702-14:55'
     pub fn req_executions(
@@ -2616,13 +2637,13 @@ where
     //################## Contract Details
     //#########################################################################
     /// Call this function to download all details for a particular
-    /// underlying. The contract details will be received via the contractDetails()
-    /// function on the EWrapper.
+    /// underlying. The contract details will be received via the
+    /// contractDetails() function on the EWrapper.
     ///
     ///
     /// # Arguments
     /// * req_id - The ID of the data request. Ensures that responses are
-    ///            matched to requests if several requests are in process.
+    ///   matched to requests if several requests are in process.
     /// * contract - The summary description of the contract being looked up.
     pub fn req_contract_details(
         &mut self,
@@ -2733,7 +2754,8 @@ where
     //#########################################################################
     //################## Market Depth
     //#########################################################################
-    /// Requests venues for which market data is returned to update_mkt_depth_l2 (those with market makers)
+    /// Requests venues for which market data is returned to update_mkt_depth_l2
+    /// (those with market makers)
     pub fn req_mkt_depth_exchanges(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -2760,24 +2782,26 @@ where
 
     //----------------------------------------------------------------------------------------------
     /// Call this function to request market depth for a specific
-    /// contract. The market depth will be returned by the update_mkt_depth() and
-    /// update_mkt_depth_l2() events.
+    /// contract. The market depth will be returned by the update_mkt_depth()
+    /// and update_mkt_depth_l2() events.
     ///
-    /// Requests the contract's market depth (order book). Note this request must be
-    /// direct-routed to an exchange and not smart-routed. The number of simultaneous
-    /// market depth requests allowed in an account is calculated based on a formula
-    /// that looks at an accounts equity, commissions, and quote booster packs.
+    /// Requests the contract's market depth (order book). Note this request
+    /// must be direct-routed to an exchange and not smart-routed. The
+    /// number of simultaneous market depth requests allowed in an account
+    /// is calculated based on a formula that looks at an accounts equity,
+    /// commissions, and quote booster packs.
     ///
     /// # Arguments
-    /// * req_id - The request id. Must be a unique value. When the market
-    ///            depth data returns, it will be identified by this tag. This is
-    ///            also used when canceling the market depth
-    /// * contract - This structure contains a description of the contract
-    ///              for which market depth data is being requested.
-    /// * num_rows - Specifies the number of rows of market depth rows to display.
-    /// * is_smart_depth - specifies SMART depth request  NOTE: ALWAYS SET TO FALSE!!!!!
-    ///                    THERE SEEMS TO BE A BUG ON IB's SIDE AND THEY WILL STOP STREAMING
-    ///                    DATA IF THIS IS SET TO TRUE
+    /// * req_id - The request id. Must be a unique value. When the market depth
+    ///   data returns, it will be identified by this tag. This is also used
+    ///   when canceling the market depth
+    /// * contract - This structure contains a description of the contract for
+    ///   which market depth data is being requested.
+    /// * num_rows - Specifies the number of rows of market depth rows to
+    ///   display.
+    /// * is_smart_depth - specifies SMART depth request  NOTE: ALWAYS SET TO
+    ///   FALSE!!!!! THERE SEEMS TO BE A BUG ON IB's SIDE AND THEY WILL STOP
+    ///   STREAMING DATA IF THIS IS SET TO TRUE
     /// * mkt_depth_options - For internal use only. Use default value XYZ.
     pub fn req_mkt_depth(
         &mut self,
@@ -2899,6 +2923,7 @@ where
     ///
     /// # Arguments
     /// * req_id - The ID that was specified in the call to req_mkt_depth().
+    //
     //  * is_smart_depth - specifies SMART depth request
     //
     pub fn cancel_mkt_depth(
@@ -2983,7 +3008,8 @@ where
     /// Call this function to request the list of managed accounts. The list
     /// will be returned by the managed_accounts() function on the Wrapper.
     ///
-    /// Note:  This request can only be made when connected to a FA managed account.
+    /// Note:  This request can only be made when connected to a FA managed
+    /// account.
     pub fn req_managed_accts(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -3000,7 +3026,8 @@ where
     /// The data returns in an XML string via a "receiveFA" ActiveX event.
     ///
     /// # Arguments
-    /// * fa_data - See the FaDataType enum. Specifies the type of Financial Advisor configuration data beingingg requested. Valid values include:
+    /// * fa_data - See the FaDataType enum. Specifies the type of Financial
+    ///   Advisor configuration data beingingg requested. Valid values include:
     ///     * 1 = GROUPS
     ///     * 2 = PROFILE
     ///     * 3 = ACCOUNT ALIASES
@@ -3022,8 +3049,8 @@ where
     /// Call this function to modify FA configuration information from the
     /// API. Note that this can also be done manually in TWS itself.
     ///
-    /// * fa_data - See the FaDataType enum. Specifies the type of Financial Advisor
-    ///             configuration data beingingg requested. Valid values include:
+    /// * fa_data - See the FaDataType enum. Specifies the type of Financial
+    ///   Advisor configuration data beingingg requested. Valid values include:
     ///     * 1 = GROUPS
     ///     * 2 = PROFILE
     ///     * 3 = ACCOUNT ALIASES
@@ -3053,18 +3080,21 @@ where
     ///
     /// # Arguments
     /// * req_id - The id of the request. Must be a unique value. When the
-    ///            market data returns, it whatToShowill be identified by this tag. This is also
-    ///            used when canceling the market data.
-    /// * contract - This object contains a description of the contract for which
-    ///              market data is being requested.
-    /// * end_date_time - Defines a query end date and time at any point during the past 6 mos.
-    ///                   Valid values include any date/time within the past six months in the format:
-    ///                   yyyymmdd HH:mm:ss ttt where "ttt" is the optional time zone.
-    /// * duration_str - Set the query duration up to one week, using a time unit
-    ///                  of seconds, days or weeks. Valid values include any integer followed by a space
-    ///                  and then S (seconds)); D (days) or W (week). If no unit is specified, seconds is used.
-    /// * bar_size_setting - See the BarSize enum for valid values. Specifies the size of the bars that will be returned (within IB/TWS listimits).
-    ///                      Valid values include:
+    ///   market data returns, it whatToShowill be identified by this tag. This
+    ///   is also used when canceling the market data.
+    /// * contract - This object contains a description of the contract for
+    ///   which market data is being requested.
+    /// * end_date_time - Defines a query end date and time at any point during
+    ///   the past 6 mos. Valid values include any date/time within the past six
+    ///   months in the format: yyyymmdd HH:mm:ss ttt where "ttt" is the
+    ///   optional time zone.
+    /// * duration_str - Set the query duration up to one week, using a time
+    ///   unit of seconds, days or weeks. Valid values include any integer
+    ///   followed by a space and then S (seconds)); D (days) or W (week). If no
+    ///   unit is specified, seconds is used.
+    /// * bar_size_setting - See the BarSize enum for valid values. Specifies
+    ///   the size of the bars that will be returned (within IB/TWS listimits).
+    ///   Valid values include:
     ///     * 1 sec
     ///     * 5 secs
     ///     * 15 secs
@@ -3077,7 +3107,8 @@ where
     ///     * 30 mins
     ///     * 1 hour
     ///     * 1 day
-    /// * what_to_show - See the WhatToShow enum for valid values.  Determines the nature of data beinging extracted. Valid values include:
+    /// * what_to_show - See the WhatToShow enum for valid values.  Determines
+    ///   the nature of data beinging extracted. Valid values include:
     ///
     ///     * TRADES
     ///     * MIDPOINT
@@ -3086,17 +3117,22 @@ where
     ///     * BID_ASK
     ///     * HISTORICAL_VOLATILITY
     ///     * OPTION_IMPLIED_VOLATILITY
-    /// * use_rth - Determines whether to return all data available during the requested time span,
-    ///             or only data that falls within regular trading hours. Valid values include:
+    /// * use_rth - Determines whether to return all data available during the
+    ///   requested time span, or only data that falls within regular trading
+    ///   hours. Valid values include:
     ///
-    ///     * 0 - all data is returned even where the market in question was outside of its
-    ///                       regular trading hours.
-    ///     * 1 - only data within the regular trading hours is returned, even if the
-    ///                       requested time span falls partially or completely outside of the RTH.
-    /// * format_date - Determines the date format applied to returned bars. validd values include:
+    ///     * 0 - all data is returned even where the market in question was
+    ///       outside of its regular trading hours.
+    ///     * 1 - only data within the regular trading hours is returned, even
+    ///       if the requested time span falls partially or completely outside
+    ///       of the RTH.
+    /// * format_date - Determines the date format applied to returned bars.
+    ///   validd values include:
     ///
-    ///     * 1 - dates applying to bars returned in the format: yyyymmdd{space}{space}hh:mm:dd
-    ///     * 2 - dates are returned as a long integer specifying the number of seconds since 1/1/1970 GMT.
+    ///     * 1 - dates applying to bars returned in the format:
+    ///       yyyymmdd{space}{space}hh:mm:dd
+    ///     * 2 - dates are returned as a long integer specifying the number of
+    ///       seconds since 1/1/1970 GMT.
     /// *chart_options: - For internal use only. Use default value XYZ.
     pub fn req_historical_data(
         &mut self,
@@ -3196,8 +3232,8 @@ where
 
     //----------------------------------------------------------------------------------------------
     /// Used if an internet disconnect has occurred or the results of a query
-    /// are otherwise delayed and the client is no longer interested in receiving
-    /// the data.
+    /// are otherwise delayed and the client is no longer interested in
+    /// receiving the data.
     ///
     /// # Arguments
     /// * req_id - the id of the original request
@@ -3219,14 +3255,17 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Returns the timestamp of earliest available historical data for a contract and data type.
+    /// Returns the timestamp of earliest available historical data for a
+    /// contract and data type.
     ///
     /// # Arguments
     /// * req_id - an identifier for the request
     /// * contract - contract object for which head timestamp is being requested
-    /// * what_to_show - type of data for head timestamp - "BID", "ASK", "TRADES", etc
+    /// * what_to_show - type of data for head timestamp - "BID", "ASK",
+    ///   "TRADES", etc
     /// * use_rth - use regular trading hours only, 1 for yes or 0 for no
-    /// * format_date - set to 1 to obtain the bars' time as `yyyyMMdd HH:mm:ss`, set to 2 to obtain it like system time format in seconds
+    /// * format_date - set to 1 to obtain the bars' time as `yyyyMMdd
+    ///   HH:mm:ss`, set to 2 to obtain it like system time format in seconds
     ///
     /// Note that formatData parameter affects intraday bars only
     /// 1-day bars always return with date in `YYYYMMDD` format
@@ -3405,11 +3444,15 @@ where
     /// # Arguments
     /// * req_id - id of the request
     /// * contract - Contract object that is subject of query
-    /// * start_date_time,i.e.`"20170701 12:01:00"`. Uses TWS timezone specified at login.
-    /// * end_date_time,i.e.`"20170701 13:01:00"`. In TWS timezone. Exactly one of start time and end time has to be defined.
-    /// * number_of_ticks - Number of distinct data points. Max currently 1,000 per request.
+    /// * start_date_time,i.e.`"20170701 12:01:00"`. Uses TWS timezone specified
+    ///   at login.
+    /// * end_date_time,i.e.`"20170701 13:01:00"`. In TWS timezone. Exactly one
+    ///   of start time and end time has to be defined.
+    /// * number_of_ticks - Number of distinct data points. Max currently 1,000
+    ///   per request.
     /// * what_to_show - (Bid_Ask, Midpoint, Trades) Type of data requested.
-    /// * use_rth - Data from regular trading hours (1), or all available hours (0)
+    /// * use_rth - Data from regular trading hours (1), or all available hours
+    ///   (0)
     /// * ignore_size - A filter only used when the source price is Bid_Ask
     /// * misc_options - should be defined as null, reserved for internal use
     pub fn req_historical_ticks(
@@ -3482,7 +3525,7 @@ where
     /// Requests an XML list of scanner parameters valid in TWS.
     /// Not all parameters are valid from API scanner.
     pub fn req_scanner_parameters(&mut self) -> Result<(), IBKRApiLibError> {
-        /*Requests an XML string that describes all possible scanner queries*/
+        /* Requests an XML string that describes all possible scanner queries */
 
         self.check_connected(NO_VALID_ID)?;
 
@@ -3497,12 +3540,15 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Starts a subscription to market scan results based on the provided parameters.
+    /// Starts a subscription to market scan results based on the provided
+    /// parameters.
     ///
     /// # Arguments
     /// * req_id - The ticker ID. Must be a unique value.
-    /// * subscription - This structure contains possible parameters used to filter results.
-    /// * scanner_subscription_options -  For internal use only. Use default value XYZ
+    /// * subscription - This structure contains possible parameters used to
+    ///   filter results.
+    /// * scanner_subscription_options -  For internal use only. Use default
+    ///   value XYZ
     pub fn req_scanner_subscription(
         &mut self,
         req_id: i32,
@@ -3591,7 +3637,7 @@ where
     /// # Arguments
     /// * req_id - the id of the original request
     pub fn cancel_scanner_subscription(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
-        /*reqId:i32 - The ticker ID. Must be a unique value*/
+        /* reqId:i32 - The ticker ID. Must be a unique value */
 
         self.check_connected(NO_VALID_ID)?;
 
@@ -3615,27 +3661,28 @@ where
     /// results through the realtimeBar() EWrapper function.
     ///
     /// # Arguments
-    /// * req_id - The Id for the request. Must be a unique value. When the
-    ///            data is received, it will be identified by this Id. This is also
-    ///            used when canceling the request.
-    /// * contract - This object contains a description of the contract
-    ///              for which real time bars are being requested
+    /// * req_id - The Id for the request. Must be a unique value. When the data
+    ///   is received, it will be identified by this Id. This is also used when
+    ///   canceling the request.
+    /// * contract - This object contains a description of the contract for
+    ///   which real time bars are being requested
     /// * bar_size - Currently only 5 second bars are supported, if any other
-    ///              value is used, an exception will be thrown.
+    ///   value is used, an exception will be thrown.
     /// * what_to_show - Determines the nature of the data extracted. Valid
-    ///                  values include:
+    ///   values include:
     ///                  * TRADES
     ///                  * BID
     ///                  * ASK
     ///                  * MIDPOINT
     /// * use_rth:bool - Regular Trading Hours only. Valid values include:
-    ///                  * 0 = all data available during the time span requested is returned,
-    ///                        including time intervals when the market in question was
-    ///                        outside of regular trading hours.
-    ///                  * 1 = only data within the regular trading hours for the product
-    ///                        requested is returned, even if the time time span falls
-    ///                        partially or completely outside.
-    /// * real_time_bars_options: - For internal use only. Use pub fnault value XYZ
+    ///                  * 0 = all data available during the time span requested
+    ///                    is returned, including time intervals when the market
+    ///                    in question was outside of regular trading hours.
+    ///                  * 1 = only data within the regular trading hours for
+    ///                    the product requested is returned, even if the time
+    ///                    time span falls partially or completely outside.
+    /// * real_time_bars_options: - For internal use only. Use pub fnault value
+    ///   XYZ
     pub fn req_real_time_bars(
         &mut self,
         req_id: i32,
@@ -3711,7 +3758,8 @@ where
     /// Call this to stop receiving real time bars.
     ///
     /// # Arguments
-    /// * req_id - The Id that was specified in the call to req_real_time_bars().
+    /// * req_id - The Id that was specified in the call to
+    ///   req_real_time_bars().
     pub fn cancel_real_time_bars(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -3737,16 +3785,16 @@ where
     /// Account Management before you can receive this data.
     /// Fundamental data will be returned at EWrapper.fundamentalData().
     ///
-    /// req_fundamental_data() can handle conid specified in the Contract object,
-    /// but not trading_class or multiplier. This is because req_fundamental_data()
-    /// is used only for stocks and stocks do not have a multiplier and
-    /// trading class.
+    /// req_fundamental_data() can handle conid specified in the Contract
+    /// object, but not trading_class or multiplier. This is because
+    /// req_fundamental_data() is used only for stocks and stocks do not
+    /// have a multiplier and trading class.
     ///
     /// # Arguments
     /// * req_id - The ID of the data request. Ensures that responses are
-    ///            matched to requests if several requests are in process.
-    /// * contract - This structure contains a description of the
-    ///              contract for which fundamental data is being requested.
+    ///   matched to requests if several requests are in process.
+    /// * contract - This structure contains a description of the contract for
+    ///   which fundamental data is being requested.
     /// * report_type - One of the following XML reports:
     ///     * ReportSnapshot (company overview)
     ///     * ReportsFinSummary (financial summary)
@@ -3865,8 +3913,9 @@ where
     //########################################################################
     //################## News
     //#########################################################################
-    /// Requests all open orders places by this specific API client (identified by the API client id).
-    /// For client ID 0, this will bind previous manual TWS orders.
+    /// Requests all open orders places by this specific API client (identified
+    /// by the API client id). For client ID 0, this will bind previous
+    /// manual TWS orders.
     pub fn req_news_providers(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -3900,7 +3949,8 @@ where
     /// * req_id - id of the request
     /// * provider_code - short code indicating news provider, e.g. FLY
     /// * article_id - id of the specific article
-    /// * news_article_options - reserved for internal use. Should be defined as null.
+    /// * news_article_options - reserved for internal use. Should be defined as
+    ///   null.
     pub fn req_news_article(
         &mut self,
         req_id: i32,
@@ -3953,10 +4003,13 @@ where
     /// * req_id - id of the request
     /// * con_id - contract id
     /// * provider_codes - a `'+'`-separated list of provider codes
-    /// * start_date_time - marks the (exclusive) start of the date range. The format is `yyyy-MM-dd HH:mm:ss.0`
-    /// * end_date_time - marks the (inclusive) end of the date range. The format is `yyyy-MM-dd HH:mm:ss.0`
+    /// * start_date_time - marks the (exclusive) start of the date range. The
+    ///   format is `yyyy-MM-dd HH:mm:ss.0`
+    /// * end_date_time - marks the (inclusive) end of the date range. The
+    ///   format is `yyyy-MM-dd HH:mm:ss.0`
     /// * total_results - the maximum number of headlines to fetch (1–300)
-    /// * historical_news_options - reserved for internal use. Should be defined as null.
+    /// * historical_news_options - reserved for internal use. Should be defined
+    ///   as null.
     pub fn req_historical_news(
         &mut self,
         req_id: i32,
@@ -4010,11 +4063,13 @@ where
     //#########################################################################
     //################## Display Groups
     //#########################################################################
-    /// Replaces Financial Advisor's settings A Financial Advisor can define three different configurations:
-    /// 1. Groups - offer traders a way to create a group of accounts and apply a single allocation method to all accounts in the group.
-    /// 2. Profiles - let you allocate shares on an account-by-account basis using a predefined calculation value.
-    /// 3. Account Aliases - let you easily identify the accounts by meaningful names rather than account numbers.
-    ///                     More information at <https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fpdfhighlights%2FPDF-AdvisorAllocations.php%3Fib_entity%3Dllc>
+    /// Replaces Financial Advisor's settings A Financial Advisor can define
+    /// three different configurations: 1. Groups - offer traders a way to
+    /// create a group of accounts and apply a single allocation method to all
+    /// accounts in the group. 2. Profiles - let you allocate shares on an
+    /// account-by-account basis using a predefined calculation value.
+    /// 3. Account Aliases - let you easily identify the accounts by meaningful
+    /// names rather than account numbers.                     More information at <https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fpdfhighlights%2FPDF-AdvisorAllocations.php%3Fib_entity%3Dllc>
     ///
     /// # Arguments
     /// * req_id - The unique number that will be associated with the response
@@ -4093,10 +4148,11 @@ where
     ///
     /// # Arguments
     /// * req_id - The requestId specified in subscribe_to_group_events().
-    /// * contract_info - is an encoded value designating a unique IB contract. Possible values include:
-    ///   1. none - empty selection
-    ///   2. contract_id - any non-combination contract. Examples 8314 for IBM SMART; 8314 for IBM ARCA
-    ///   3. combo - if any combo is selected Note: This request from the API does not get a TWS response unless an error occurs.
+    /// * contract_info - is an encoded value designating a unique IB contract.
+    ///   Possible values include: 1. none - empty selection 2. contract_id -
+    ///   any non-combination contract. Examples 8314 for IBM SMART; 8314 for
+    ///   IBM ARCA 3. combo - if any combo is selected Note: This request from
+    ///   the API does not get a TWS response unless an error occurs.
 
     pub fn update_display_group(
         &mut self,
@@ -4169,7 +4225,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs.
+    /// For IB's internal purpose. Allows to provide means of verification
+    /// between the TWS and third party programs.
     pub fn verify_request(
         &mut self,
         api_name: &str,
@@ -4220,7 +4277,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs.
+    /// For IB's internal purpose. Allows to provide means of verification
+    /// between the TWS and third party programs.
     pub fn verify_message(&mut self, api_data: &'static str) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -4252,7 +4310,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs.
+    /// For IB's internal purpose. Allows to provide means of verification
+    /// between the TWS and third party programs.
     pub fn verify_and_auth_request(
         &mut self,
         api_name: &str,
@@ -4305,7 +4364,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// For IB's internal purpose. Allows to provide means of verification between the TWS and third party programs
+    /// For IB's internal purpose. Allows to provide means of verification
+    /// between the TWS and third party programs
     pub fn verify_and_auth_message(
         &mut self,
         api_data: &str,
@@ -4342,12 +4402,14 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests security definition option parameters for viewing a contract's option chain.
+    /// Requests security definition option parameters for viewing a contract's
+    /// option chain.
     ///
     /// # Arguments
     /// * req_id - the ID chosen for the request
     /// * underlying_symbol
-    /// * fut_fop_exchange - The exchange on which the returned options are trading. Can be set to the empty string "" for all exchanges.
+    /// * fut_fop_exchange - The exchange on which the returned options are
+    ///   trading. Can be set to the empty string "" for all exchanges.
     /// * underlying_sec_type - The type of the underlying security, i.e. STK
     /// * underlying_con_id - the contract ID of the underlying security
     pub fn req_sec_def_opt_params(
@@ -4389,9 +4451,9 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests pre-defined Soft Dollar Tiers. This is only supported for registered professional
-    /// advisors and hedge and mutual funds who have configured Soft Dollar Tiers in Account Management.
-    /// Refer to: <https://www.interactivebrokers.com/en/software/am/am/manageaccount/requestsoftdollars.htm?Highlight=soft%20dollar%20tier>.
+    /// Requests pre-defined Soft Dollar Tiers. This is only supported for
+    /// registered professional advisors and hedge and mutual funds who have
+    /// configured Soft Dollar Tiers in Account Management. Refer to: <https://www.interactivebrokers.com/en/software/am/am/manageaccount/requestsoftdollars.htm?Highlight=soft%20dollar%20tier>.
     ///
     /// # Arguments
     /// * req_id - the identifier for this request
@@ -4409,7 +4471,8 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    /// Requests family codes for an account, for instance if it is a FA, IBroker, or associated account.
+    /// Requests family codes for an account, for instance if it is a FA,
+    /// IBroker, or associated account.
     pub fn req_family_codes(&mut self) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -4440,7 +4503,8 @@ where
     ///
     /// # Arguments
     /// * req_id - the identifier for this request
-    /// * pattern - either start of ticker symbol or (for larger strings) company name
+    /// * pattern - either start of ticker symbol or (for larger strings)
+    ///   company name
     pub fn req_matching_symbols(
         &mut self,
         req_id: i32,
@@ -4477,8 +4541,9 @@ where
     /// Requests completed orders.
     ///
     /// # Arguments
-    /// * api_only - If api_only parameter is true, then only completed orders placed from API are requested.
-    ///              Each completed order will be fed back through the completed_order() function on the Wrapper
+    /// * api_only - If api_only parameter is true, then only completed orders
+    ///   placed from API are requested. Each completed order will be fed back
+    ///   through the completed_order() function on the Wrapper
     pub fn req_completed_orders(&mut self, api_only: bool) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 

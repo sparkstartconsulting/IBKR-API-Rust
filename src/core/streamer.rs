@@ -48,6 +48,7 @@ impl Write for TcpStreamer {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.stream.write(buf)
     }
+
     fn flush(&mut self) -> io::Result<()> {
         self.stream.flush()
     }
@@ -110,6 +111,7 @@ impl Write for TestStreamer {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.stream.write(buf)
     }
+
     fn flush(&mut self) -> io::Result<()> {
         self.stream.flush()
     }

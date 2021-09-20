@@ -243,7 +243,8 @@ pub struct Order {
     pub sweep_to_fill: bool,
     pub display_size: i32,
     pub trigger_method: i32,
-    // 0=Default, 1=Double_Bid_Ask, 2=Last, 3=Double_Last, 4=Bid_Ask, 7=Last_or_Bid_Ask, 8=Mid-point
+    // 0=Default, 1=Double_Bid_Ask, 2=Last, 3=Double_Last, 4=Bid_Ask, 7=Last_or_Bid_Ask,
+    // 8=Mid-point
     pub outside_rth: bool,
     pub hidden: bool,
     pub good_after_time: String,
@@ -251,7 +252,9 @@ pub struct Order {
     pub good_till_date: String,
     // Format: 20060505 08:00:00 {time zone}
     pub rule80a: String,
-    // Individual = 'I', Agency = 'A', AgentOtherMember = 'W', IndividualPTIA = 'J', AgencyPTIA = 'U', AgentOtherMemberPTIA = 'M', IndividualPT = 'K', AgencyPT = 'Y', AgentOtherMemberPT = 'N'
+    // Individual = 'I', Agency = 'A', AgentOtherMember = 'W', IndividualPTIA = 'J', AgencyPTIA =
+    // 'U', AgentOtherMemberPTIA = 'M', IndividualPT = 'K', AgencyPT = 'Y', AgentOtherMemberPT =
+    // 'N'
     pub all_or_none: bool,
     pub min_qty: i32,
     //type: int
@@ -276,7 +279,8 @@ pub struct Order {
     pub origin: Origin,
     // 0=Customer, 1=Firm
     pub short_sale_slot: i32,
-    // type: int; 1 if you hold the shares, 2 if they will be delivered from elsewhere.  Only for Action=SSHORT
+    // type: int; 1 if you hold the shares, 2 if they will be delivered from elsewhere.  Only for
+    // Action=SSHORT
     pub exempt_code: i32,
 
     // SMART routing only
@@ -785,19 +789,25 @@ impl Default for Order {
             active_start_time: "".to_string(), // for GTC orders
             active_stop_time: "".to_string(),  // for GTC orders
             oca_group: "".to_string(),         // one cancels all group name
-            oca_type: 0, // 1 = CANCEL_WITH_BLOCK, 2 = REDUCE_WITH_BLOCK, 3 = REDUCE_NON_BLOCK
+            oca_type: 0,                       /* 1 = CANCEL_WITH_BLOCK, 2 = REDUCE_WITH_BLOCK, 3
+                                                * = REDUCE_NON_BLOCK */
             order_ref: "".to_string(),
             transmit: true, // if false, order will be created but not transmited
-            parent_id: 0, // Parent order Id, to associate Auto STP or TRAIL orders with the original order.
+            parent_id: 0,   /* Parent order Id, to associate Auto STP or TRAIL orders with the
+                             * original order. */
             block_order: false,
             sweep_to_fill: false,
             display_size: 0,
-            trigger_method: 0, // 0=Default, 1=Double_Bid_Ask, 2=Last, 3=Double_Last, 4=Bid_Ask, 7=Last_or_Bid_Ask, 8=Mid-point
+            trigger_method: 0, /* 0=Default, 1=Double_Bid_Ask, 2=Last, 3=Double_Last, 4=Bid_Ask,
+                                * 7=Last_or_Bid_Ask, 8=Mid-point */
             outside_rth: false,
             hidden: false,
             good_after_time: "".to_string(), // Format: 20060505 08:00:00 {time zone}
             good_till_date: "".to_string(),  // Format: 20060505 08:00:00 {time zone}
-            rule80a: "".to_string(), // Individual = 'I', Agency = 'A', AgentOtherMember = 'W', IndividualPTIA = 'J', AgencyPTIA = 'U', AgentOtherMemberPTIA = 'M', IndividualPT = 'K', AgencyPT = 'Y', AgentOtherMemberPT = 'N'
+            rule80a: "".to_string(),         /* Individual = 'I', Agency = 'A', AgentOtherMember
+                                              * = 'W', IndividualPTIA = 'J', AgencyPTIA = 'U',
+                                              * AgentOtherMemberPTIA = 'M', IndividualPT = 'K',
+                                              * AgencyPT = 'Y', AgentOtherMemberPT = 'N' */
             all_or_none: false,
             min_qty: UNSET_INTEGER,       //type: int
             percent_offset: UNSET_DOUBLE, // type: float; REL orders only
@@ -815,7 +825,9 @@ impl Default for Order {
             designated_location: "".to_string(), //used only when shortSaleSlot=2
             open_close: "O".to_string(),         // O=Open, C=Close
             origin: Customer,                    // 0=Customer, 1=Firm
-            short_sale_slot: 0, // type: int; 1 if you hold the shares, 2 if they will be delivered from elsewhere.  Only for Action=SSHORT
+            short_sale_slot: 0,                  /* type: int; 1 if you hold the shares, 2 if
+                                                  * they will be delivered from elsewhere.  Only
+                                                  * for Action=SSHORT */
             exempt_code: -1,
 
             // SMART routing only
@@ -826,10 +838,11 @@ impl Default for Order {
             opt_out_smart_routing: false,
 
             // BOX exchange orders only
-            auction_strategy: AuctionUnset, // type: int; AUCTION_MATCH, AUCTION_IMPROVEMENT, AUCTION_TRANSPARENT
-            starting_price: UNSET_DOUBLE,   // type: float
-            stock_ref_price: UNSET_DOUBLE,  // type: float
-            delta: UNSET_DOUBLE,            // type: float
+            auction_strategy: AuctionUnset, /* type: int; AUCTION_MATCH, AUCTION_IMPROVEMENT,
+                                             * AUCTION_TRANSPARENT */
+            starting_price: UNSET_DOUBLE,  // type: float
+            stock_ref_price: UNSET_DOUBLE, // type: float
+            delta: UNSET_DOUBLE,           // type: float
 
             // pegged to stock and VOL orders only
             stock_range_lower: UNSET_DOUBLE, // type: float
