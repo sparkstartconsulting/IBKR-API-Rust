@@ -141,7 +141,7 @@ impl<T: Streamer> TestWrapper<T> {
                 1,
                 "TRADES",
                 true,
-                vec![],
+                &[],
             )?;
 
         Ok(())
@@ -1427,7 +1427,7 @@ impl<T: Streamer> TestWrapper<T> {
                 1,
                 1,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1444,7 +1444,7 @@ impl<T: Streamer> TestWrapper<T> {
                 1,
                 1,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1461,7 +1461,7 @@ impl<T: Streamer> TestWrapper<T> {
                 1,
                 1,
                 true,
-                vec![],
+                &[],
             )?;
 
         Ok(())
@@ -1504,7 +1504,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1517,7 +1517,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         self.client
@@ -1531,7 +1531,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 true,
                 false,
-                vec![],
+                &[],
             )?;
 
         // Each regulatory snapshot request incurs a 0.01 USD fee
@@ -1546,7 +1546,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 false,
                 true,
-                vec![],
+                &[],
             )?;
 
         // Requesting RTVolume (Time & Sales), shortable and Fundamental Ratios generic
@@ -1562,7 +1562,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "233,236,258",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         // Without the API news subscription this will generate an "invalid tick type"
@@ -1578,7 +1578,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "100",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1591,7 +1591,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,292:BRFG+DJNL",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1604,7 +1604,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,292:BRFUPDN",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1617,7 +1617,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,292:DJ-RT",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         self.client
@@ -1631,7 +1631,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,292",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1644,7 +1644,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,292",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1657,7 +1657,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,292",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1670,7 +1670,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,292",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         // Requesting data for an option contract will return the greek values
@@ -1685,7 +1685,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -1698,7 +1698,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         self.client
@@ -1712,7 +1712,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,588",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         self.client
@@ -1726,7 +1726,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         self.client
@@ -1740,7 +1740,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,105",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         // Requests description of map of single letter exchange codes to full exchange
@@ -1769,7 +1769,7 @@ impl<T: Streamer> TestWrapper<T> {
                 contract_samples::eur_gbp_fx().borrow(),
                 5,
                 false,
-                vec![],
+                &[],
             )?;
 
         self.client
@@ -1782,7 +1782,7 @@ impl<T: Streamer> TestWrapper<T> {
                 contract_samples::us_stock_at_smart().borrow(),
                 5,
                 false,
-                vec![],
+                &[],
             )?;
 
         // Request list of exchanges sending market depth to UpdateMktDepthL2()
@@ -1817,7 +1817,7 @@ impl<T: Streamer> TestWrapper<T> {
                 contract_samples::option_at_box().borrow(),
                 5.0,
                 85.0,
-                vec![],
+                &[],
             )?;
 
         // Calculating option's price
@@ -1831,7 +1831,7 @@ impl<T: Streamer> TestWrapper<T> {
                 contract_samples::option_at_box().borrow(),
                 0.22,
                 85.0,
-                vec![],
+                &[],
             )?;
 
         // Exercising options
@@ -1872,12 +1872,12 @@ impl<T: Streamer> TestWrapper<T> {
             .req_scanner_subscription(
                 7001,
                 scanner_subscription_samples::high_opt_volume_pcratio_usindexes(),
-                vec![],
-                vec![],
+                &[],
+                &[],
             )?;
 
         // Generic Filters
-        let tagvalues = vec![
+        let tag_values = vec![
             TagValue::new("usdMarketCapAbove".to_string(), "10000".to_string()),
             TagValue::new("optVolumeAbove".to_string(), "1000".to_string()),
             TagValue::new("avgVolumeAbove".to_string(), "10000".to_string()),
@@ -1892,8 +1892,8 @@ impl<T: Streamer> TestWrapper<T> {
             .req_scanner_subscription(
                 7002,
                 scanner_subscription_samples::hot_usstk_by_volume(),
-                vec![],
-                tagvalues,
+                &[],
+                &tag_values,
             ); // requires TWS v973+
 
         if result.is_err() {
@@ -1918,8 +1918,8 @@ impl<T: Streamer> TestWrapper<T> {
             .req_scanner_subscription(
                 7003,
                 scanner_subscription_samples::complex_orders_and_trades(),
-                vec![],
-                aaplcon_idtag,
+                &[],
+                &aaplcon_idtag,
             )?; // requires TWS v975 +
 
         Ok(())
@@ -1938,7 +1938,7 @@ impl<T: Streamer> TestWrapper<T> {
                 8001,
                 contract_samples::usstock().borrow(),
                 "ReportsFinSummary",
-                vec![],
+                &[],
             )?;
 
         self.client
@@ -1950,7 +1950,7 @@ impl<T: Streamer> TestWrapper<T> {
                 8002,
                 contract_samples::us_stock_at_smart().borrow(),
                 "ReportSnapshot",
-                vec![],
+                &[],
             )?; // for company overview
         self.client
             .as_ref()
@@ -1961,7 +1961,7 @@ impl<T: Streamer> TestWrapper<T> {
                 8003,
                 contract_samples::us_stock_at_smart().borrow(),
                 "ReportRatios",
-                vec![],
+                &[],
             )?; // for financial ratios
         self.client
             .as_ref()
@@ -1972,7 +1972,7 @@ impl<T: Streamer> TestWrapper<T> {
                 8004,
                 contract_samples::us_stock_at_smart().borrow(),
                 "ReportsFinStatements",
-                vec![],
+                &[],
             )?; // for financial statements
         self.client
             .as_ref()
@@ -1983,7 +1983,7 @@ impl<T: Streamer> TestWrapper<T> {
                 8005,
                 contract_samples::us_stock_at_smart().borrow(),
                 "RESC",
-                vec![],
+                &[],
             )?; // for analyst estimates
         self.client
             .as_ref()
@@ -1994,7 +1994,7 @@ impl<T: Streamer> TestWrapper<T> {
                 8006,
                 contract_samples::us_stock_at_smart().borrow(),
                 "CalendarReport",
-                vec![],
+                &[],
             )?;
         // for company calendar
 
@@ -2168,7 +2168,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "TRADES",
                 1,
                 true,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -2184,7 +2184,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "BID_ASK",
                 1,
                 true,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -2200,7 +2200,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "MIDPOINT",
                 1,
                 true,
-                vec![],
+                &[],
             )?;
 
         Ok(())
@@ -2256,7 +2256,7 @@ impl<T: Streamer> TestWrapper<T> {
                 0,
                 1,
                 false,
-                vec![],
+                &[],
             )?;
 
         Ok(())
@@ -2348,7 +2348,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -2361,7 +2361,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -2374,7 +2374,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         self.client
@@ -2387,7 +2387,7 @@ impl<T: Streamer> TestWrapper<T> {
                 contract_samples::usstock_cfd().borrow(),
                 10,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -2399,7 +2399,7 @@ impl<T: Streamer> TestWrapper<T> {
                 contract_samples::european_stock_cfd().borrow(),
                 10,
                 false,
-                vec![],
+                &[],
             )?;
         self.client
             .as_ref()
@@ -2411,7 +2411,7 @@ impl<T: Streamer> TestWrapper<T> {
                 contract_samples::cash_cfd().borrow(),
                 10,
                 false,
-                vec![],
+                &[],
             )?;
 
         Ok(())
@@ -2498,7 +2498,7 @@ impl<T: Streamer> TestWrapper<T> {
                 "mdoff,258",
                 false,
                 false,
-                vec![],
+                &[],
             )?;
 
         // Returns list of subscribed news providers
@@ -2515,7 +2515,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_IS_NONE)
             .lock()
             .expect(CLIENT_POISONED_MUTEX)
-            .req_news_article(10002, "BRFG", "BRFG4fb9da2", vec![])?;
+            .req_news_article(10002, "BRFG", "BRFG4fb9da2", &[])?;
 
         // Returns list of historical news headlines with IDs
         self.client
@@ -2523,7 +2523,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_IS_NONE)
             .lock()
             .expect(CLIENT_POISONED_MUTEX)
-            .req_historical_news(10003, 8314, "BRFG", "", "", 10, vec![])?;
+            .req_historical_news(10003, 8314, "BRFG", "", "", 10, &[])?;
 
         self.client
             .as_ref()

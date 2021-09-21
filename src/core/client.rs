@@ -326,7 +326,7 @@ where
         generic_tick_list: &str,
         snapshot: bool,
         regulatory_snapshot: bool,
-        mkt_data_options: Vec<TagValue>,
+        mkt_data_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
@@ -736,7 +736,7 @@ where
         contract: &Contract,
         option_price: f64,
         under_price: f64,
-        impl_vol_options: Vec<TagValue>,
+        impl_vol_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
@@ -834,7 +834,7 @@ where
         contract: &Contract,
         volatility: f64,
         under_price: f64,
-        opt_prc_options: Vec<TagValue>,
+        opt_prc_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
@@ -2809,7 +2809,7 @@ where
         contract: &Contract,
         num_rows: i32,
         is_smart_depth: bool,
-        mkt_depth_options: Vec<TagValue>,
+        mkt_depth_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -3145,7 +3145,7 @@ where
         use_rth: i32,
         format_date: i32,
         keep_up_to_date: bool,
-        chart_options: Vec<TagValue>,
+        chart_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -3465,7 +3465,7 @@ where
         what_to_show: &str,
         use_rth: i32,
         ignore_size: bool,
-        misc_options: Vec<TagValue>,
+        misc_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -3553,8 +3553,8 @@ where
         &mut self,
         req_id: i32,
         subscription: ScannerSubscription,
-        scanner_subscription_options: Vec<TagValue>,
-        scanner_subscription_filter_options: Vec<TagValue>,
+        scanner_subscription_options: &[TagValue],
+        scanner_subscription_filter_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
@@ -3690,7 +3690,7 @@ where
         bar_size: i32,
         what_to_show: &str,
         use_rth: bool,
-        real_time_bars_options: Vec<TagValue>,
+        real_time_bars_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -3807,7 +3807,7 @@ where
         req_id: i32,
         contract: &Contract,
         report_type: &str,
-        fundamental_data_options: Vec<TagValue>,
+        fundamental_data_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -3956,7 +3956,7 @@ where
         req_id: i32,
         provider_code: &str,
         article_id: &str,
-        news_article_options: Vec<TagValue>,
+        news_article_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
@@ -4018,7 +4018,7 @@ where
         start_date_time: &str,
         end_date_time: &str,
         total_results: i32,
-        historical_news_options: Vec<TagValue>,
+        historical_news_options: &[TagValue],
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
