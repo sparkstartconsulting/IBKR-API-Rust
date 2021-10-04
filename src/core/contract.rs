@@ -201,6 +201,24 @@ impl Contract {
         }
     }
 
+    /// Foreign exchange currency pair.
+    /// # Arguments
+    /// * pair: Shortcut for specifying symbol and currency, like `"EURUSD"`.
+    /// * exchange: Destination exchange.
+    /// * symbol: Base currency.
+    /// * currency: Quote currency.
+    pub fn forex(pair: &str, exchange: Option<&str>, symbol: Option<&str>, currency: Option<&str>) -> Self {
+        assert!(pair.len() == 6);
+
+        Self {
+            symbol: symbol.unwrap_or(&pair[..3]).to_string(),
+            sec_type: "CASH".to_string(),
+            exchange: exchange.unwrap_or("IDEALPRO").to_string(),
+            currency: currency.unwrap_or(&pair[3..]).to_string(),
+            ..Default::default()
+        }
+    }
+
     pub fn future(symbol: &str, last_trade_date_or_contract_month: &str, exchange: &str) -> Self {
         Self {
             symbol: symbol.to_string(),
