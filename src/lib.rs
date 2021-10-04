@@ -51,5 +51,5 @@
 //! }
 //! ```
 pub mod core;
-pub mod examples;
+//pub mod examples;
 mod tests;

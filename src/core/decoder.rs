@@ -218,9 +218,9 @@ where
             Some(IncomingMessageIds::PositionData) => self.process_position_data(fields)?,
             Some(IncomingMessageIds::PositionEnd) => self.process_position_end(fields)?,
             Some(IncomingMessageIds::RealTimeBars) => self.process_real_time_bars(fields)?,
-            Some(IncomingMessageIds::ReceiveFa) => self.process_receive_fa(fields)?,
+            Some(IncomingMessageIds::ReceiveFa) => self.process_receive_financial_advisor(fields)?,
             Some(IncomingMessageIds::RerouteMktDataReq) => {
-                self.process_reroute_mkt_data_req(fields)?
+                self.process_reroute_market_data_request(fields)?
             }
 
             Some(IncomingMessageIds::PositionMulti) => self.process_position_multi(fields)?,
@@ -248,7 +248,7 @@ where
             Some(IncomingMessageIds::TickOptionComputation) => {
                 self.process_tick_option_computation(fields)?
             }
-            Some(IncomingMessageIds::TickReqParams) => self.process_tick_req_params(fields)?,
+            Some(IncomingMessageIds::TickReqParams) => self.process_tick_request_parameters(fields)?,
             Some(IncomingMessageIds::TickSize) => self.process_tick_size(fields)?,
             Some(IncomingMessageIds::TickSnapshotEnd) => self.process_tick_snapshot_end(fields)?,
             Some(IncomingMessageIds::TickString) => self.process_tick_string(fields)?,
@@ -264,7 +264,7 @@ where
                 self.process_verify_and_auth_message_api(fields)?
             }
             Some(IncomingMessageIds::RerouteMktDepthReq) => {
-                self.process_reroute_mkt_depth_req(fields)?
+                self.process_reroute_market_depth_request(fields)?
             }
 
             _ => panic!("Received unkown message id!!  Exiting..."),
@@ -276,12 +276,12 @@ where
     fn process_tick_price(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let tick_type: i32 = decode_i32(&mut fields_itr)?;
         let price: f64 = decode_f64(&mut fields_itr)?;
         let size = decode_i32(&mut fields_itr)?;
@@ -301,13 +301,13 @@ where
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
             .tick_price(
-                req_id,
+                request_id,
                 FromPrimitive::from_i32(tick_type).unwrap(),
                 price,
                 tick_arrtibute,
             );
 
-        // process ver 2 fields
+        // Process ver 2 fields.
 
         let size_tick_type = match FromPrimitive::from_i32(tick_type) {
             Some(TickType::Bid) => TickType::BidSize,
@@ -323,8 +323,9 @@ where
             self.wrapper
                 .lock()
                 .expect(WRAPPER_POISONED_MUTEX)
-                .tick_size(req_id, size_tick_type, size);
+                .tick_size(request_id, size_tick_type, size);
         }
+
         Ok(())
     }
 
@@ -332,12 +333,12 @@ where
     fn process_tick_string(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id: i32 = decode_i32(&mut fields_itr)?;
+        let request_id: i32 = decode_i32(&mut fields_itr)?;
         let tick_type: i32 = decode_i32(&mut fields_itr)?;
         let value = decode_string(&mut fields_itr)?;
 
@@ -345,7 +346,7 @@ where
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
             .tick_string(
-                req_id,
+                request_id,
                 FromPrimitive::from_i32(tick_type).unwrap(),
                 value.as_ref(),
             );
@@ -356,9 +357,9 @@ where
     fn process_account_summary(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         self.wrapper
@@ -378,9 +379,9 @@ where
     fn process_account_summary_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         self.wrapper
@@ -394,12 +395,12 @@ where
     fn process_account_update_multi(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id: i32 = decode_i32(&mut fields_itr)?;
+        let request_id: i32 = decode_i32(&mut fields_itr)?;
         let account = decode_string(&mut fields_itr)?;
         let model_code = decode_string(&mut fields_itr)?;
         let key = decode_string(&mut fields_itr)?;
@@ -410,7 +411,7 @@ where
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
             .account_update_multi(
-                req_id,
+                request_id,
                 account.as_ref(),
                 model_code.as_ref(),
                 key.as_ref(),
@@ -427,17 +428,17 @@ where
     ) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id: i32 = decode_i32(&mut fields_itr)?;
+        let request_id: i32 = decode_i32(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .account_update_multi_end(req_id);
+            .account_update_multi_end(request_id);
         Ok(())
     }
 
@@ -445,9 +446,9 @@ where
     fn process_account_download_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         self.wrapper
@@ -461,9 +462,9 @@ where
     fn process_account_update_time(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         self.wrapper
@@ -477,9 +478,9 @@ where
     fn process_account_value(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         self.wrapper
@@ -498,14 +499,14 @@ where
     fn process_bond_contract_data(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let version: i32 = decode_i32(&mut fields_itr)?;
 
-        let mut req_id = -1;
+        let mut request_id = -1;
         if version >= 3 {
-            req_id = decode_i32(&mut fields_itr)?;
+            request_id = decode_i32(&mut fields_itr)?;
         }
 
         let mut contract = ContractDetails::default();
@@ -569,16 +570,16 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .bond_contract_details(req_id, contract.clone());
+            .bond_contract_details(request_id, contract.clone());
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn process_commission_report(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let commission_report = CommissionReport {
@@ -604,7 +605,7 @@ where
     fn process_completed_order(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let mut contract = Contract::default();
@@ -632,7 +633,7 @@ where
     fn process_complete_orders_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
         self.wrapper
             .lock()
@@ -645,14 +646,14 @@ where
     fn process_contract_details(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let version: i32 = decode_i32(&mut fields_itr)?;
 
-        let mut req_id = -1;
+        let mut request_id = -1;
         if version >= 3 {
-            req_id = decode_i32(&mut fields_itr)?;
+            request_id = decode_i32(&mut fields_itr)?;
         }
 
         let mut contract = ContractDetails::default();
@@ -729,7 +730,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .contract_details(req_id, contract.clone());
+            .contract_details(request_id, contract.clone());
         Ok(())
     }
 
@@ -737,17 +738,17 @@ where
     fn process_contract_details_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .contract_details_end(req_id);
+            .contract_details_end(request_id);
         Ok(())
     }
 
@@ -755,9 +756,9 @@ where
     fn process_current_time(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         self.wrapper
@@ -774,12 +775,12 @@ where
     ) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let delta_neutral_contract = DeltaNeutralContract {
             con_id: decode_i32(&mut fields_itr)?,
@@ -790,7 +791,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .delta_neutral_validation(req_id, delta_neutral_contract);
+            .delta_neutral_validation(request_id, delta_neutral_contract);
         Ok(())
     }
 
@@ -798,19 +799,19 @@ where
     fn process_display_group_list(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let groups = decode_string(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .display_group_list(req_id, groups.as_ref());
+            .display_group_list(request_id, groups.as_ref());
         Ok(())
     }
 
@@ -818,28 +819,28 @@ where
     fn process_display_group_updated(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let contract_info = decode_string(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .display_group_updated(req_id, contract_info.as_ref());
+            .display_group_updated(request_id, contract_info.as_ref());
         Ok(())
     }
 
     fn process_error_message(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).error(
@@ -854,7 +855,7 @@ where
     fn process_execution_data(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let mut version = self.server_version;
@@ -863,10 +864,10 @@ where
             version = decode_i32(&mut fields_itr)?;
         }
 
-        let mut req_id = -1;
+        let mut request_id = -1;
 
         if version >= 7 {
-            req_id = decode_i32(&mut fields_itr)?;
+            request_id = decode_i32(&mut fields_itr)?;
         }
 
         let order_id = decode_i32(&mut fields_itr)?;
@@ -945,7 +946,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .exec_details(req_id, contract, execution);
+            .exec_details(request_id, contract, execution);
         Ok(())
     }
 
@@ -953,17 +954,17 @@ where
     fn process_execution_data_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .exec_details_end(req_id);
+            .exec_details_end(request_id);
         Ok(())
     }
 
@@ -971,7 +972,7 @@ where
     fn process_family_codes(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let family_codes_count = decode_i32(&mut fields_itr)?;
@@ -994,17 +995,17 @@ where
     fn process_fundamental_data(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let data = decode_string(&mut fields_itr)?;
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .fundamental_data(req_id, data.as_ref());
+            .fundamental_data(request_id, data.as_ref());
         Ok(())
     }
 
@@ -1012,15 +1013,15 @@ where
     fn process_head_timestamp(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let timestamp = decode_string(&mut fields_itr)?;
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .fundamental_data(req_id, timestamp.as_ref());
+            .fundamental_data(request_id, timestamp.as_ref());
         Ok(())
     }
 
@@ -1028,10 +1029,10 @@ where
     fn process_histogram_data(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let num_points = decode_i32(&mut fields_itr)?;
 
         let histogram = vec![
@@ -1045,21 +1046,21 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .histogram_data(req_id, histogram);
+            .histogram_data(request_id, histogram);
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn process_historical_data(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         if self.server_version < MIN_SERVER_VER_SYNT_REALTIME_BARS {
             fields_itr.next();
         }
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let start_date = decode_string(&mut fields_itr)?; // ver 2 field
         let end_date = decode_string(&mut fields_itr)?; // ver 2 field
 
@@ -1092,14 +1093,14 @@ where
             self.wrapper
                 .lock()
                 .expect(WRAPPER_POISONED_MUTEX)
-                .historical_data(req_id, bar);
+                .historical_data(request_id, bar);
         }
 
         // send end of dataset marker
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .historical_data_end(req_id, start_date.as_ref(), end_date.as_ref());
+            .historical_data_end(request_id, start_date.as_ref(), end_date.as_ref());
         Ok(())
     }
 
@@ -1107,10 +1108,10 @@ where
     fn process_historical_data_update(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let bar = BarData {
             bar_count: decode_i32(&mut fields_itr)?,
@@ -1126,7 +1127,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .historical_data_update(req_id, bar);
+            .historical_data_update(request_id, bar);
         Ok(())
     }
 
@@ -1134,10 +1135,10 @@ where
     fn process_historical_news(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let time = decode_string(&mut fields_itr)?;
         let provider_code = decode_string(&mut fields_itr)?;
         let article_id = decode_string(&mut fields_itr)?;
@@ -1146,7 +1147,7 @@ where
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
             .historical_news(
-                req_id,
+                request_id,
                 time.as_ref(),
                 provider_code.as_ref(),
                 article_id.as_ref(),
@@ -1159,16 +1160,16 @@ where
     fn process_historical_news_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let has_more = decode_bool(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .historical_news_end(req_id, has_more);
+            .historical_news_end(request_id, has_more);
         Ok(())
     }
 
@@ -1176,10 +1177,10 @@ where
     fn process_historical_ticks(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let tick_count = decode_i32(&mut fields_itr)?;
 
         let mut ticks = vec![];
@@ -1200,7 +1201,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .historical_ticks(req_id, ticks, done);
+            .historical_ticks(request_id, ticks, done);
         Ok(())
     }
 
@@ -1211,10 +1212,10 @@ where
     ) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let tick_count = decode_i32(&mut fields_itr)?;
 
         let mut ticks = vec![];
@@ -1242,7 +1243,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .historical_ticks_bid_ask(req_id, ticks, done);
+            .historical_ticks_bid_ask(request_id, ticks, done);
         Ok(())
     }
 
@@ -1250,10 +1251,10 @@ where
     fn process_historical_ticks_last(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let tick_count = decode_i32(&mut fields_itr)?;
 
         let mut ticks = vec![];
@@ -1281,7 +1282,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .historical_ticks_last(req_id, ticks, done);
+            .historical_ticks_last(request_id, ticks, done);
         Ok(())
     }
 
@@ -1289,9 +1290,9 @@ where
     fn process_managed_accounts(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let accounts_list = decode_string(&mut fields_itr)?;
@@ -1307,28 +1308,28 @@ where
     //----------------------------------------------------------------------------------------------
     fn process_market_data_type(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let market_data_type = decode_i32(&mut fields_itr)?;
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .market_data_type(req_id, market_data_type);
+            .market_data_type(request_id, market_data_type);
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
     fn process_market_depth(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let position = decode_i32(&mut fields_itr)?;
         let operation = decode_i32(&mut fields_itr)?;
@@ -1339,7 +1340,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .update_mkt_depth(req_id, position, operation, side, price, size);
+            .update_market_depth(request_id, position, operation, side, price, size);
         Ok(())
     }
 
@@ -1347,12 +1348,12 @@ where
     fn process_market_depth_l2(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let position = decode_i32(&mut fields_itr)?;
         let market_maker = decode_string(&mut fields_itr)?;
@@ -1369,8 +1370,8 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .update_mkt_depth_l2(
-                req_id,
+            .update_market_depth_l2(
+                request_id,
                 position,
                 market_maker.as_ref(),
                 operation,
@@ -1386,7 +1387,7 @@ where
     fn process_market_rule(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let market_rule_id = decode_i32(&mut fields_itr)?;
@@ -1411,13 +1412,13 @@ where
     fn process_market_depth_exchanges(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let mut depth_mkt_data_descriptions = vec![];
-        let depth_mkt_data_descriptions_count = decode_i32(&mut fields_itr)?;
+        let mut depth_market_data_descriptions = vec![];
+        let depth_market_data_descriptions_count = decode_i32(&mut fields_itr)?;
 
-        for _ in 0..depth_mkt_data_descriptions_count {
+        for _ in 0..depth_market_data_descriptions_count {
             let mut desc = DepthMktDataDescription {
                 exchange: decode_string(&mut fields_itr)?,
                 sec_type: decode_string(&mut fields_itr)?,
@@ -1430,13 +1431,13 @@ where
             } else {
                 decode_i32(&mut fields_itr)?; // boolean notSuppIsL2
             }
-            depth_mkt_data_descriptions.push(desc);
+            depth_market_data_descriptions.push(desc);
         }
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .mkt_depth_exchanges(depth_mkt_data_descriptions);
+            .market_depth_exchanges(depth_market_data_descriptions);
         Ok(())
     }
 
@@ -1444,16 +1445,16 @@ where
     fn process_news_article(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let article_type = decode_i32(&mut fields_itr)?;
         let article_text = decode_string(&mut fields_itr)?;
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .news_article(req_id, article_type, article_text.as_ref());
+            .news_article(request_id, article_type, article_text.as_ref());
         Ok(())
     }
 
@@ -1461,9 +1462,9 @@ where
     fn process_news_bulletins(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let news_msg_id = decode_i32(&mut fields_itr)?;
@@ -1487,7 +1488,7 @@ where
     fn process_news_providers(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let news_providers_count = decode_i32(&mut fields_itr)?;
@@ -1510,9 +1511,9 @@ where
     fn process_next_valid_id(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let order_id = decode_i32(&mut fields_itr)?;
@@ -1527,7 +1528,7 @@ where
     fn process_open_order(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
         //info!("Processing open order");
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let mut order = Order::default();
@@ -1569,17 +1570,17 @@ where
     fn process_order_bound(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let api_client_id = decode_i32(&mut fields_itr)?;
         let api_order_id = decode_i32(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .order_bound(req_id, api_client_id, api_order_id);
+            .order_bound(request_id, api_client_id, api_order_id);
         Ok(())
     }
 
@@ -1587,7 +1588,7 @@ where
     fn process_order_status(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         if self.server_version < MIN_SERVER_VER_MARKET_CAP_PRICE {
@@ -1621,9 +1622,9 @@ where
         let client_id = decode_i32(&mut fields_itr)?; // ver 5 field
         let why_held = decode_string(&mut fields_itr)?; // ver 6 field
 
-        let mut mkt_cap_price = 0.0;
+        let mut market_cap_price = 0.0;
         if self.server_version >= MIN_SERVER_VER_MARKET_CAP_PRICE {
-            mkt_cap_price = decode_f64(&mut fields_itr)?;
+            market_cap_price = decode_f64(&mut fields_itr)?;
         }
 
         self.wrapper
@@ -1640,7 +1641,7 @@ where
                 last_fill_price,
                 client_id,
                 why_held.as_ref(),
-                mkt_cap_price,
+                market_cap_price,
             );
         Ok(())
     }
@@ -1649,10 +1650,10 @@ where
     fn process_pnl(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let daily_pnl = decode_f64(&mut fields_itr)?;
         let mut unrealized_pnl = 0.0;
         let mut realized_pnl = 0.0;
@@ -1665,8 +1666,8 @@ where
             realized_pnl = decode_f64(&mut fields_itr)?;
         }
 
-        self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).pnl(
-            req_id,
+        self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).profit_and_loss(
+            request_id,
             daily_pnl,
             unrealized_pnl,
             realized_pnl,
@@ -1678,10 +1679,10 @@ where
     fn process_pnl_single(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let pos = decode_i32(&mut fields_itr)?;
         let daily_pnl = decode_f64(&mut fields_itr)?;
         let mut unrealized_pnl = 0.0;
@@ -1700,7 +1701,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .pnl_single(req_id, pos, daily_pnl, unrealized_pnl, realized_pnl, value);
+            .profit_and_loss_single(request_id, pos, daily_pnl, unrealized_pnl, realized_pnl, value);
         Ok(())
     }
 
@@ -1708,7 +1709,7 @@ where
     fn process_portfolio_value(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let version = decode_i32(&mut fields_itr)?;
@@ -1774,7 +1775,7 @@ where
     fn process_position_data(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let version = decode_i32(&mut fields_itr)?;
@@ -1833,12 +1834,12 @@ where
     fn process_position_multi(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let account = decode_string(&mut fields_itr)?;
 
@@ -1866,7 +1867,7 @@ where
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
             .position_multi(
-                req_id,
+                request_id,
                 account.as_ref(),
                 model_code.as_ref(),
                 contract,
@@ -1881,16 +1882,16 @@ where
     fn process_position_multi_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .position_multi_end(req_id);
+            .position_multi_end(request_id);
         Ok(())
     }
 
@@ -1898,12 +1899,12 @@ where
     fn process_real_time_bars(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let bar = RealTimeBar {
             date_time: decode_string(&mut fields_itr)?,
@@ -1919,17 +1920,17 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .realtime_bar(req_id, bar);
+            .realtime_bar(request_id, bar);
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    fn process_receive_fa(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+    fn process_receive_financial_advisor(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let fa_data_type = decode_i32(&mut fields_itr)?;
@@ -1938,43 +1939,43 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .receive_fa(FromPrimitive::from_i32(fa_data_type).unwrap(), xml.as_ref());
+            .receive_financial_advisor(FromPrimitive::from_i32(fa_data_type).unwrap(), xml.as_ref());
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    fn process_reroute_mkt_data_req(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+    fn process_reroute_market_data_request(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let con_id = decode_i32(&mut fields_itr)?;
         let exchange = decode_string(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .reroute_mkt_data_req(req_id, con_id, exchange.as_ref());
+            .reroute_market_data_request(request_id, con_id, exchange.as_ref());
         Ok(())
     }
 
     //----------------------------------------------------------------------------------------------
-    fn process_reroute_mkt_depth_req(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+    fn process_reroute_market_depth_request(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let con_id = decode_i32(&mut fields_itr)?;
         let exchange = decode_string(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .reroute_mkt_depth_req(req_id, con_id, exchange.as_ref());
+            .reroute_market_depth_request(request_id, con_id, exchange.as_ref());
         Ok(())
     }
 
@@ -1982,12 +1983,12 @@ where
     fn process_scanner_data(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let number_of_elements = decode_i32(&mut fields_itr)?;
 
@@ -2024,7 +2025,7 @@ where
                 .lock()
                 .expect(WRAPPER_POISONED_MUTEX)
                 .scanner_data(
-                    req_id,
+                    request_id,
                     data.rank,
                     data.contract,
                     data.distance.as_ref(),
@@ -2037,7 +2038,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .scanner_data_end(req_id);
+            .scanner_data_end(request_id);
         Ok(())
     }
 
@@ -2045,9 +2046,9 @@ where
     fn process_scanner_parameters(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let xml = decode_string(&mut fields_itr)?;
@@ -2065,10 +2066,10 @@ where
     ) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let exchange = decode_string(&mut fields_itr)?;
         let underlying_con_id = decode_i32(&mut fields_itr)?;
@@ -2094,7 +2095,7 @@ where
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
             .security_definition_option_parameter(
-                req_id,
+                request_id,
                 exchange.as_ref(),
                 underlying_con_id,
                 trading_class.as_ref(),
@@ -2112,14 +2113,14 @@ where
     ) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .security_definition_option_parameter_end(req_id);
+            .security_definition_option_parameter_end(request_id);
         Ok(())
     }
 
@@ -2127,10 +2128,10 @@ where
     fn process_smart_components(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let count = decode_i32(&mut fields_itr)?;
 
@@ -2146,7 +2147,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .smart_components(req_id, smart_components);
+            .smart_components(request_id, smart_components);
         Ok(())
     }
 
@@ -2154,10 +2155,10 @@ where
     fn process_soft_dollar_tiers(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let count = decode_i32(&mut fields_itr)?;
 
@@ -2173,7 +2174,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .soft_dollar_tiers(req_id, tiers);
+            .soft_dollar_tiers(request_id, tiers);
         Ok(())
     }
 
@@ -2181,10 +2182,10 @@ where
     fn process_symbol_samples(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
         let count = decode_i32(&mut fields_itr)?;
         let mut contract_descriptions = vec![];
 
@@ -2214,7 +2215,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .symbol_samples(req_id, contract_descriptions);
+            .symbol_samples(request_id, contract_descriptions);
 
         Ok(())
     }
@@ -2223,10 +2224,10 @@ where
     fn process_tick_by_tick(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         let tick_type = decode_i32(&mut fields_itr)?;
         let time = decode_i64(&mut fields_itr)?;
@@ -2249,7 +2250,7 @@ where
                     .lock()
                     .expect(WRAPPER_POISONED_MUTEX)
                     .tick_by_tick_all_last(
-                        req_id,
+                        request_id,
                         FromPrimitive::from_i32(tick_type).unwrap(),
                         time,
                         price,
@@ -2275,7 +2276,7 @@ where
                     .lock()
                     .expect(WRAPPER_POISONED_MUTEX)
                     .tick_by_tick_bid_ask(
-                        req_id,
+                        request_id,
                         time,
                         bid_price,
                         ask_price,
@@ -2291,7 +2292,7 @@ where
                 self.wrapper
                     .lock()
                     .expect(WRAPPER_POISONED_MUTEX)
-                    .tick_by_tick_mid_point(req_id, time, mid_point);
+                    .tick_by_tick_mid_point(request_id, time, mid_point);
             }
             _ => return Ok(()),
         }
@@ -2300,12 +2301,12 @@ where
 
     //----------------------------------------------------------------------------------------------
     #[allow(dead_code)]
-    fn process_tick_efp(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+    fn process_tick_exchange_for_physical(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let ticker_id = decode_i32(&mut fields_itr)?;
@@ -2317,7 +2318,7 @@ where
         let future_last_trade_date = decode_string(&mut fields_itr)?;
         let dividend_impact = decode_f64(&mut fields_itr)?;
         let dividends_to_last_trade_date = decode_f64(&mut fields_itr)?;
-        self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).tick_efp(
+        self.wrapper.lock().expect(WRAPPER_POISONED_MUTEX).tick_exchange_for_physical(
             ticker_id,
             FromPrimitive::from_i32(tick_type).unwrap(),
             basis_points,
@@ -2335,9 +2336,9 @@ where
     fn process_tick_generic(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let ticker_id = decode_i32(&mut fields_itr)?;
@@ -2359,7 +2360,7 @@ where
     fn process_tick_news(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
         let ticker_id = decode_i32(&mut fields_itr)?;
         let time_stamp = decode_i32(&mut fields_itr)?;
@@ -2388,7 +2389,7 @@ where
     ) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let version = decode_i32(&mut fields_itr)?;
@@ -2469,10 +2470,10 @@ where
     }
 
     //----------------------------------------------------------------------------------------------
-    fn process_tick_req_params(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+    fn process_tick_request_parameters(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
 
         let ticker_id = decode_i32(&mut fields_itr)?;
@@ -2482,7 +2483,7 @@ where
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .tick_req_params(
+            .tick_request_parameters(
                 ticker_id,
                 min_tick,
                 bbo_exchange.as_ref(),
@@ -2495,9 +2496,9 @@ where
     fn process_tick_size(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let ticker_id = decode_i32(&mut fields_itr)?;
@@ -2515,17 +2516,17 @@ where
     fn process_tick_snapshot_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
-        let req_id = decode_i32(&mut fields_itr)?;
+        let request_id = decode_i32(&mut fields_itr)?;
 
         self.wrapper
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
-            .tick_snapshot_end(req_id);
+            .tick_snapshot_end(request_id);
         Ok(())
     }
 
@@ -2536,9 +2537,9 @@ where
     ) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
         let _is_successful_str = decode_string(&mut fields_itr)?;
         let is_successful = "true" == decode_string(&mut fields_itr)?;
@@ -2558,9 +2559,9 @@ where
     ) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
 
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let api_data = decode_string(&mut fields_itr)?;
@@ -2576,9 +2577,9 @@ where
     //----------------------------------------------------------------------------------------------
     fn process_verify_completed(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let _is_successful_str = decode_string(&mut fields_itr)?;
@@ -2596,9 +2597,9 @@ where
     #[allow(dead_code)]
     fn process_verify_message_api(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
         let mut fields_itr = fields.iter();
-        //throw away message_id
+        // Throw away message_id.
         fields_itr.next();
-        //throw away version
+        // Throw away version.
         fields_itr.next();
 
         let api_data = decode_string(&mut fields_itr)?;

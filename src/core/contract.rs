@@ -200,6 +200,28 @@ impl Contract {
             delta_neutral_contract,
         }
     }
+
+    pub fn future(symbol: &str, last_trade_date_or_contract_month: &str, exchange: &str) -> Self {
+        Self {
+            symbol: symbol.to_string(),
+            sec_type: "FUT".to_string(),
+            exchange: exchange.to_string(),
+            //currency: "USD".to_string(),
+            last_trade_date_or_contract_month: last_trade_date_or_contract_month.to_string(),
+            ..Default::default()
+        }
+    }
+
+    pub fn stock(symbol: &str, exchange: &str, currency: &str) -> Self {
+        Self {
+            symbol: symbol.to_string(),
+            sec_type: "STK".to_string(),
+            exchange: exchange.to_string(),
+            currency: currency.to_string(),
+            ..Default::default()
+        }
+    }
+
 }
 
 impl Display for Contract {

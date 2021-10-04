@@ -171,15 +171,15 @@ impl From<TwsApiReportableError> for IBKRApiLibError {
 
 #[derive(Clone, Debug)]
 pub struct TwsApiReportableError {
-    pub req_id: i32,
+    pub request_id: i32,
     pub code: String,
     pub description: String,
 }
 
 impl TwsApiReportableError {
-    pub fn new(req_id: i32, code: String, description: String) -> Self {
+    pub fn new(request_id: i32, code: String, description: String) -> Self {
         Self {
-            req_id,
+            request_id,
             code,
             description,
         }
@@ -190,8 +190,8 @@ impl fmt::Display for TwsApiReportableError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "TWS Error: req_id = {}. code = {}. description = {}",
-            self.req_id, self.code, self.description
+            "TWS Error: request_id = {}. code = {}. description = {}",
+            self.request_id, self.code, self.description
         )
     }
 }

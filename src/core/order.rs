@@ -15,6 +15,7 @@ use crate::core::order_condition::{Condition, OrderConditionEnum};
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]
 pub enum Origin {
+    // #[default]
     Customer = 0,
     Firm = 1,
     Unknown = 2,
@@ -31,6 +32,7 @@ impl Default for Origin {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]
 pub enum AuctionStrategy {
+    // #[default]
     AuctionUnset = 0,
     AuctionMatch = 1,
     AuctionImprovement = 2,

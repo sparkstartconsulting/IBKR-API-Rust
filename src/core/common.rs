@@ -17,7 +17,7 @@ pub const UNSET_LONG: i64 = std::i64::MAX;
 //==================================================================================================
 /// Tick types
 #[repr(i32)]
-#[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy)]
+#[derive(Serialize, Deserialize, Clone, Debug, FromPrimitive, Copy, PartialEq)]
 pub enum TickType {
     BidSize = 0,
     Bid = 1,
@@ -40,7 +40,7 @@ pub enum TickType {
     High26Week = 18,
     Low52Week = 19,
     High52Week = 20,
-    AvgVolume = 21,
+    AverageVolume = 21,
     OpenInterest = 22,
     OptionHistoricalVol = 23,
     OptionImpliedVol = 24,
@@ -57,17 +57,17 @@ pub enum TickType {
     AuctionPrice = 35,
     AuctionImbalance = 36,
     MarkPrice = 37,
-    BidEfpComputation = 38,
-    AskEfpComputation = 39,
-    LastEfpComputation = 40,
-    OpenEfpComputation = 41,
-    HighEfpComputation = 42,
-    LowEfpComputation = 43,
-    CloseEfpComputation = 44,
+    BidExchangeForPhysicalComputation = 38,
+    AskExchangeForPhysicalComputation = 39,
+    LastExchangeForPhysicalComputation = 40,
+    OpenExchangeForPhysicalComputation = 41,
+    HighExchangeForPhysicalComputation = 42,
+    LowExchangeForPhysicalComputation = 43,
+    CloseExchangeForPhysicalComputation = 44,
     LastTimestamp = 45,
     Shortable = 46,
     FundamentalRatios = 47,
-    RtVolume = 48,
+    RegularTradingVolume = 48,
     Halted = 49,
     BidYield = 50,
     AskYield = 51,
@@ -76,9 +76,9 @@ pub enum TickType {
     TradeCount = 54,
     TradeRate = 55,
     VolumeRate = 56,
-    LastRthTrade = 57,
-    RtHistoricalVol = 58,
-    IbDividends = 59,
+    LastRegularTradingHoursTrade = 57,
+    RegularTradingHistoricalVolume = 58,
+    Dividends = 59,
     BondFactorMultiplier = 60,
     RegulatoryImbalance = 61,
     NewsTick = 62,
@@ -104,11 +104,40 @@ pub enum TickType {
     DelayedLastOption = 82,
     DelayedModelOption = 83,
     LastExch = 84,
-    LastRegTime = 85,
+    LastRegularTime = 85,
     FuturesOpenInterest = 86,
-    AvgOptVolume = 87,
+    AverageOptionVolume = 87,
     DelayedLastTimestamp = 88,
     ShortableShares = 89,
+    ExchangeTradedFundNetAssetValueClose = 92,
+    ExchangeTradedFundNetAssetValuePriorClose = 93,
+    ExchangeTradedFundNetAssetValueBid = 94,
+    ExchangeTradedFundNetAssetValueAsk = 95,
+    ExchangeTradedFundNetAssetValueLast = 96,
+    ExchangeTradedFundNetAssetValueFrozenLast = 97,
+    ExchangeTradedFundNetAssetValueHigh = 98,
+    ExchangeTradedFundNetAssetValueLow = 99,
+    /*OptionVolume = 100,
+    OptionOpenInterest = 101,
+    OptionHistoricalVolatility = 104,
+    OptionAverageVolume = 105,
+    OptionImpliedVolatility = 106,
+    IndexFuturePremium = 162,
+    MiscellaneousStats = 165,
+    MarkPrice = 221,
+    Auction = 225,
+    RealtimeVolume = 233,
+    ShortableShares = 236,
+    Inventory = 256,
+    FundamentalRatios = 258,
+    TradeCount = 293,
+    TradeRate = 294,
+    VolumeRate = 295,
+    RealtimeTradeVolume = 375,
+    RealtimeHistoricalVolatility = 411,
+    Dividends = 456,
+    FuturesOpenInterest = 588,*/
+    // #[default]
     NotSet = UNSET_INTEGER,
 }
 
@@ -136,7 +165,7 @@ impl fmt::Display for TickType {
             TickType::High26Week => write!(fmt, "26WeekHigh"),
             TickType::Low52Week => write!(fmt, "52WeekLow"),
             TickType::High52Week => write!(fmt, "52WeekHigh"),
-            TickType::AvgVolume => write!(fmt, "AvgVolume"),
+            TickType::AverageVolume => write!(fmt, "AvgVolume"),
             TickType::OpenInterest => write!(fmt, "OpenInterest"),
             TickType::OptionHistoricalVol => write!(fmt, "OptionHistoricalVolatility"),
             TickType::OptionImpliedVol => write!(fmt, "OptionImpliedVolatility"),
@@ -153,17 +182,17 @@ impl fmt::Display for TickType {
             TickType::AuctionPrice => write!(fmt, "auctionPrice"),
             TickType::AuctionImbalance => write!(fmt, "auctionImbalance"),
             TickType::MarkPrice => write!(fmt, "markPrice"),
-            TickType::BidEfpComputation => write!(fmt, "bidEFP"),
-            TickType::AskEfpComputation => write!(fmt, "askEFP"),
-            TickType::LastEfpComputation => write!(fmt, "lastEFP"),
-            TickType::OpenEfpComputation => write!(fmt, "openEFP"),
-            TickType::HighEfpComputation => write!(fmt, "highEFP"),
-            TickType::LowEfpComputation => write!(fmt, "lowEFP"),
-            TickType::CloseEfpComputation => write!(fmt, "closeEFP"),
+            TickType::BidExchangeForPhysicalComputation => write!(fmt, "bidEFP"),
+            TickType::AskExchangeForPhysicalComputation => write!(fmt, "askEFP"),
+            TickType::LastExchangeForPhysicalComputation => write!(fmt, "lastEFP"),
+            TickType::OpenExchangeForPhysicalComputation => write!(fmt, "openEFP"),
+            TickType::HighExchangeForPhysicalComputation => write!(fmt, "highEFP"),
+            TickType::LowExchangeForPhysicalComputation => write!(fmt, "lowEFP"),
+            TickType::CloseExchangeForPhysicalComputation => write!(fmt, "closeEFP"),
             TickType::LastTimestamp => write!(fmt, "lastTimestamp"),
             TickType::Shortable => write!(fmt, "shortable"),
             TickType::FundamentalRatios => write!(fmt, "fundamentals"),
-            TickType::RtVolume => write!(fmt, "RTVolume"),
+            TickType::RegularTradingVolume => write!(fmt, "RTVolume"),
             TickType::Halted => write!(fmt, "halted"),
             TickType::BidYield => write!(fmt, "bidYield"),
             TickType::AskYield => write!(fmt, "askYield"),
@@ -172,9 +201,9 @@ impl fmt::Display for TickType {
             TickType::TradeCount => write!(fmt, "tradeCount"),
             TickType::TradeRate => write!(fmt, "tradeRate"),
             TickType::VolumeRate => write!(fmt, "volumeRate"),
-            TickType::LastRthTrade => write!(fmt, "lastRTHTrade"),
-            TickType::RtHistoricalVol => write!(fmt, "RTHistoricalVol"),
-            TickType::IbDividends => write!(fmt, "IBDividends"),
+            TickType::LastRegularTradingHoursTrade => write!(fmt, "lastRTHTrade"),
+            TickType::RegularTradingHistoricalVolume => write!(fmt, "RtHistoricalVol"),
+            TickType::Dividends => write!(fmt, "IBDividends"),
             TickType::BondFactorMultiplier => write!(fmt, "bondFactorMultiplier"),
             TickType::RegulatoryImbalance => write!(fmt, "regulatoryImbalance"),
             TickType::NewsTick => write!(fmt, "newsTick"),
@@ -200,11 +229,39 @@ impl fmt::Display for TickType {
             TickType::DelayedLastOption => write!(fmt, "delayedLastOptComp"),
             TickType::DelayedModelOption => write!(fmt, "delayedModelOptComp"),
             TickType::LastExch => write!(fmt, "lastExchange"),
-            TickType::LastRegTime => write!(fmt, "lastRegTime"),
+            TickType::LastRegularTime => write!(fmt, "lastRegTime"),
             TickType::FuturesOpenInterest => write!(fmt, "futuresOpenInterest"),
-            TickType::AvgOptVolume => write!(fmt, "avgOptVolume"),
+            TickType::AverageOptionVolume => write!(fmt, "avgOptVolume"),
             TickType::DelayedLastTimestamp => write!(fmt, "delayedLastTimestamp"),
             TickType::ShortableShares => write!(fmt, "shortableShares"),
+            TickType::ExchangeTradedFundNetAssetValueClose => write!(fmt, "EtfNavClose"),
+            TickType::ExchangeTradedFundNetAssetValuePriorClose => write!(fmt, "EtfNavClose"),
+            TickType::ExchangeTradedFundNetAssetValueBid => write!(fmt, "EtfNavBid"),
+            TickType::ExchangeTradedFundNetAssetValueAsk => write!(fmt, "EtfNavAsk"),
+            TickType::ExchangeTradedFundNetAssetValueLast => write!(fmt, "EtfNavLast"),
+            TickType::ExchangeTradedFundNetAssetValueFrozenLast => write!(fmt, "EtfNavFrozenLast"),
+            TickType::ExchangeTradedFundNetAssetValueHigh => write!(fmt, "EtfNavHigh"),
+            TickType::ExchangeTradedFundNetAssetValueLow => write!(fmt, "EtfNavLow"),
+            /*TickType::OptionVolume => write!(fmt, "OptionVolume"),
+            TickType::OptionOpenInterest  => write!(fmt, "OptionOpenInterest"),
+            TickType::OptionHistoricalVolatility  => write!(fmt, "OptionHistoricalVolatility"),
+            TickType::OptionAverageVolume  => write!(fmt, "OptionAverageVolume"),
+            TickType::OptionImpliedVolatility  => write!(fmt, "OptionImpliedVolatility"),
+            TickType::IndexFuturePremium  => write!(fmt, "IndexFuturePremium"),
+            TickType::MiscellaneousStatistics  => write!(fmt, "MiscellaneousStatistics"),
+            TickType::MarkPrice  => write!(fmt, "MarkPrice"),
+            TickType::Auction => write!(fmt, "Auction"),
+            TickType::RealtimeVolume  => write!(fmt, "RealtimeVolume"),
+            TickType::ShortableShares  => write!(fmt, "ShortableShares"),
+            TickType::Inventory  => write!(fmt, "Inventory"),
+            TickType::FundamentalRatios  => write!(fmt, "FundamentalRatios"),
+            TickType::TradeCount  => write!(fmt, "TradeCount"),
+            TickType::TradeRate  => write!(fmt, "TradeRate"),
+            TickType::VolumeRate => write!(fmt, "VolumeRate"),
+            TickType::RealtimeTradeVolume => write!(fmt, "RealtimeTradeVolume"),
+            TickType::RealtimeHistoricalVolatility => write!(fmt, "RealtimeHistoricalVolatility"),
+            TickType::Dividends  => write!(fmt, "Dividends"),
+            TickType::FuturesOpenInterest  => write!(fmt, "FuturesOpenInterest"),*/
             TickType::NotSet => write!(fmt, "unknown"),
         }
     }
@@ -215,6 +272,7 @@ impl fmt::Display for TickType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum FaDataType {
+    // #[default]
     NA = 0,
     GROUPS = 1,
     PROFILES = 2,
@@ -232,7 +290,8 @@ impl fmt::Display for FaDataType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum TickByTickType {
-    NA = 0,
+    // #[default]
+    None = 0,
     Last = 1,
     AllLast = 2,
     BidAsk = 3,
@@ -242,7 +301,7 @@ pub enum TickByTickType {
 impl fmt::Display for TickByTickType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TickByTickType::NA => write!(f, "N/A"),
+            TickByTickType::None => write!(f, "N/A"),
             TickByTickType::Last => write!(f, "Last"),
             TickByTickType::AllLast => write!(f, "AllLast"),
             TickByTickType::BidAsk => write!(f, "BidAsk"),
@@ -794,6 +853,7 @@ impl fmt::Display for TagValue {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum ComboParam {
+    // #[default]
     NonGuaranteed,
     PriceCondConid,
     CondPriceMax,
@@ -827,6 +887,7 @@ impl Display for ComboParam {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum HedgeType {
+    // #[default]
     None,
     Delta,
     Beta,
@@ -850,6 +911,7 @@ impl Display for HedgeType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum Right {
+    // #[default]
     None,
     Put,
     Call,
@@ -869,6 +931,7 @@ impl Display for Right {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum VolatilityType {
+    // #[default]
     None,
     Daily,
     Annual,
@@ -888,6 +951,7 @@ impl Display for VolatilityType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum ReferencePriceType {
+    // #[default]
     None,
     Midpoint,
     BidOrAsk,
@@ -907,6 +971,7 @@ impl Display for ReferencePriceType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum TriggerMethod {
+    // #[default]
     Default,
     DoubleBidAsk,
     Last,
@@ -934,17 +999,18 @@ impl Display for TriggerMethod {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum Action {
-    BUY,
-    SELL,
-    SSHORT,
+    // #[default]
+    Buy,
+    Sell,
+    Sshort,
 }
 
 impl Display for Action {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
-            Action::BUY => write!(f, "BUY"),
-            Action::SELL => write!(f, "SELL"),
-            Action::SSHORT => write!(f, "SSHORT"),
+            Action::Buy => write!(f, "BUY"),
+            Action::Sell => write!(f, "SELL"),
+            Action::Sshort => write!(f, "SSHORT"),
         }
     }
 }
@@ -953,6 +1019,7 @@ impl Display for Action {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum Rule80A {
+    // #[default]
     None,
     Individual,
     Agency,
@@ -986,6 +1053,7 @@ impl Display for Rule80A {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum OcaType {
+    // #[default]
     None,
     CancelWithBlocking,
     ReduceWithBlocking,
@@ -1007,6 +1075,7 @@ impl Display for OcaType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum TimeInForce {
+    // #[default]
     DAY,
     GTC,
     OPG,
@@ -1040,6 +1109,7 @@ impl Display for TimeInForce {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum ExerciseType {
+    // #[default]
     None,
     Exercise,
     Lapse,
@@ -1059,6 +1129,7 @@ impl Display for ExerciseType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum FundamentalType {
+    // #[default]
     ReportSnapshot,
     ReportsFinSummary,
     ReportRatios,
@@ -1086,6 +1157,7 @@ impl Display for FundamentalType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum WhatToShow {
+    // #[default]
     Trades,
     Midpoint,
     Bid,
@@ -1124,6 +1196,7 @@ impl Display for WhatToShow {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum BarSize {
+    // #[default]
     _1Secs,
     _5Secs,
     _10Secs,
@@ -1173,6 +1246,7 @@ impl Display for BarSize {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum DurationUnit {
+    // #[default]
     SECOND,
     DAY,
     WEEK,
@@ -1196,17 +1270,18 @@ impl Display for DurationUnit {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum DeepType {
-    INSERT,
-    UPDATE,
-    DELETE,
+    // #[default]
+    Insert,
+    Update,
+    Delete,
 }
 
 impl Display for DeepType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
-            DeepType::INSERT => write!(f, "INSERT"),
-            DeepType::UPDATE => write!(f, "UPDATE"),
-            DeepType::DELETE => write!(f, "DELETE"),
+            DeepType::Insert => write!(f, "INSERT"),
+            DeepType::Update => write!(f, "UPDATE"),
+            DeepType::Delete => write!(f, "DELETE"),
         }
     }
 }
@@ -1214,6 +1289,7 @@ impl Display for DeepType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum DeepSide {
+    // #[default]
     Sell,
     Buy,
 }
@@ -1231,11 +1307,12 @@ impl Display for DeepSide {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum NewsType {
+    // #[default]
     Unknown,
-    BBS,
-    LiveExch,
-    DeadExch,
-    HTML,
+    Bbs,
+    LiveExchange,
+    DeadExchange,
+    Html,
     PopupText,
     PopupHtml,
 }
@@ -1244,10 +1321,10 @@ impl Display for NewsType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
             NewsType::Unknown => write!(f, "UNKNOWN"),
-            NewsType::BBS => write!(f, "BBS"),
-            NewsType::LiveExch => write!(f, "LIVE_EXCH"),
-            NewsType::DeadExch => write!(f, "DEAD_EXCH"),
-            NewsType::HTML => write!(f, "HTML"),
+            NewsType::Bbs => write!(f, "BBS"),
+            NewsType::LiveExchange => write!(f, "LIVE_EXCH"),
+            NewsType::DeadExchange => write!(f, "DEAD_EXCH"),
+            NewsType::Html => write!(f, "HTML"),
             NewsType::PopupText => write!(f, "POPUP_TEXT"),
             NewsType::PopupHtml => write!(f, "POPUP_HTML"),
         }
@@ -1257,7 +1334,8 @@ impl Display for NewsType {
 //==================================================================================================
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
-pub enum SecIdType {
+pub enum SecurityIdType {
+    // #[default]
     None,
     CUSIP,
     SEDOL,
@@ -1265,14 +1343,14 @@ pub enum SecIdType {
     RIC,
 }
 
-impl Display for SecIdType {
+impl Display for SecurityIdType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
-            SecIdType::None => write!(f, ""),
-            SecIdType::CUSIP => write!(f, "CUSIP"),
-            SecIdType::SEDOL => write!(f, "SEDOL"),
-            SecIdType::ISIN => write!(f, "ISIN"),
-            SecIdType::RIC => write!(f, "RIC"),
+            SecurityIdType::None => write!(f, ""),
+            SecurityIdType::CUSIP => write!(f, "CUSIP"),
+            SecurityIdType::SEDOL => write!(f, "SEDOL"),
+            SecurityIdType::ISIN => write!(f, "ISIN"),
+            SecurityIdType::RIC => write!(f, "RIC"),
         }
     }
 }
@@ -1280,7 +1358,8 @@ impl Display for SecIdType {
 //==================================================================================================
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
-pub enum SecType {
+pub enum SecurityType {
+    // #[default]
     None,
     STK,
     OPT,
@@ -1306,32 +1385,32 @@ pub enum SecType {
     ICS,
 }
 
-impl Display for SecType {
+impl Display for SecurityType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         match *self {
-            SecType::None => write!(f, ""),
-            SecType::STK => write!(f, "STK"),
-            SecType::OPT => write!(f, "OPT"),
-            SecType::FUT => write!(f, "FUT"),
-            SecType::CONTFUT => write!(f, "CONTFUT"),
-            SecType::CASH => write!(f, "CASH"),
-            SecType::BOND => write!(f, "BOND"),
-            SecType::CFD => write!(f, "CFD"),
-            SecType::FOP => write!(f, "FOP"),
-            SecType::WAR => write!(f, "WAR"),
-            SecType::IOPT => write!(f, "IOPT"),
-            SecType::FWD => write!(f, "FWD"),
-            SecType::BAG => write!(f, "BAG"),
-            SecType::IND => write!(f, "IND"),
-            SecType::BILL => write!(f, "BILL"),
-            SecType::FUND => write!(f, "FUND"),
-            SecType::FIXED => write!(f, "FIXED"),
-            SecType::SLB => write!(f, "SLB"),
-            SecType::NEWS => write!(f, "NEWS"),
-            SecType::CMDTY => write!(f, "CMDTY"),
-            SecType::BSK => write!(f, "BSK"),
-            SecType::ICU => write!(f, "ICU"),
-            SecType::ICS => write!(f, "ICS"),
+            SecurityType::None => write!(f, ""),
+            SecurityType::STK => write!(f, "STK"),
+            SecurityType::OPT => write!(f, "OPT"),
+            SecurityType::FUT => write!(f, "FUT"),
+            SecurityType::CONTFUT => write!(f, "CONTFUT"),
+            SecurityType::CASH => write!(f, "CASH"),
+            SecurityType::BOND => write!(f, "BOND"),
+            SecurityType::CFD => write!(f, "CFD"),
+            SecurityType::FOP => write!(f, "FOP"),
+            SecurityType::WAR => write!(f, "WAR"),
+            SecurityType::IOPT => write!(f, "IOPT"),
+            SecurityType::FWD => write!(f, "FWD"),
+            SecurityType::BAG => write!(f, "BAG"),
+            SecurityType::IND => write!(f, "IND"),
+            SecurityType::BILL => write!(f, "BILL"),
+            SecurityType::FUND => write!(f, "FUND"),
+            SecurityType::FIXED => write!(f, "FIXED"),
+            SecurityType::SLB => write!(f, "SLB"),
+            SecurityType::NEWS => write!(f, "NEWS"),
+            SecurityType::CMDTY => write!(f, "CMDTY"),
+            SecurityType::BSK => write!(f, "BSK"),
+            SecurityType::ICU => write!(f, "ICU"),
+            SecurityType::ICS => write!(f, "ICS"),
         }
     }
 }
@@ -1340,6 +1419,7 @@ impl Display for SecType {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum MarketDataTypeEnum {
+    // #[default]
     Unknown,
     Realtime,
     Frozen,
@@ -1363,6 +1443,7 @@ impl Display for MarketDataTypeEnum {
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
 pub enum Method {
+    // #[default]
     None,
     EqualQuantity,
     AvailableEquity,
@@ -1385,18 +1466,19 @@ impl Display for Method {
 //==================================================================================================
 #[repr(i32)]
 #[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
-pub enum UsePriceMgmtAlgo {
+pub enum UsePriceManagementAlgorithm {
+    // #[default]
     Default,
     NotUse,
     Use,
 }
 
-impl UsePriceMgmtAlgo {
+impl UsePriceManagementAlgorithm {
     pub fn value(&self) -> Option<bool> {
         match *self {
-            UsePriceMgmtAlgo::Default => None,
-            UsePriceMgmtAlgo::NotUse => Some(false),
-            UsePriceMgmtAlgo::Use => Some(true),
+            UsePriceManagementAlgorithm::Default => None,
+            UsePriceManagementAlgorithm::NotUse => Some(false),
+            UsePriceManagementAlgorithm::Use => Some(true),
         }
     }
 }

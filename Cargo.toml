@@ -8,9 +8,9 @@ edition = "2021"
 name = "twsapi"
 path = "src/lib.rs"
 
-[[bin]]
+[[example]]
 name = "twsapi_client"
-path = "src/bin/manual_tests.rs"
+path = "example/bin/manual_tests.rs"
 
 [dependencies]
 ascii = "1.0.0"
@@ -27,5 +27,6 @@ log = "0.4.14"
 log4rs = "1.0.0"
 num = "0.4.0"
 num-derive = "0.3.3"
+#num_enum = "0.5.4"
 num-traits = "0.2.14"
 serde = { version = "1.0.130", features = ["derive"] }

@@ -99,6 +99,7 @@ impl Reader {
                 break;
             }
         }
+
         Ok(())
     }
 
