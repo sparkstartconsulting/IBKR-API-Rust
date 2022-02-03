@@ -1,6 +1,6 @@
 # IBKR-API-Rust
 
-## This branch is currently in progress to upgrade to version 10.12.01.  Do not use until it is merged to master!!! test
+## This branch is currently in progress to upgrade to version 10.12.01.  Do not use until it is merged to master!!!
 
 Port of Interactive Broker's trading API written in Rust (API_Version=10.12.01)
 
