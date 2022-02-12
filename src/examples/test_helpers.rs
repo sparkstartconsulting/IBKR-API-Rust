@@ -8,7 +8,7 @@ use crate::{
     },
     core::contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract},
     core::errors::IBKRApiLibError,
-    core::execution::{Execution, ExecutionFilter},
+    core::execution::{Execution},
     core::{
         account_summary_tags::AccountSummaryTags,
         order::{Order, OrderState, SoftDollarTier},
@@ -17,12 +17,7 @@ use crate::{
     },
     core::{
         algo_params::{
-            fill_accumulate_distribute_params, fill_adaptive_params, fill_arrival_price_params,
-            fill_balance_impact_risk_params, fill_close_price_params, fill_csfbinline_params,
-            fill_dark_ice_params, fill_jefferies_vwapparams, fill_min_impact_params,
-            fill_pct_vol_params, fill_price_variant_pct_vol_params, fill_qbalgo_in_line_params,
-            fill_scale_params, fill_size_variant_pct_vol_params, fill_time_variant_pct_vol_params,
-            fill_twap_params, fill_vwap_params,
+            fill_arrival_price_params,
         },
         streamer::Streamer,
     },
