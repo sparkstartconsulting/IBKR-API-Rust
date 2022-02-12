@@ -8,19 +8,14 @@ use crate::{
     },
     core::contract::{Contract, ContractDescription, ContractDetails, DeltaNeutralContract},
     core::errors::IBKRApiLibError,
-    core::execution::{Execution},
+    core::execution::Execution,
     core::{
         account_summary_tags::AccountSummaryTags,
         order::{Order, OrderState, SoftDollarTier},
         order_condition::TriggerMethod,
         wrapper::Wrapper,
     },
-    core::{
-        algo_params::{
-            fill_arrival_price_params,
-        },
-        streamer::Streamer,
-    },
+    core::{algo_params::fill_arrival_price_params, streamer::Streamer},
     examples::{
         contract_samples, fa_allocation_samples, order_samples, scanner_subscription_samples,
     },
