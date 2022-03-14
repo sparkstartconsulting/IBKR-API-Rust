@@ -42,6 +42,12 @@ pub struct TestWrapper<T: Streamer + 'static> {
     account: String,
 }
 
+impl<T: Streamer> Default for TestWrapper<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Streamer> TestWrapper<T> {
     pub fn new() -> Self {
         TestWrapper {
@@ -192,7 +198,7 @@ impl<T: Streamer> TestWrapper<T> {
                 .expect(CLIENT_POISONED_MUTEX)
                 .place_order(
                     next_id,
-                    &contract_samples::usstock().borrow(),
+                    &contract_samples::usstock(),
                     order_samples::limit_order("SELL", 1.0, 50.0).borrow(),
                 )?;
         }
@@ -209,7 +215,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                &contract_samples::usstock(),
                 fa_order_one_account.borrow(),
             )?;
 
@@ -274,7 +280,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 model_order.borrow(),
             )?;
 
@@ -364,7 +370,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::discretionary("SELL", 1.0, 45.0, 0.5).borrow(),
             )?;
 
@@ -389,7 +395,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::limit_on_close("SELL", 1.0, 34.0).borrow(),
             )?;
 
@@ -401,7 +407,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::limit_on_open("BUY", 1.0, 35.0).borrow(),
             )?;
 
@@ -413,7 +419,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::market_if_touched("BUY", 1.0, 30.0).borrow(),
             )?;
 
@@ -425,7 +431,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::market_on_close("SELL", 1.0).borrow(),
             )?;
 
@@ -437,7 +443,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::market_on_open("BUY", 1.0).borrow(),
             )?;
 
@@ -449,7 +455,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::market_order("SELL", 1.0).borrow(),
             )?;
 
@@ -461,7 +467,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::market_to_limit("BUY", 1.0).borrow(),
             )?;
 
@@ -486,7 +492,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::market_to_limit("BUY", 1.0).borrow(),
             )?;
 
@@ -498,7 +504,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::stop("SELL", 1.0, 34.4).borrow(),
             )?;
 
@@ -510,7 +516,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 &order_samples::stop_limit("BUY", 1.0, 35.0, 33.0),
             )?;
 
@@ -534,7 +540,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::sweep_to_fill("BUY", 1.0, 35.0).borrow(),
             )?;
 
@@ -546,7 +552,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::trailing_stop("SELL", 1.0, 0.5, 30.0).borrow(),
             )?;
 
@@ -558,7 +564,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_POISONED_MUTEX)
             .place_order(
                 next_id,
-                &contract_samples::usstock().borrow(),
+                contract_samples::usstock().borrow(),
                 order_samples::trailing_stop_limit("BUY", 1.0, 2.0, 5.0, 50.0).borrow(),
             )?;
 
@@ -1850,19 +1856,11 @@ impl<T: Streamer> TestWrapper<T> {
             )?;
 
         // Generic Filters
-        let mut tagvalues = vec![];
-        tagvalues.push(TagValue::new(
-            "usdMarketCapAbove".to_string(),
-            "10000".to_string(),
-        ));
-        tagvalues.push(TagValue::new(
-            "optVolumeAbove".to_string(),
-            "1000".to_string(),
-        ));
-        tagvalues.push(TagValue::new(
-            "avgVolumeAbove".to_string(),
-            "10000".to_string(),
-        ));
+        let tagvalues = vec![
+            TagValue::new("usdMarketCapAbove".to_string(), "10000".to_string()),
+            TagValue::new("optVolumeAbove".to_string(), "1000".to_string()),
+            TagValue::new("avgVolumeAbove".to_string(), "10000".to_string()),
+        ];
 
         let result = self
             .client
@@ -1876,15 +1874,13 @@ impl<T: Streamer> TestWrapper<T> {
                 vec![],
                 tagvalues,
             ); // requires TWS v973 +
-        if result.is_err() {
-            match result.unwrap_err() {
-                IBKRApiLibError::ApiError(err) => self.error(
-                    err.req_id,
-                    err.code.as_str().parse().unwrap(),
-                    err.description.as_ref(),
-                ),
-                _ => {}
-            }
+
+        if let IBKRApiLibError::ApiError(err) = result.unwrap_err() {
+            self.error(
+                err.req_id,
+                err.code.as_str().parse().unwrap(),
+                err.description.as_ref(),
+            )
         }
 
         let aaplcon_idtag = vec![TagValue::new(
@@ -3287,7 +3283,7 @@ where
     //----------------------------------------------------------------------------------------------
     fn managed_accounts(&mut self, accounts_list: &str) {
         info!("managed_accounts -- accounts_list: {}", accounts_list);
-        let _split = accounts_list.split(",");
+        let _split = accounts_list.split(',');
         //self.account = split;
     }
 
@@ -3570,10 +3566,7 @@ where
                 .iter()
                 .map(|x| x.as_str())
                 .collect::<Vec<&str>>(),
-            strikes
-                .iter()
-                .map(|x| x.clone())
-                .collect::<Vec<BigDecimal>>()
+            strikes.iter().cloned().collect::<Vec<BigDecimal>>()
         );
     }
 
