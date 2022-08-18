@@ -1090,20 +1090,18 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL {
-            if contract.delta_neutral_contract.is_some() {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    NO_VALID_ID,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support delta-neutral orders."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL && contract.delta_neutral_contract.is_some() {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                NO_VALID_ID,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support delta-neutral orders."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SCALE_ORDERS2
