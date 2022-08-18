@@ -249,6 +249,7 @@ pub fn read_fields(buf: &str) -> Vec<String> {
 }
 
 //==================================================================================================
+/// OH BOY THIS IS UGGLY
 pub fn make_field(val: &dyn Any) -> Result<String, IBKRApiLibError> {
     // debug!("CALLING make_field!!");
     // adds the NULL string terminator
