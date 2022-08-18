@@ -86,7 +86,7 @@ pub fn decode_f64_show_unset(iter: &mut Iter<String>) -> Result<f64, IBKRApiLibE
 pub fn decode_string(iter: &mut Iter<String>) -> Result<String, IBKRApiLibError> {
     let next = iter.next();
     //info!("{:?}", next);
-    let val = next.unwrap().parse().unwrap_or("".to_string());
+    let val = next.unwrap().parse().unwrap_or_else(|_| "".to_string());
     Ok(val)
 }
 
@@ -1577,20 +1577,17 @@ where
 
         let status = decode_string(&mut fields_itr)?;
 
-        let filled;
-        if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
-            filled = decode_f64(&mut fields_itr)?;
+        let filled = if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
+            decode_f64(&mut fields_itr)?
         } else {
-            filled = decode_i32(&mut fields_itr)? as f64;
-        }
+            decode_i32(&mut fields_itr)? as f64
+        };
 
-        let remaining;
-
-        if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
-            remaining = decode_f64(&mut fields_itr)?;
+        let remaining = if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
+            decode_f64(&mut fields_itr)?
         } else {
-            remaining = decode_i32(&mut fields_itr)? as f64;
-        }
+            decode_i32(&mut fields_itr)? as f64
+        };
 
         let avg_fill_price = decode_f64(&mut fields_itr)?;
 
@@ -1712,12 +1709,11 @@ where
             contract.trading_class = decode_string(&mut fields_itr)?;
         }
 
-        let position;
-        if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
-            position = decode_f64(&mut fields_itr)?;
+        let position = if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
+            decode_f64(&mut fields_itr)?
         } else {
-            position = decode_i32(&mut fields_itr)? as f64;
-        }
+            decode_i32(&mut fields_itr)? as f64
+        };
 
         let market_price = decode_f64(&mut fields_itr)?;
         let market_value = decode_f64(&mut fields_itr)?;
@@ -1774,12 +1770,11 @@ where
             contract.trading_class = decode_string(&mut fields_itr)?;
         }
 
-        let position;
-        if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
-            position = decode_f64(&mut fields_itr)?;
+        let position = if self.server_version >= MIN_SERVER_VER_FRACTIONAL_POSITIONS {
+            decode_f64(&mut fields_itr)?
         } else {
-            position = decode_i32(&mut fields_itr)? as f64;
-        }
+            decode_i32(&mut fields_itr)? as f64
+        };
 
         let mut avg_cost = 0.0;
         if version >= 3 {
