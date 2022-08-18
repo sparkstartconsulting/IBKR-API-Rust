@@ -152,13 +152,13 @@ where
 
         //An Interactive Broker's developer's note: "sometimes I get news before the server version, thus the loop"
         while fields.len() != 2 {
-            if fields.len() > 0 {
+            if !fields.is_empty() {
                 decoder.interpret(fields.as_slice())?;
             }
 
             let buf = reader.recv_packet()?;
 
-            if buf.len() > 0 {
+            if !buf.is_empty() {
                 let (_size, msg, _remaining_messages) = read_msg(buf.as_slice())?;
 
                 fields.clear();
@@ -436,7 +436,7 @@ where
         // send mktDataOptions parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             // current doc says this part is for "internal use only" -> won't support it
-            if mkt_data_options.len() > 0 {
+            if !mkt_data_options.is_empty() {
                 let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
                     TwsError::UpdateTws.code().to_string(),
@@ -1195,7 +1195,7 @@ where
 
                 return Err(err);
             }
-            if contract.combo_legs.len() > 0
+            if !contract.combo_legs.is_empty()
                 && contract.combo_legs.iter().any(|x| x.exempt_code != -1)
             {
                 let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
@@ -1306,7 +1306,7 @@ where
 
         if self.server_version() < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE
             && contract.sec_type == "BAG"
-            && order.order_combo_legs.len() > 0
+            && !order.order_combo_legs.is_empty()
             && order
                 .order_combo_legs
                 .iter()
@@ -1892,7 +1892,7 @@ where
 
             msg.push_str(&make_field(&order.conditions.len())?);
 
-            if order.conditions.len() > 0 {
+            if !order.conditions.is_empty() {
                 for cond in &order.conditions {
                     msg.push_str(&make_field(&(cond.get_type() as i32))?);
                     let vals = cond.make_fields()?;
@@ -2883,7 +2883,7 @@ where
         // send mkt_depth_options parameter
         if self.server_version() >= MIN_SERVER_VER_LINKING {
             // current doc says this part if for "internal use only" -> won't support it
-            if mkt_depth_options.len() > 0 {
+            if !mkt_depth_options.is_empty() {
                 let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                     req_id,
                     TwsError::Unsupported.code().to_string(),
