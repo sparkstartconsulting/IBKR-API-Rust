@@ -859,11 +859,7 @@ pub fn attach_adjustable_to_stop(
     } else {
         "BUY"
     };
-    let mut order = stop(
-        action,
-        parent.total_quantity,
-        attached_order_stop_price,
-    );
+    let mut order = stop(action, parent.total_quantity, attached_order_stop_price);
     order.parent_id = parent.order_id;
     // When trigger price is penetrated
     order.trigger_price = trigger_price;
@@ -889,11 +885,7 @@ pub fn attach_adjustable_to_stop_limit(
     } else {
         "BUY"
     };
-    let mut order = stop(
-        action,
-        parent.total_quantity,
-        attached_order_stop_price,
-    );
+    let mut order = stop(action, parent.total_quantity, attached_order_stop_price);
     order.parent_id = parent.order_id;
     // When trigger price is penetrated
     order.trigger_price = trigger_price;
@@ -922,11 +914,7 @@ pub fn attach_adjustable_to_trail(
     } else {
         "BUY"
     };
-    let mut order = stop(
-        action,
-        parent.total_quantity,
-        attached_order_stop_price,
-    );
+    let mut order = stop(action, parent.total_quantity, attached_order_stop_price);
     order.parent_id = parent.order_id;
     // When trigger price is penetrated
     order.trigger_price = trigger_price;

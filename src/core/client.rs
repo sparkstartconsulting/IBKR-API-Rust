@@ -1,5 +1,5 @@
 //! EClient and supporting structs.
-//! 
+//!
 //! Responsible for connecting to Trader Workstation or IB Gatway and sending requests
 use std::io::Write;
 use std::marker::Sync;
@@ -124,11 +124,7 @@ where
         let streamer = TcpStreamer::new(tcp_stream);
         self.set_streamer(Option::from(Box::new(streamer.clone()) as Box<dyn Streamer>));
         let (tx, rx) = channel::<String>();
-        let mut reader = Reader::new(
-            Box::new(streamer),
-            tx,
-            self.disconnect_requested.clone(),
-        );
+        let mut reader = Reader::new(Box::new(streamer), tx, self.disconnect_requested.clone());
 
         let mut fields: Vec<String> = Vec::new();
 
@@ -353,7 +349,9 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -600,7 +598,7 @@ where
     /// Request tick by tick data
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `req_id` - unique identifier of the request.
     /// * `contract` - the contract for which tick-by-tick data is requested.
     /// * `tick_type` - TickByTickType data type: "Last", "AllLast", "BidAsk" or "MidPoint".
@@ -679,7 +677,7 @@ where
     /// Cancel tick by tick data
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `req_id` - The identifier of the original request.
     pub fn cancel_tick_by_tick_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
@@ -747,7 +745,9 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -844,7 +844,7 @@ where
 
         let below_min_version = self.server_version() < MIN_SERVER_VER_TRADING_CLASS;
         let non_empty_trading_class = !contract.trading_class.is_empty();
-        if  below_min_version && non_empty_trading_class {
+        if below_min_version && non_empty_trading_class {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -946,7 +946,7 @@ where
     /// Call this function to cancel a request to calculate the option implied volatility.
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `req_id` - The original request id.
     pub fn cancel_calculate_implied_volatility(
         &mut self,
@@ -986,7 +986,7 @@ where
     /// Call this function to excercise options
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `req_id` - The ticker id. multipleust be a unique value.
     /// * `contract` - This structure contains a description of the contract to be exercised
     /// * `exercise_action` - Specifies whether you want the option to lapse or be exercised. Values are:
@@ -1013,7 +1013,9 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -1072,7 +1074,7 @@ where
     /// be returned by the Wrapper::order_status event.
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `order_id` - The order id. You must specify a unique value. When the
     ///              order status returns, it will be identified by this tag.
     ///              This tag is also used when canceling the order.
@@ -1089,7 +1091,9 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL && contract.delta_neutral_contract.is_some() {
+        if self.server_version() < MIN_SERVER_VER_DELTA_NEUTRAL
+            && contract.delta_neutral_contract.is_some()
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code().to_string(),
@@ -2265,7 +2269,7 @@ where
     /// and then updates are returned for any position changes in real time.
     ///
     /// # Arguments
-    /// 
+    ///
     /// * `req_id` - Request's identifier
     /// * `account` - If an account Id is provided, only the account's positions belonging to the
     ///             specified model will be delivered
@@ -2634,7 +2638,9 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
-        if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE && (!contract.sec_id_type.is_empty() || !contract.sec_id.is_empty()) {
+        if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE
+            && (!contract.sec_id_type.is_empty() || !contract.sec_id.is_empty())
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -2648,7 +2654,9 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -2788,7 +2796,9 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && (!&contract.trading_class.is_empty() || contract.con_id > 0) {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && (!&contract.trading_class.is_empty() || contract.con_id > 0)
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -3110,7 +3120,9 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && (!&contract.trading_class.is_empty() || contract.con_id > 0) {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && (!&contract.trading_class.is_empty() || contract.con_id > 0)
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -3642,7 +3654,9 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS
+            && !contract.trading_class.is_empty()
+        {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 NO_VALID_ID,
                 TwsError::UpdateTws.code().to_string(),

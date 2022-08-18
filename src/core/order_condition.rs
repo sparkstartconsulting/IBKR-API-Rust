@@ -176,8 +176,8 @@ impl Debug for OrderConditionEnum {
                 write!(f, "Execution = {}", s.value_to_string())
             }
             OrderConditionEnum::Price(p) => write!(f, "Price = {}", p.value_to_string()),
-            OrderConditionEnum::Margin(m) => write!(f, "Margin = {}",  m.value_to_string()),
-            OrderConditionEnum::Time(t) => write!(f, "Time = {}",  t.value_to_string()),
+            OrderConditionEnum::Margin(m) => write!(f, "Margin = {}", m.value_to_string()),
+            OrderConditionEnum::Time(t) => write!(f, "Time = {}", t.value_to_string()),
             OrderConditionEnum::Volume(v) => write!(f, "Volume = {}", v.value_to_string()),
             OrderConditionEnum::PercentChange(pch) => {
                 write!(f, "Percentage Change = {}", pch.value_to_string())

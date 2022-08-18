@@ -838,7 +838,9 @@ impl<'a> OrderDecoder<'a> {
         &mut self,
         fields_iter: &mut Iter<String>,
     ) -> Result<(), IBKRApiLibError> {
-        if self.server_version >= MIN_SERVER_VER_PEGGED_TO_BENCHMARK && self.order.order_type == "PEG BENCH" {
+        if self.server_version >= MIN_SERVER_VER_PEGGED_TO_BENCHMARK
+            && self.order.order_type == "PEG BENCH"
+        {
             self.order.reference_contract_id = decode_i32(fields_iter)?;
             self.order.is_pegged_change_amount_decrease = decode_bool(fields_iter)?;
             self.order.pegged_change_amount = decode_f64(fields_iter)?;

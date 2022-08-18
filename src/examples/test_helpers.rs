@@ -3573,9 +3573,7 @@ where
                 .iter()
                 .map(|x| x.as_str())
                 .collect::<Vec<&str>>(),
-            strikes
-                .iter().cloned()
-                .collect::<Vec<BigDecimal>>()
+            strikes.iter().cloned().collect::<Vec<BigDecimal>>()
         );
     }
 

@@ -2,7 +2,6 @@
 
 #![allow(clippy::field_reassign_with_default)]
 
-
 use crate::core::scanner::ScannerSubscription;
 
 ///Hot US stocks by volume
