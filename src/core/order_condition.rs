@@ -205,7 +205,7 @@ pub struct OrderCondition {
 impl OrderCondition {
     pub fn new(cond_type: ConditionType) -> Self {
         OrderCondition {
-            cond_type: cond_type,
+            cond_type,
             is_conjunction_connection: false,
         }
     }
@@ -258,9 +258,9 @@ pub struct ExecutionCondition {
 impl ExecutionCondition {
     pub fn new(sec_type: String, exchange: String, symbol: String) -> Self {
         ExecutionCondition {
-            sec_type: sec_type,
-            exchange: exchange,
-            symbol: symbol,
+            sec_type,
+            exchange,
+            symbol,
             order_condition: OrderCondition::new(ConditionType::Execution),
         }
     }
@@ -336,7 +336,7 @@ impl OperatorCondition {
     pub fn new(cond_type: ConditionType, is_more: bool) -> Self {
         OperatorCondition {
             order_condition: OrderCondition::new(cond_type),
-            is_more: is_more,
+            is_more,
         }
     }
 
@@ -377,7 +377,7 @@ impl MarginCondition {
     pub fn new(is_more: bool, percent: f64) -> Self {
         MarginCondition {
             operator_condition: OperatorCondition::new(ConditionType::Margin, is_more),
-            percent: percent,
+            percent,
         }
     }
 }
@@ -443,7 +443,7 @@ impl ContractCondition {
     pub fn new(cond_type: ConditionType, con_id: i32, exchange: &str, is_more: bool) -> Self {
         ContractCondition {
             operator_condition: OperatorCondition::new(cond_type, is_more),
-            con_id: con_id,
+            con_id,
             exchange: exchange.to_string(),
         }
     }
@@ -514,7 +514,7 @@ impl TimeCondition {
     pub fn new(is_more: bool, time: String) -> Self {
         TimeCondition {
             operator_condition: OperatorCondition::new(ConditionType::Time, is_more),
-            time: time,
+            time,
         }
     }
 }
@@ -597,8 +597,8 @@ impl PriceCondition {
                 exchange,
                 is_more,
             ),
-            price: price,
-            trigger_method: trigger_method,
+            price,
+            trigger_method,
         }
     }
 }
@@ -685,7 +685,7 @@ impl PercentChangeCondition {
                 exchange.as_ref(),
                 is_more,
             ),
-            change_percent: change_percent,
+            change_percent,
         }
     }
 }
@@ -771,7 +771,7 @@ impl VolumeCondition {
                 exchange,
                 is_more,
             ),
-            volume: volume,
+            volume,
         }
     }
 }

@@ -118,7 +118,7 @@ where
     ) -> Self {
         Decoder {
             wrapper: the_wrapper,
-            msg_queue: msg_queue,
+            msg_queue,
             server_version,
             conn_state,
         }

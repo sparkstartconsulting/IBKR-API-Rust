@@ -18,7 +18,7 @@ pub struct TcpStreamer {
 
 impl TcpStreamer {
     pub fn new(stream: TcpStream) -> Self {
-        Self { stream: stream }
+        Self { stream }
     }
 }
 

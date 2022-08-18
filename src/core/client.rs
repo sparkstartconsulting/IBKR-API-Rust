@@ -69,7 +69,7 @@ where
 {
     pub fn new(wrapper: Arc<Mutex<T>>) -> Self {
         EClient {
-            wrapper: wrapper,
+            wrapper,
             stream: None,
             host: "".to_string(),
             port: 0,

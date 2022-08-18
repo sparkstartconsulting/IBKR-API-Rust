@@ -178,9 +178,9 @@ pub struct TwsApiReportableError {
 impl TwsApiReportableError {
     pub fn new(req_id: i32, code: String, description: String) -> Self {
         Self {
-            req_id: req_id,
-            code: code,
-            description: description,
+            req_id,
+            code,
+            description,
         }
     }
 }
