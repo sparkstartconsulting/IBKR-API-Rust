@@ -280,9 +280,9 @@ where
 
         let msg = format!(
             "{}{}{}{}",
-            make_field(&mut (Some(OutgoingMessageIds::StartApi).unwrap() as i32))?,
-            make_field(&mut version.to_string())?,
-            make_field(&mut self.client_id.to_string())?,
+            make_field(&(Some(OutgoingMessageIds::StartApi).unwrap() as i32))?,
+            make_field(&version.to_string())?,
+            make_field(&self.client_id.to_string())?,
             opt_capab
         );
 
