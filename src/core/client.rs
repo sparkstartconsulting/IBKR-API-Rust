@@ -1013,20 +1013,18 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if !contract.trading_class.is_empty() {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support con_id, multiplier, trading_class parameter in exercise_options."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support con_id, multiplier, trading_class parameter in exercise_options."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 2;
