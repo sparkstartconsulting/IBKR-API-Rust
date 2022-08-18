@@ -24,6 +24,7 @@ use crate::core::wrapper::Wrapper;
 pub struct DefaultWrapper {}
 
 impl DefaultWrapper {
+    #![allow(clippy::new_without_default)]
     pub fn new() -> Self {
         DefaultWrapper {}
     }
@@ -590,7 +591,7 @@ impl Wrapper for DefaultWrapper {
                 .collect::<Vec<&str>>(),
             strikes
                 .iter()
-                .map(|x| x.clone())
+                .cloned()
                 .collect::<Vec<BigDecimal>>()
         );
     }

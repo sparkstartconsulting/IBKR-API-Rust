@@ -1,5 +1,7 @@
 //! Examples of populating fields that define various types of contacts
 
+#![allow(clippy::field_reassign_with_default)]
+
 use crate::core::contract::{ComboLeg, Contract, PositionType};
 
 //==================================================================================================

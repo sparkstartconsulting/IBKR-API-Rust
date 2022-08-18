@@ -1,5 +1,7 @@
 //! Examples of populating fields of various order types
 
+#![allow(clippy::field_reassign_with_default)]
+
 use num_traits::FromPrimitive;
 
 use crate::core::common::TagValue;
@@ -852,13 +854,13 @@ pub fn attach_adjustable_to_stop(
     adjust_stop_price: f64,
 ) -> Order {
     // Attached order is a conventional STP order in opposite direction
+    let action = if parent.action == "BUY" {
+        "SELL"
+    } else {
+        "BUY"
+    };
     let mut order = stop(
-        (if parent.action == "BUY" {
-            "SELL"
-        } else {
-            "BUY"
-        })
-        .as_ref(),
+        action,
         parent.total_quantity,
         attached_order_stop_price,
     );
@@ -882,13 +884,13 @@ pub fn attach_adjustable_to_stop_limit(
     adjusted_stop_limit_price: f64,
 ) -> Order {
     // Attached order is a conventional STP order
+    let action = if parent.action == "BUY" {
+        "SELL"
+    } else {
+        "BUY"
+    };
     let mut order = stop(
-        (if parent.action == "BUY" {
-            "SELL"
-        } else {
-            "BUY"
-        })
-        .as_ref(),
+        action,
         parent.total_quantity,
         attached_order_stop_price,
     );
@@ -915,13 +917,13 @@ pub fn attach_adjustable_to_trail(
     trail_unit: i32,
 ) -> Order {
     // Attached order is a conventional STP order
+    let action = if parent.action == "BUY" {
+        "SELL"
+    } else {
+        "BUY"
+    };
     let mut order = stop(
-        (if parent.action == "BUY" {
-            "SELL"
-        } else {
-            "BUY"
-        })
-        .as_ref(),
+        action,
         parent.total_quantity,
         attached_order_stop_price,
     );
