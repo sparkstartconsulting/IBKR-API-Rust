@@ -1057,7 +1057,6 @@ where
         }
         msg.push_str(&make_field(&exercise_action)?);
         msg.push_str(&make_field(&exercise_quantity)?);
-        
         msg.push_str(&make_field(&account.to_string())?);
         msg.push_str(&make_field(&over_ride)?);
 
@@ -2635,20 +2634,18 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
-        if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE {
-            if contract.sec_id_type != "" || contract.sec_id != "" {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support sec_id_type and secId parameters."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE && (contract.sec_id_type != "" || contract.sec_id != "") {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support sec_id_type and secId parameters."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
