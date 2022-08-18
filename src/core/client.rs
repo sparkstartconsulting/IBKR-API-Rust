@@ -1008,7 +1008,7 @@ where
         contract: &Contract,
         exercise_action: i32,
         exercise_quantity: i32,
-        account: &String,
+        account: &str,
         over_ride: i32,
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
@@ -1059,7 +1059,8 @@ where
         }
         msg.push_str(&make_field(&exercise_action)?);
         msg.push_str(&make_field(&exercise_quantity)?);
-        msg.push_str(&make_field(account)?);
+        
+        msg.push_str(&make_field(&account.to_string())?);
         msg.push_str(&make_field(&over_ride)?);
 
         self.send_request(msg.as_str())?;
