@@ -41,6 +41,7 @@
 //! ```     
 
 #![allow(clippy::too_many_arguments)]
+#![allow(clippy::field_reassign_with_default)]
 
 pub mod core;
 pub mod examples;
