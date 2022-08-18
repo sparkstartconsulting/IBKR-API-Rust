@@ -3642,20 +3642,18 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if !contract.trading_class.is_empty() {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    NO_VALID_ID,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support con_id and trading_class parameter in req_real_time_bars."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                NO_VALID_ID,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support con_id and trading_class parameter in req_real_time_bars."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 3;
