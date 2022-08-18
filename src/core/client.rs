@@ -2788,20 +2788,18 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if &contract.trading_class != "" || *&contract.con_id > 0 {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support con_id and trading_class parameters in req_mkt_depth."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && (&contract.trading_class != "" || *&contract.con_id > 0) {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support con_id and trading_class parameters in req_mkt_depth."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         if self.server_version() < MIN_SERVER_VER_SMART_DEPTH && is_smart_depth {
@@ -3112,20 +3110,18 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if &contract.trading_class != "" || contract.con_id > 0 {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support con_id and trading_class parameters in req_historical_data."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && (&contract.trading_class != "" || contract.con_id > 0) {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support con_id and trading_class parameters in req_historical_data."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 6;
