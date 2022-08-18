@@ -54,11 +54,13 @@ impl Write for TcpStreamer {
 }
 
 //----------------------------------------------------------------------------------------------
+// TODO: put this in a test section
 pub struct TestStreamer {
     stream: ByteBuffer,
 }
 
 impl TestStreamer {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         TestStreamer {
             stream: ByteBuffer::new(),

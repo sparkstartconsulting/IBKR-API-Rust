@@ -213,7 +213,7 @@ pub fn make_message(msg: &str) -> Result<Vec<u8>, IBKRApiLibError> {
 }
 
 //==================================================================================================
-pub fn read_msg<'a>(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibError> {
+pub fn read_msg(buf: &[u8]) -> Result<(usize, String, Vec<u8>), IBKRApiLibError> {
     // first the size prefix and then the corresponding msg payload ""
 
     if buf.len() < 4 {
