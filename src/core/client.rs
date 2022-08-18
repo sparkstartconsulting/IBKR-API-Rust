@@ -1,4 +1,6 @@
-//! EClient and supporting structs.  Responsible for connecting to Trader Workstation or IB Gatway and sending requests
+//! EClient and supporting structs.
+//! 
+//! Responsible for connecting to Trader Workstation or IB Gatway and sending requests
 use std::io::Write;
 use std::marker::Sync;
 use std::net::Shutdown;
@@ -598,11 +600,12 @@ where
     /// Request tick by tick data
     ///
     /// # Arguments
-    /// * req_id	- unique identifier of the request.
-    /// * contract	- the contract for which tick-by-tick data is requested.
-    /// * tick_type	- TickByTickType data type: "Last", "AllLast", "BidAsk" or "MidPoint".
-    /// * number_of_ticks	- number of ticks.
-    /// * ignore_size	- ignore size flag.
+    /// 
+    /// * `req_id` - unique identifier of the request.
+    /// * `contract` - the contract for which tick-by-tick data is requested.
+    /// * `tick_type` - TickByTickType data type: "Last", "AllLast", "BidAsk" or "MidPoint".
+    /// * `number_of_ticks` - number of ticks.
+    /// * `ignore_size` - ignore size flag.
     pub fn req_tick_by_tick_data(
         &mut self,
         req_id: i32,
@@ -676,7 +679,8 @@ where
     /// Cancel tick by tick data
     ///
     /// # Arguments
-    /// * req_id	- The identifier of the original request.
+    /// 
+    /// * `req_id` - The identifier of the original request.
     pub fn cancel_tick_by_tick_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
@@ -942,7 +946,8 @@ where
     /// Call this function to cancel a request to calculate the option implied volatility.
     ///
     /// # Arguments
-    /// * req_id - The original request id.
+    /// 
+    /// * `req_id` - The original request id.
     pub fn cancel_calculate_implied_volatility(
         &mut self,
         req_id: i32,
@@ -981,14 +986,15 @@ where
     /// Call this function to excercise options
     ///
     /// # Arguments
-    /// * req_id - The ticker id. multipleust be a unique value.
-    /// * contract - This structure contains a description of the contract to be exercised
-    /// * exercise_action - Specifies whether you want the option to lapse or be exercised. Values are:
+    /// 
+    /// * `req_id` - The ticker id. multipleust be a unique value.
+    /// * `contract` - This structure contains a description of the contract to be exercised
+    /// * `exercise_action` - Specifies whether you want the option to lapse or be exercised. Values are:
     ///     * 1 = exercise
     ///     * 2 = lapse.
-    /// * exercise_quantity - The quantity you want to exercise.
-    /// * account - destination account
-    /// * override - Specifies whether your setting will override the system's
+    /// * `exercise_quantity` - The quantity you want to exercise.
+    /// * `account` - destination account
+    /// * `override` - Specifies whether your setting will override the system's
     ///              natural action. For example, if your action is "exercise" and the
     ///              option is not in-the-money, by natural action the option would not
     ///              exercise. If you have override set to "yes" the natural action would
@@ -1068,12 +1074,13 @@ where
     /// be returned by the Wrapper::order_status event.
     ///
     /// # Arguments
-    /// * order_id - The order id. You must specify a unique value. When the
+    /// 
+    /// * `order_id` - The order id. You must specify a unique value. When the
     ///              order status returns, it will be identified by this tag.
     ///              This tag is also used when canceling the order.
-    /// * contract - This structure contains a description of the
+    /// * `contract` - This structure contains a description of the
     ///              contract which is being traded.
-    /// * order - This structure contains the details of the order.
+    /// * `order` - This structure contains the details of the order.
     ///
     /// Note: Each client MUST connect with a unique client_id.
     pub fn place_order(
@@ -2262,10 +2269,11 @@ where
     /// and then updates are returned for any position changes in real time.
     ///
     /// # Arguments
-    /// * req_id - Request's identifier
-    /// * account - If an account Id is provided, only the account's positions belonging to the
+    /// 
+    /// * `req_id` - Request's identifier
+    /// * `account` - If an account Id is provided, only the account's positions belonging to the
     ///             specified model will be delivered
-    /// * modelCode	- The code of the model's positions we are interested in.
+    /// * `modelCode` - The code of the model's positions we are interested in.
     pub fn req_positions_multi(
         &mut self,
         req_id: i32,
@@ -3223,11 +3231,11 @@ where
     /// Returns the timestamp of earliest available historical data for a contract and data type.
     ///
     /// # Arguments
-    /// * req_id	- an identifier for the request
-    /// * contract	- contract object for which head timestamp is being requested
-    /// * what_to_show	- type of data for head timestamp - "BID", "ASK", "TRADES", etc
-    /// * use_rth	- use regular trading hours only, 1 for yes or 0 for no
-    /// * format_date	set to 1 to obtain the bars' time as yyyyMMdd HH:mm:ss, set to 2 to obtain it like system time format in seconds
+    /// * `req_id` - an identifier for the request
+    /// * `contract` - contract object for which head timestamp is being requested
+    /// * `what_to_show` - type of data for head timestamp - "BID", "ASK", "TRADES", etc
+    /// * `use_rth` - use regular trading hours only, 1 for yes or 0 for no
+    /// * `format_date` - set to 1 to obtain the bars' time as yyyyMMdd HH:mm:ss, set to 2 to obtain it like system time format in seconds
     ///
     /// Note that formatData parameter affects intraday bars only
     /// 1-day bars always return with date in YYYYMMDD format
@@ -3404,15 +3412,15 @@ where
     /// Requests historical Time&Sales data for an instrument.
     ///
     /// # Arguments
-    /// * req_id - id of the request
-    /// * contract - Contract object that is subject of query
-    /// * start_date_time,i.e.	"20170701 12:01:00". Uses TWS timezone specified at login.
-    /// * end_date_time,i.e.	"20170701 13:01:00". In TWS timezone. Exactly one of start time and end time has to be defined.
-    /// * number_of_ticks - Number of distinct data points. Max currently 1000 per request.
-    /// * what_to_show - (Bid_Ask, Midpoint, Trades) Type of data requested.
-    /// * use_rth - Data from regular trading hours (1), or all available hours (0)
-    /// * ignore_size - A filter only used when the source price is Bid_Ask
-    /// * misc_options - should be defined as null, reserved for internal use
+    /// * `req_id` - id of the request
+    /// * `contract` - Contract object that is subject of query
+    /// * `start_date_time` - "20170701 12:01:00". Uses TWS timezone specified at login.
+    /// * `end_date_time` - "20170701 13:01:00". In TWS timezone. Exactly one of start time and end time has to be defined.
+    /// * `number_of_ticks` - Number of distinct data points. Max currently 1000 per request.
+    /// * `what_to_show` - (Bid_Ask, Midpoint, Trades) Type of data requested.
+    /// * `use_rth` - Data from regular trading hours (1), or all available hours (0)
+    /// * `ignore_size` - A filter only used when the source price is Bid_Ask
+    /// * `misc_options` - should be defined as null, reserved for internal use
     pub fn req_historical_ticks(
         &mut self,
         req_id: i32,
@@ -3951,13 +3959,13 @@ where
     ///
     /// # Arguments
     ///
-    /// * req_id - id of the request
-    /// * con_id - contract id
-    /// * provider_codes - a '+'-separated list of provider codes
-    /// * start_date_time	- marks the (exclusive) start of the date range. The format is yyyy-MM-dd HH:mm:ss.0
-    /// * end_date_time	- marks the (inclusive) end of the date range. The format is yyyy-MM-dd HH:mm:ss.0
-    /// * total_results	- the maximum number of headlines to fetch (1 - 300)
-    /// * historical_news_options	reserved for internal use. Should be defined as null.
+    /// * `req_id` - id of the request
+    /// * `con_id` - contract id
+    /// * `provider_codes` - a '+'-separated list of provider codes
+    /// * `start_date_time` - marks the (exclusive) start of the date range. The format is yyyy-MM-dd HH:mm:ss.0
+    /// * `end_date_time` - marks the (inclusive) end of the date range. The format is yyyy-MM-dd HH:mm:ss.0
+    /// * `total_results` - the maximum number of headlines to fetch (1 - 300)
+    /// * `historical_news_options` - reserved for internal use. Should be defined as null.
     pub fn req_historical_news(
         &mut self,
         req_id: i32,
@@ -4093,12 +4101,11 @@ where
     /// Updates the contract displayed in a TWS Window Group.
     ///
     /// # Arguments
-    /// * req_id - The requestId specified in subscribe_to_group_events().
-    /// * contract_info	is an encoded value designating a unique IB contract. Possible values include:
-    /// 1. none - empty selection
-    /// 2. contract_id - any non-combination contract. Examples 8314 for IBM SMART; 8314 for IBM ARCA
-    /// 3. combo - if any combo is selected Note: This request from the API does not get a TWS response unless an error occurs.
-
+    /// * `req_id` - The requestId specified in subscribe_to_group_events().
+    /// * `contract_info` - An encoded value designating a unique IB contract. Possible values include:
+    ///   1. none - empty selection
+    ///   2. contract_id - any non-combination contract. Examples 8314 for IBM SMART; 8314 for IBM ARCA
+    ///   3. combo - if any combo is selected Note: This request from the API does not get a TWS response unless an error occurs.
     pub fn update_display_group(
         &mut self,
         req_id: i32,
