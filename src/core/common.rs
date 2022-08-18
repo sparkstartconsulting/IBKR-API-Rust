@@ -212,7 +212,7 @@ impl fmt::Display for TickType {
 //==================================================================================================
 /// Financial advisor data types
 #[repr(i32)]
-#[derive(Serialize, Deserialize, Clone, FromPrimitive, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, FromPrimitive, Debug)]
 pub enum FaDataType {
     NA = 0,
     GROUPS = 1,
@@ -222,7 +222,7 @@ pub enum FaDataType {
 
 impl fmt::Display for FaDataType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Type: {}", self)
+        write!(f, "Type: {}", *self as i32)
     }
 }
 
