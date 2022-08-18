@@ -842,20 +842,20 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS {
-            if "" != contract.trading_class {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support trading_class parameter in calculateImpliedVolatility."
-                    ),
-                ));
+        let below_min_version = self.server_version() < MIN_SERVER_VER_TRADING_CLASS;
+        let non_empty_trading_class = "" != contract.trading_class;
+        if  below_min_version && non_empty_trading_class {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support trading_class parameter in calculateImpliedVolatility."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 3;
