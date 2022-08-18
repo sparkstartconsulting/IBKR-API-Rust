@@ -39,6 +39,9 @@
 //!    Ok(())
 //! }
 //! ```     
+
+#![allow(clippy::too_many_arguments)]
+
 pub mod core;
 pub mod examples;
 mod tests;

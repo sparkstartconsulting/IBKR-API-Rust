@@ -2,7 +2,7 @@
 
 # Cleaning Up
 - [ ] Remove `#![allow(unused_imports)]` in src/examples/test_helpers.rs
-
+- [ ] Remove `#![allow(clippy::too_many_arguments)]`
 
 # IBKR-API-Rust
 
