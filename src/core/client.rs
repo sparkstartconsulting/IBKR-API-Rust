@@ -125,8 +125,8 @@ where
         self.set_streamer(Option::from(Box::new(streamer.clone()) as Box<dyn Streamer>));
         let (tx, rx) = channel::<String>();
         let mut reader = Reader::new(
-            Box::new(streamer.clone()),
-            tx.clone(),
+            Box::new(streamer),
+            tx,
             self.disconnect_requested.clone(),
         );
 
@@ -353,7 +353,7 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && "" != contract.trading_class {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -747,7 +747,7 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && "" != contract.trading_class {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -843,7 +843,7 @@ where
         }
 
         let below_min_version = self.server_version() < MIN_SERVER_VER_TRADING_CLASS;
-        let non_empty_trading_class = "" != contract.trading_class;
+        let non_empty_trading_class = !contract.trading_class.is_empty();
         if  below_min_version && non_empty_trading_class {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -1371,7 +1371,7 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_ALGO_ID && order.algo_id != "" {
+        if self.server_version() < MIN_SERVER_VER_ALGO_ID && !order.algo_id.is_empty() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 order_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -1749,7 +1749,7 @@ where
         }
 
         if self.server_version() >= MIN_SERVER_VER_DELTA_NEUTRAL_OPEN_CLOSE
-            && order.delta_neutral_order_type != ""
+            && !order.delta_neutral_order_type.is_empty()
         {
             msg.push_str(&make_field(&order.delta_neutral_open_close)?);
             msg.push_str(&make_field(&order.delta_neutral_short_sale)?);
@@ -1892,7 +1892,7 @@ where
                 for cond in &order.conditions {
                     msg.push_str(&make_field(&(cond.get_type() as i32))?);
                     let vals = cond.make_fields()?;
-                    let vals_string = vals.iter().map(|val| val.clone()).collect::<String>();
+                    let vals_string = vals.iter().cloned().collect::<String>();
                     msg.push_str(vals_string.as_ref());
                 }
 
@@ -2634,7 +2634,7 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(req_id)?;
 
-        if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE && (contract.sec_id_type != "" || contract.sec_id != "") {
+        if self.server_version() < MIN_SERVER_VER_SEC_ID_TYPE && (!contract.sec_id_type.is_empty() || !contract.sec_id.is_empty()) {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -2648,7 +2648,7 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && contract.trading_class != "" {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && !contract.trading_class.is_empty() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -2662,7 +2662,7 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_LINKING && contract.primary_exchange != "" {
+        if self.server_version() < MIN_SERVER_VER_LINKING && !contract.primary_exchange.is_empty() {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -2701,7 +2701,7 @@ where
             msg.push_str(&make_field(&contract.exchange)?);
             msg.push_str(&make_field(&contract.primary_exchange)?);
         } else if self.server_version() >= MIN_SERVER_VER_LINKING {
-            if contract.primary_exchange != ""
+            if !contract.primary_exchange.is_empty()
                 && (contract.exchange == "BEST" || contract.exchange == "SMART")
             {
                 msg.push_str(&make_field(&format!(
@@ -2788,7 +2788,7 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && (&contract.trading_class != "" || *&contract.con_id > 0) {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && (!&contract.trading_class.is_empty() || contract.con_id > 0) {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),
@@ -2817,7 +2817,7 @@ where
         }
 
         if self.server_version() < MIN_SERVER_VER_MKT_DEPTH_PRIM_EXCHANGE
-            && contract.primary_exchange != ""
+            && !contract.primary_exchange.is_empty()
         {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
@@ -3110,7 +3110,7 @@ where
     ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
-        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && (&contract.trading_class != "" || contract.con_id > 0) {
+        if self.server_version() < MIN_SERVER_VER_TRADING_CLASS && (!&contract.trading_class.is_empty() || contract.con_id > 0) {
             let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
                 req_id,
                 TwsError::UpdateTws.code().to_string(),

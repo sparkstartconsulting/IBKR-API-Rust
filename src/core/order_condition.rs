@@ -44,7 +44,7 @@ impl Display for ConditionType {
 
 impl Debug for ConditionType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{} = {}", self.to_string(), *self as i32)
+        write!(f, "{} = {}", self, *self as i32)
     }
 }
 
@@ -541,7 +541,7 @@ impl Condition for TimeCondition {
 
     //----------------------------------------------------------------------------------------------
     fn set_value_from_string(&mut self, text: String) {
-        self.time = text.to_string()
+        self.time = text
     }
 
     //----------------------------------------------------------------------------------------------
@@ -655,7 +655,7 @@ impl Display for PriceCondition {
         write!(
             f,
             "{} price of {} ",
-            self.trigger_method.to_string(),
+            self.trigger_method,
             self.value_to_string()
         )
     }

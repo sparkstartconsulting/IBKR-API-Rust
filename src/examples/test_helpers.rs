@@ -3290,7 +3290,7 @@ where
     //----------------------------------------------------------------------------------------------
     fn managed_accounts(&mut self, accounts_list: &str) {
         info!("managed_accounts -- accounts_list: {}", accounts_list);
-        let _split = accounts_list.split(",");
+        let _split = accounts_list.split(',');
         //self.account = split;
     }
 
@@ -3574,8 +3574,7 @@ where
                 .map(|x| x.as_str())
                 .collect::<Vec<&str>>(),
             strikes
-                .iter()
-                .map(|x| x.clone())
+                .iter().cloned()
                 .collect::<Vec<BigDecimal>>()
         );
     }

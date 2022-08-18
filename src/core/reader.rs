@@ -39,12 +39,10 @@ impl Reader {
         let buf = self._recv_all_msg()?;
         // receiving 0 bytes outside a timeout means the connection is either
         // closed or broken
-        if buf.is_empty() {
-            if !self.disconnect_requested.load(Ordering::Acquire) {
-                info!("socket either closed or broken, disconnecting");
-                self.stream.shutdown(Shutdown::Both)?;
-                self.is_connected = false;
-            }
+        if buf.is_empty() && !self.disconnect_requested.load(Ordering::Acquire) {
+            info!("socket either closed or broken, disconnecting");
+            self.stream.shutdown(Shutdown::Both)?;
+            self.is_connected = false;
         }
         Ok(buf)
     }
@@ -112,7 +110,7 @@ impl Reader {
                 return;
             }
             let result = self.process_reader_msgs();
-            if !result.is_err() {
+            if result.is_ok() {
                 continue;
             }
             error!("{:?}", result);

@@ -920,7 +920,7 @@ where
             execution.ev_rule = decode_string(&mut fields_itr)?;
 
             let tmp_ev_mult = (&mut fields_itr).peekable().peek().unwrap().as_str();
-            if tmp_ev_mult != "" {
+            if !tmp_ev_mult.is_empty() {
                 execution.ev_multiplier = decode_f64(&mut fields_itr)?;
             } else {
                 execution.ev_multiplier = 1.0;
@@ -2571,21 +2571,21 @@ where
         is_bond: bool,
         read_date: &str,
     ) -> Result<(), IBKRApiLibError> {
-        if read_date != "" {
+        if !read_date.is_empty() {
             let splitted = read_date.split_whitespace().collect::<Vec<&str>>();
             if !splitted.is_empty() {
                 if is_bond {
-                    contract.maturity = splitted.get(0).unwrap_or_else(|| &"").to_string();
+                    contract.maturity = splitted.first().unwrap_or(&"").to_string();
                 } else {
                     contract.contract.last_trade_date_or_contract_month =
-                        splitted.get(0).unwrap_or_else(|| &"").to_string();
+                        splitted.first().unwrap_or(&"").to_string();
                 }
             }
             if splitted.len() > 1 {
-                contract.last_trade_time = splitted.get(1).unwrap_or_else(|| &"").to_string();
+                contract.last_trade_time = splitted.get(1).unwrap_or(&"").to_string();
             }
             if is_bond && splitted.len() > 2 {
-                contract.time_zone_id = splitted.get(2).unwrap_or_else(|| &"").to_string();
+                contract.time_zone_id = splitted.get(2).unwrap_or(&"").to_string();
             }
         }
         Ok(())
