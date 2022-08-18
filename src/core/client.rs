@@ -2662,20 +2662,18 @@ where
             return Err(err);
         }
 
-        if self.server_version() < MIN_SERVER_VER_LINKING {
-            if contract.primary_exchange != "" {
-                let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                    req_id,
-                    TwsError::UpdateTws.code().to_string(),
-                    format!(
-                        "{}{}",
-                        TwsError::UpdateTws.message(),
-                        " It does not support primary_exchange parameter in req_contract_details."
-                    ),
-                ));
+        if self.server_version() < MIN_SERVER_VER_LINKING && contract.primary_exchange != "" {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                req_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support primary_exchange parameter in req_contract_details."
+                ),
+            ));
 
-                return Err(err);
-            }
+            return Err(err);
         }
 
         let version = 8;
