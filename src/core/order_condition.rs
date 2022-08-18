@@ -87,7 +87,7 @@ impl Display for TriggerMethod {
 
 impl Debug for TriggerMethod {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        write!(f, "{} = {}", self.to_string(), *self as i32)
+        write!(f, "{} = {}", self, *self as i32)
     }
 }
 
