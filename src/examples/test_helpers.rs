@@ -1,5 +1,6 @@
+#![allow(unused_imports)]
 use crate::{
-    core::client::EClient,
+    core::client::{EClient, LogLevel},
     core::common::{
         BarData, CommissionReport, DepthMktDataDescription, FaDataType, FamilyCode, HistogramData,
         HistoricalTick, HistoricalTickBidAsk, HistoricalTickLast, MarketDataTypeEnum, NewsProvider,
@@ -2578,7 +2579,7 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_IS_NONE)
             .lock()
             .expect(CLIENT_POISONED_MUTEX)
-            .set_server_log_level(1)?;
+            .set_server_log_level(LogLevel::SYSTEM)?;
 
         Ok(())
     }
