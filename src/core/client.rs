@@ -7,7 +7,9 @@ use std::ops::Deref;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::channel;
 use std::sync::{Arc, Mutex};
-use std::{fmt::Debug, thread};
+use std::{thread, result::Result};
+use std::fmt::{Debug, Display};
+use std::fmt;
 
 use from_ascii::FromAscii;
 use log::*;
@@ -41,6 +43,24 @@ pub enum ConnStatus {
     CONNECTING,
     CONNECTED,
     REDIRECT,
+}
+
+//==================================================================================================
+/// Log Level
+#[repr(i32)]
+#[derive(FromPrimitive, Copy, Clone, Debug)]
+pub enum LogLevel {
+    SYSTEM,
+    ERROR,
+    WARNING,
+    INFORMATION,
+    DETAIL,
+}
+
+impl Display for LogLevel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
 }
 
 //==================================================================================================
@@ -210,10 +230,9 @@ where
 
     //----------------------------------------------------------------------------------------------
     /// Sets server logging level
-    pub fn set_server_log_level(&mut self, log_evel: i32) -> Result<(), IBKRApiLibError> {
+    pub fn set_server_log_level(&mut self, log_evel: LogLevel) -> Result<(), IBKRApiLibError> {
         //The pub default detail level is ERROR. For more details, see API
         //        Logging.
-        //TODO Make log_level an enum
         debug!("set_server_log_level -- log_evel: {}", log_evel);
 
         self.check_connected(NO_VALID_ID)?;
