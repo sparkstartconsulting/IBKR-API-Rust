@@ -463,36 +463,42 @@ pub fn bracket_order(
     stop_loss_price: f64,
 ) -> (Order, Order, Order) {
     // This will be our main or "parent" order
-    let mut parent = Order::default();
-    parent.order_id = parent_order_id;
-    parent.action = action.to_string();
-    parent.order_type = "LMT".to_string();
-    parent.total_quantity = quantity;
-    parent.lmt_price = limit_price;
-    // The parent and children orders will need this attribute set to False to prevent accidental executions.
-    // The LAST CHILD will have it set to True,
-    parent.transmit = false;
+    let parent = Order {
+        order_id: parent_order_id,
+        action: action.to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: limit_price,
+        // The parent and children orders will need this attribute set to False to prevent accidental executions.
+        // The LAST CHILD will have it set to True,
+        transmit: false,
+        ..Order::default()
+    };
 
-    let mut take_profit = Order::default();
-    take_profit.order_id = parent.order_id + 1;
-    take_profit.action = (if action == "BUY" { "SELL" } else { "BUY" }).to_string();
-    take_profit.order_type = "LMT".to_string();
-    take_profit.total_quantity = quantity;
-    take_profit.lmt_price = take_profit_limit_price;
-    take_profit.parent_id = parent_order_id;
-    take_profit.transmit = false;
+    let take_profit = Order {
+        order_id: parent.order_id + 1,
+        action: (if action == "BUY" { "SELL" } else { "BUY" }).to_string(),
+        order_type: "LMT".to_string(),
+        total_quantity: quantity,
+        lmt_price: take_profit_limit_price,
+        parent_id: parent_order_id,
+        transmit: false,
+        ..Order::default()
+    };
 
-    let mut stop_loss = Order::default();
-    stop_loss.order_id = parent.order_id + 2;
-    stop_loss.action = (if action == "BUY" { "SELL" } else { "BUY" }).to_string();
-    stop_loss.order_type = "STP".to_string();
-    // stop trigger price
-    stop_loss.aux_price = stop_loss_price;
-    stop_loss.total_quantity = quantity;
-    stop_loss.parent_id = parent_order_id;
-    // In this case, the low side order will be the last child being sent. Therefore, it needs to set this attribute to True
-    // to activate all its predecessors
-    stop_loss.transmit = true;
+    let stop_loss = Order {
+        order_id: parent.order_id + 2,
+        action: (if action == "BUY" { "SELL" } else { "BUY" }).to_string(),
+        order_type: "STP".to_string(),
+        // stop trigger price
+        aux_price: stop_loss_price,
+        total_quantity: quantity,
+        parent_id: parent_order_id,
+        // In this case, the low side order will be the last child being sent. Therefore, it needs to set this attribute to True
+        // to activate all its predecessors
+        transmit: true,
+        ..Order::default()
+    };
 
     (parent, take_profit, stop_loss)
 }
@@ -503,12 +509,12 @@ pub fn bracket_order(
 /// at which the filled portion of the order executed.
 //==================================================================================================
 pub fn market_to_limit(action: &str, quantity: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MTL".to_string();
-    order.total_quantity = quantity;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MTL".to_string(),
+        total_quantity: quantity,
+        ..Order::default()
+    }
 }
 
 /// This order type is useful for futures traders using Globex. A Market with Protection order is a market order that will be cancelled and
@@ -517,12 +523,12 @@ pub fn market_to_limit(action: &str, quantity: f64) -> Order {
 /// Products: FUT, FOP
 //==================================================================================================
 pub fn market_with_protection(action: &str, quantity: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "MKT PRT".to_string();
-    order.total_quantity = quantity;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "MKT PRT".to_string(),
+        total_quantity: quantity,
+        ..Order::default()
+    }
 }
 
 /// A stop order is an instruction to submit a buy or sell market order if and when the user-specified stop trigger price is attained or
@@ -533,13 +539,13 @@ pub fn market_with_protection(action: &str, quantity: f64) -> Order {
 /// Products: CFD, BAG, CASH, FUT, FOP, OPT, STK, WAR
 //==================================================================================================
 pub fn stop(action: &str, quantity: f64, stop_price: f64) -> Order {
-    let mut order = Order::default();
-    order.action = action.to_string();
-    order.order_type = "STP".to_string();
-    order.aux_price = stop_price;
-    order.total_quantity = quantity;
-
-    order
+    Order {
+        action: action.to_string(),
+        order_type: "STP".to_string(),
+        aux_price: stop_price,
+        total_quantity: quantity,
+        ..Order::default()
+    }
 }
 
 /// A stop-Limit order is an instruction to submit a buy or sell limit order when the user-specified stop trigger price is attained or
@@ -853,12 +859,11 @@ pub fn attach_adjustable_to_stop(
 ) -> Order {
     // Attached order is a conventional STP order in opposite direction
     let mut order = stop(
-        (if parent.action == "BUY" {
+        if parent.action == "BUY" {
             "SELL"
         } else {
             "BUY"
-        })
-        .as_ref(),
+        },
         parent.total_quantity,
         attached_order_stop_price,
     );
@@ -883,12 +888,11 @@ pub fn attach_adjustable_to_stop_limit(
 ) -> Order {
     // Attached order is a conventional STP order
     let mut order = stop(
-        (if parent.action == "BUY" {
+        if parent.action == "BUY" {
             "SELL"
         } else {
             "BUY"
-        })
-        .as_ref(),
+        },
         parent.total_quantity,
         attached_order_stop_price,
     );
@@ -916,12 +920,11 @@ pub fn attach_adjustable_to_trail(
 ) -> Order {
     // Attached order is a conventional STP order
     let mut order = stop(
-        (if parent.action == "BUY" {
+        if parent.action == "BUY" {
             "SELL"
         } else {
             "BUY"
-        })
-        .as_ref(),
+        },
         parent.total_quantity,
         attached_order_stop_price,
     );

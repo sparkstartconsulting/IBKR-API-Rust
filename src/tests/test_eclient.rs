@@ -863,7 +863,7 @@ mod tests {
             client_id,
             acct_code.to_string(),
             time.to_string(),
-            symbol.to_string().to_string(),
+            symbol.to_string(),
             sec_type.to_string(),
             exchange.to_string(),
             side.to_string(),

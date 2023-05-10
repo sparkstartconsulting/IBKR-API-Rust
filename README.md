@@ -1,6 +1,8 @@
 # IBKR-API-Rust
 
-Port of Interactive Broker's trading API written in Rust (API_Version=9.76.01)
+## This branch is currently in progress to upgrade to version 10.12.01.  Do not use until it is merged to master!!!
+
+Port of Interactive Broker's trading API written in Rust (API_Version=10.12.01)
 
 Please see the latest IB Tws Api documentation here: <http://interactivebrokers.github.io/tws-api/introduction.html>.
 
