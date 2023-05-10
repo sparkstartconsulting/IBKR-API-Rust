@@ -2,7 +2,7 @@
 name = "IBKR-API-Rust"
 version = "0.1.0"
 authors = ["brett.miller@sparkstart.com"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,10 +15,11 @@ name = "twsapi_client"
 path = "src/bin/manual_tests.rs"
 
 [dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
 bzip2 = "0.4.3"
 log = "0.4.8"
 log4rs = "1.0.0"
-bytebuffer = "0.2.1"
+bytebuffer = "2.1.1"
 encoding = "0.2"
 num = "0.4.0"
 num-derive = "0.3"
