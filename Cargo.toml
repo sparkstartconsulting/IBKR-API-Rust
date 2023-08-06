@@ -17,7 +17,6 @@ path = "src/bin/manual_tests.rs"
 [dependencies]
 bzip2 = "0.4"
 log = "0.4.8"
-log4rs = "0.12.0"
 bytebuffer = "2.1"
 encoding = "0.2"
 num = "0.4.0"

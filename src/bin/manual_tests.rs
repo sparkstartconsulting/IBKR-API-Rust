@@ -15,17 +15,6 @@ use twsapi::examples::test_helpers::TestWrapper;
 /// start_requests function inn TestWrapper which is called by next_valid_id
 //==================================================================================================
 pub fn main() -> Result<(), IBKRApiLibError> {
-    match log4rs::init_file("./log_config.yml", Default::default()) {
-        Ok(_) => (),
-        Err(_) => {
-            return Err(IBKRApiLibError::ApiError(TwsApiReportableError::new(
-                -1,
-                "-1".to_string(),
-                "Failed to create logger!!".to_string(),
-            )))
-        }
-    };
-
     let wrapper = Arc::new(Mutex::new(TestWrapper::<TcpStreamer>::new()));
     let app = Arc::new(Mutex::new(EClient::new(wrapper.clone())));
 
