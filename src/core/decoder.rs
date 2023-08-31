@@ -41,7 +41,7 @@ use crate::core::server_versions::{
 };
 use crate::core::wrapper::Wrapper;
 
-use super::server_versions::{MIN_SERVER_VER_STOCK_TYPE, MIN_SERVER_VER_PRICE_BASED_VOLATILITY};
+use super::server_versions::{MIN_SERVER_VER_PRICE_BASED_VOLATILITY, MIN_SERVER_VER_STOCK_TYPE};
 
 const WRAPPER_POISONED_MUTEX: &str = "Wrapper mutex was poisoned";
 //==================================================================================================
@@ -268,6 +268,8 @@ where
             Some(IncomingMessageIds::RerouteMktDepthReq) => {
                 self.process_reroute_mkt_depth_req(fields)?
             }
+
+            Some(IncomingMessageIds::ReplaceFaEnd) => self.process_fa_end(fields)?,
 
             _ => panic!("Received unkown message id!!  Exiting..."),
         }
@@ -726,7 +728,7 @@ where
         if self.server_version >= MIN_SERVER_VER_REAL_EXPIRATION_DATE {
             contract.real_expiration_date = decode_string(&mut fields_itr)?;
         }
-         
+
         if self.server_version >= MIN_SERVER_VER_STOCK_TYPE {
             contract.stock_type = decode_string(&mut fields_itr)?;
         }
@@ -2356,7 +2358,7 @@ where
         } else {
             i32::MAX
         };
-        
+
         let ticker_id = decode_i32(&mut fields_itr)?;
         let tick_type = decode_i32(&mut fields_itr)?;
 
@@ -2562,6 +2564,25 @@ where
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
             .verify_completed(is_successful, error_text.as_ref());
+        Ok(())
+    }
+
+    fn process_fa_end(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+        let mut fields_itr = fields.iter();
+
+        //throw away message_id
+        fields_itr.next();
+        //throw away version
+        fields_itr.next();
+
+        let req_id = decode_i32(&mut fields_itr)?;
+        let text = decode_string(&mut fields_itr)?;
+
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .replace_fa_end(req_id, text.as_str());
+
         Ok(())
     }
 

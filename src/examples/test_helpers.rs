@@ -2441,28 +2441,44 @@ impl<T: Streamer> TestWrapper<T> {
             .expect(CLIENT_IS_NONE)
             .lock()
             .expect(CLIENT_POISONED_MUTEX)
-            .replace_fa(FaDataType::GROUPS, fa_allocation_samples::FA_ONE_GROUP)?;
+            .replace_fa(
+                17001,
+                FaDataType::GROUPS,
+                fa_allocation_samples::FA_ONE_GROUP,
+            )?;
 
         self.client
             .as_ref()
             .expect(CLIENT_IS_NONE)
             .lock()
             .expect(CLIENT_POISONED_MUTEX)
-            .replace_fa(FaDataType::GROUPS, fa_allocation_samples::FA_TWO_GROUPS)?;
+            .replace_fa(
+                17002,
+                FaDataType::GROUPS,
+                fa_allocation_samples::FA_TWO_GROUPS,
+            )?;
 
         self.client
             .as_ref()
             .expect(CLIENT_IS_NONE)
             .lock()
             .expect(CLIENT_POISONED_MUTEX)
-            .replace_fa(FaDataType::PROFILES, fa_allocation_samples::FA_ONE_PROFILE)?;
+            .replace_fa(
+                17003,
+                FaDataType::PROFILES,
+                fa_allocation_samples::FA_ONE_PROFILE,
+            )?;
 
         self.client
             .as_ref()
             .expect(CLIENT_IS_NONE)
             .lock()
             .expect(CLIENT_POISONED_MUTEX)
-            .replace_fa(FaDataType::PROFILES, fa_allocation_samples::FA_TWO_PROFILES)?;
+            .replace_fa(
+                17004,
+                FaDataType::PROFILES,
+                fa_allocation_samples::FA_TWO_PROFILES,
+            )?;
 
         self.client
             .as_ref()
@@ -3543,10 +3559,11 @@ where
         und_price: f64,
     ) {
         info!(
-            "tick_option_computation -- req_id: {}, tick_type: {}, implied_vol: {}, delta: {}, \
+            "tick_option_computation -- req_id: {}, tick_type: {}, tick_attr: {}, implied_vol: {}, delta: {}, \
              opt_price: {}, pv_dividend: {},  gamma: {}, vega: {}, theta: {}, und_price: {}",
             req_id,
             tick_type,
+            tick_attribute,
             implied_vol,
             delta,
             opt_price,
@@ -3858,5 +3875,9 @@ where
     //----------------------------------------------------------------------------------------------
     fn completed_orders_end(&mut self) {
         info!("completed_orders_end -- (no parameters for this message)");
+    }
+
+    fn replace_fa_end(&mut self, req_id: i32, text: &str) {
+        info!("replace_fa_end -- req_id: {}, text: {}", req_id, text);
     }
 }

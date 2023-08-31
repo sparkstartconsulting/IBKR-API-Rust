@@ -715,4 +715,8 @@ pub trait Wrapper: Send + Sync {
     //----------------------------------------------------------------------------------------------
     /// This is called at the end of a given request for completed orders.
     fn completed_orders_end(&mut self);
+
+    //----------------------------------------------------------------------------------------------
+    /// Called at the end of a replace FA.
+    fn replace_fa_end(&mut self, req_id: i32, text: &str);
 }

@@ -3022,7 +3022,7 @@ where
     //----------------------------------------------------------------------------------------------
     /// Call this function to modify FA configuration information from the
     /// API. Note that this can also be done manually in TWS itself.
-    ///
+    /// * req_id - The id of the request.
     /// * fa_data - See the FaDataType enum. Specifies the type of Financial Advisor
     ///             configuration data beingingg requested. Valid values include:
     ///     * 1 = GROUPS
@@ -3030,7 +3030,12 @@ where
     ///     * 3 = ACCOUNT ALIASES
     /// *cxml - The XML string containing the new FA configuration
     ///         information.
-    pub fn replace_fa(&mut self, fa_data: FaDataType, cxml: &str) -> Result<(), IBKRApiLibError> {
+    pub fn replace_fa(
+        &mut self,
+        req_id: i32,
+        fa_data: FaDataType,
+        cxml: &str,
+    ) -> Result<(), IBKRApiLibError> {
         self.check_connected(NO_VALID_ID)?;
 
         let version = 1;
@@ -3041,6 +3046,10 @@ where
         msg.push_str(&make_field(&version)?);
         msg.push_str(&make_field(&fa_data)?);
         msg.push_str(&make_field(&String::from(cxml))?);
+
+        if self.server_version() >= MIN_SERVER_VER_REPLACE_FA_END {
+            msg.push_str(&make_field(&req_id)?);
+        }
 
         self.send_request(msg.as_str())
     }

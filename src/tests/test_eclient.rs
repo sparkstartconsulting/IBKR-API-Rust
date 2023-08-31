@@ -502,6 +502,9 @@ mod tests {
         fn completed_orders_end(&mut self) {
             todo!()
         }
+        fn replace_fa_end(&mut self, _req_id: i32, _text: &str) {
+            todo!()
+        }
     }
 
     //------------------------------------------------------------------------------------------------

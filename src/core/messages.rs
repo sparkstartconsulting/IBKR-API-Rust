@@ -111,6 +111,7 @@ pub enum IncomingMessageIds {
     OrderBound = 100,
     CompletedOrder = 101,
     CompletedOrdersEnd = 102,
+    ReplaceFaEnd = 103,
 }
 
 //==================================================================================================

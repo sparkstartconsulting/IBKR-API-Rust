@@ -551,10 +551,11 @@ impl Wrapper for DefaultWrapper {
         und_price: f64,
     ) {
         info!(
-            "tick_option_computation -- req_id: {}, tick_type: {}, implied_vol: {}, delta: {}, \
+            "tick_option_computation -- req_id: {}, tick_type: {}, tock_attr: {}, implied_vol: {}, delta: {}, \
              opt_price: {}, pv_dividend: {},  gamma: {}, vega: {}, theta: {}, und_price: {}",
             req_id,
             tick_type,
+            tick_attribute,
             implied_vol,
             delta,
             opt_price,
@@ -867,5 +868,9 @@ impl Wrapper for DefaultWrapper {
     //----------------------------------------------------------------------------------------------
     fn completed_orders_end(&mut self) {
         info!("completed_orders_end -- (no parameters for this message)");
+    }
+
+    fn replace_fa_end(&mut self, req_id: i32, text: &str) {
+        info!("replace fa end -- req_id: {}, text: {}", req_id, text);
     }
 }
