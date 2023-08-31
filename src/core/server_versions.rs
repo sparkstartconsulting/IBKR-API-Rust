@@ -93,9 +93,10 @@ pub const MIN_SERVER_VER_MKT_DEPTH_PRIM_EXCHANGE: i32 = 149;
 pub const MIN_SERVER_VER_COMPLETED_ORDERS: i32 = 150;
 pub const MIN_SERVER_VER_PRICE_MGMT_ALGO: i32 = 151;
 pub const MIN_SERVER_VER_STOCK_TYPE: i32 = 152;
+pub const MIN_SERVER_VER_ENCODE_MSG_ASCII7: i32 = 153;
 
 // 100+ messaging */
 // 100 = enhanced handshake, msg length prefixes
 
 pub const MIN_CLIENT_VER: i32 = 100;
-pub const MAX_CLIENT_VER: i32 = MIN_SERVER_VER_STOCK_TYPE;
+pub const MAX_CLIENT_VER: i32 = MIN_SERVER_VER_ENCODE_MSG_ASCII7;
