@@ -41,7 +41,7 @@ use crate::core::server_versions::{
 };
 use crate::core::wrapper::Wrapper;
 
-use super::server_versions::MIN_SERVER_VER_STOCK_TYPE;
+use super::server_versions::{MIN_SERVER_VER_STOCK_TYPE, MIN_SERVER_VER_PRICE_BASED_VOLATILITY};
 
 const WRAPPER_POISONED_MUTEX: &str = "Wrapper mutex was poisoned";
 //==================================================================================================
@@ -2351,9 +2351,21 @@ where
         //throw away message_id
         fields_itr.next();
 
-        let version = decode_i32(&mut fields_itr)?;
+        let version = if self.server_version < MIN_SERVER_VER_PRICE_BASED_VOLATILITY {
+            decode_i32(&mut fields_itr)?
+        } else {
+            i32::MAX
+        };
+        
         let ticker_id = decode_i32(&mut fields_itr)?;
         let tick_type = decode_i32(&mut fields_itr)?;
+
+        // See Java version
+        let mut tick_attribute = i32::MAX;
+        if self.server_version >= MIN_SERVER_VER_PRICE_BASED_VOLATILITY {
+            tick_attribute = decode_i32(&mut fields_itr)?;
+        }
+
         let mut implied_vol = decode_f64(&mut fields_itr)?;
         if approx_eq!(f64, implied_vol, -1.0, ulps = 2) {
             // -1 is the "not yet computed" indicator
@@ -2416,6 +2428,7 @@ where
             .tick_option_computation(
                 ticker_id,
                 FromPrimitive::from_i32(tick_type).unwrap(),
+                tick_attribute,
                 implied_vol,
                 delta,
                 opt_price,

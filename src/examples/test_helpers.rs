@@ -3532,6 +3532,7 @@ where
         &mut self,
         req_id: i32,
         tick_type: TickType,
+        tick_attribute: i32,
         implied_vol: f64,
         delta: f64,
         opt_price: f64,

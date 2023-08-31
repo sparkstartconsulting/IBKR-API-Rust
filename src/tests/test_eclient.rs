@@ -315,6 +315,7 @@ mod tests {
             &mut self,
             _req_id: i32,
             _tick_type: TickType,
+            _tick_attribute: i32,
             _implied_vol: f64,
             _delta: f64,
             _opt_price: f64,
