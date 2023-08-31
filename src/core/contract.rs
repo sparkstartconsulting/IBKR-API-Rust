@@ -277,6 +277,7 @@ pub struct ContractDetails {
     pub sec_id_list: Vec<TagValue>,
     pub real_expiration_date: String,
     pub last_trade_time: String,
+    pub stock_type: String,
 
     // BOND values
     pub cusip: String,
@@ -323,6 +324,7 @@ impl ContractDetails {
         sec_id_list: Vec<TagValue>,
         real_expiration_date: String,
         last_trade_time: String,
+        stock_type: String,
         cusip: String,
         ratings: String,
         desc_append: String,
@@ -365,6 +367,7 @@ impl ContractDetails {
             sec_id_list,
             real_expiration_date,
             last_trade_time,
+            stock_type,
             cusip,
             ratings,
             desc_append,

@@ -92,6 +92,7 @@ pub const MIN_SERVER_VER_D_PEG_ORDERS: i32 = 148;
 pub const MIN_SERVER_VER_MKT_DEPTH_PRIM_EXCHANGE: i32 = 149;
 pub const MIN_SERVER_VER_COMPLETED_ORDERS: i32 = 150;
 pub const MIN_SERVER_VER_PRICE_MGMT_ALGO: i32 = 151;
+pub const MIN_SERVER_VER_STOCK_TYPE: i32 = 152;
 
 // 100+ messaging */
 // 100 = enhanced handshake, msg length prefixes

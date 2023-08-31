@@ -41,6 +41,8 @@ use crate::core::server_versions::{
 };
 use crate::core::wrapper::Wrapper;
 
+use super::server_versions::MIN_SERVER_VER_STOCK_TYPE;
+
 const WRAPPER_POISONED_MUTEX: &str = "Wrapper mutex was poisoned";
 //==================================================================================================
 pub fn decode_i32(iter: &mut Iter<String>) -> Result<i32, IBKRApiLibError> {
@@ -723,6 +725,10 @@ where
 
         if self.server_version >= MIN_SERVER_VER_REAL_EXPIRATION_DATE {
             contract.real_expiration_date = decode_string(&mut fields_itr)?;
+        }
+         
+        if self.server_version >= MIN_SERVER_VER_STOCK_TYPE {
+            contract.stock_type = decode_string(&mut fields_itr)?;
         }
 
         self.wrapper
