@@ -98,4 +98,4 @@ pub const MIN_SERVER_VER_STOCK_TYPE: i32 = 152;
 // 100 = enhanced handshake, msg length prefixes
 
 pub const MIN_CLIENT_VER: i32 = 100;
-pub const MAX_CLIENT_VER: i32 = MIN_SERVER_VER_PRICE_MGMT_ALGO;
+pub const MAX_CLIENT_VER: i32 = MIN_SERVER_VER_STOCK_TYPE;
