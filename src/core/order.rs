@@ -432,6 +432,7 @@ pub struct Order {
     pub parent_perm_id: i32,
 
     pub use_price_mgmt_algo: bool,
+    pub duration: i32,
 }
 
 impl Order {
@@ -566,6 +567,7 @@ impl Order {
         route_marketable_to_bbo: bool,
         parent_perm_id: i32,
         use_price_mgmt_algo: bool,
+        duration: i32,
     ) -> Self {
         Order {
             soft_dollar_tier,
@@ -698,6 +700,7 @@ impl Order {
             route_marketable_to_bbo,
             parent_perm_id,
             use_price_mgmt_algo,
+            duration,
         }
     }
 }
@@ -949,6 +952,7 @@ impl Default for Order {
             parent_perm_id: 0,
 
             use_price_mgmt_algo: false,
+            duration: UNSET_INTEGER,
         }
     }
 }

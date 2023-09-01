@@ -1530,6 +1530,19 @@ where
             return Err(err);
         }
 
+        if self.server_version() < MIN_SERVER_VER_DURATION && order.duration != UNSET_INTEGER {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                order_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not does not support duration attribute"
+                ),
+            ));
+            return Err(err);
+        }
+
         let version: i32 = if self.server_version() < MIN_SERVER_VER_NOT_HELD {
             27
         } else {
@@ -1943,6 +1956,10 @@ where
 
         if self.server_version() >= MIN_SERVER_VER_PRICE_MGMT_ALGO {
             msg.push_str(&make_field_handle_empty(&order.use_price_mgmt_algo)?);
+        }
+
+        if self.server_version() >= MIN_SERVER_VER_DURATION {
+            msg.push_str(&make_field(&order.duration)?);
         }
 
         self.send_request(msg.as_str())?;
