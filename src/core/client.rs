@@ -1543,6 +1543,20 @@ where
             return Err(err);
         }
 
+        if self.server_version() < MIN_SERVER_VER_POST_TO_ATS && order.post_to_ats != UNSET_INTEGER
+        {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                order_id,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    "   It does not support postToAts attribute"
+                ),
+            ));
+            return Err(err);
+        }
+
         let version: i32 = if self.server_version() < MIN_SERVER_VER_NOT_HELD {
             27
         } else {
@@ -1960,6 +1974,11 @@ where
 
         if self.server_version() >= MIN_SERVER_VER_DURATION {
             msg.push_str(&make_field(&order.duration)?);
+        }
+
+        if self.server_version() >= MIN_SERVER_VER_POST_TO_ATS {
+            println!("adding post_to_ats to place_order req");
+            msg.push_str(&make_field(&order.post_to_ats)?);
         }
 
         self.send_request(msg.as_str())?;

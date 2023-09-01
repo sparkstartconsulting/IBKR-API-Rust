@@ -99,9 +99,11 @@ pub const MIN_SERVER_VER_NO_DEFAULT_OPEN_CLOSE: i32 = 155;
 pub const MIN_SERVER_VER_PRICE_BASED_VOLATILITY: i32 = 156;
 pub const MIN_SERVER_VER_REPLACE_FA_END: i32 = 157;
 pub const MIN_SERVER_VER_DURATION: i32 = 158;
+pub const MIN_SERVER_VER_MARKET_DATA_IN_SHARES: i32 = 159;
+pub const MIN_SERVER_VER_POST_TO_ATS: i32 = 160;
 
 // 100+ messaging */
 // 100 = enhanced handshake, msg length prefixes
 
 pub const MIN_CLIENT_VER: i32 = 100;
-pub const MAX_CLIENT_VER: i32 = MIN_SERVER_VER_DURATION;
+pub const MAX_CLIENT_VER: i32 = MIN_SERVER_VER_POST_TO_ATS;

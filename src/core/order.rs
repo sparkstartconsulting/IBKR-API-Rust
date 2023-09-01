@@ -433,6 +433,7 @@ pub struct Order {
 
     pub use_price_mgmt_algo: bool,
     pub duration: i32,
+    pub post_to_ats: i32,
 }
 
 impl Order {
@@ -568,6 +569,7 @@ impl Order {
         parent_perm_id: i32,
         use_price_mgmt_algo: bool,
         duration: i32,
+        post_to_ats: i32,
     ) -> Self {
         Order {
             soft_dollar_tier,
@@ -701,6 +703,7 @@ impl Order {
             parent_perm_id,
             use_price_mgmt_algo,
             duration,
+            post_to_ats,
         }
     }
 }
@@ -953,6 +956,7 @@ impl Default for Order {
 
             use_price_mgmt_algo: false,
             duration: UNSET_INTEGER,
+            post_to_ats: UNSET_INTEGER,
         }
     }
 }
