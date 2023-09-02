@@ -873,4 +873,11 @@ impl Wrapper for DefaultWrapper {
     fn replace_fa_end(&mut self, req_id: i32, text: &str) {
         info!("replace fa end -- req_id: {}, text: {}", req_id, text);
     }
+
+    fn wsh_event_data(&mut self, req_id: i32, data_json: &str) {
+        info!(
+            "wsh_event_data -- req_id: {}, data_json: {}",
+            req_id, data_json
+        )
+    }
 }

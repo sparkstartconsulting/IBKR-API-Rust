@@ -1431,3 +1431,36 @@ impl UsePriceMgmtAlgo {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct WshEventData {
+    pub con_id: i32,
+    pub filter: String,
+    pub fill_watchlist: bool,
+    pub fill_portfolio: bool,
+    pub fill_competitors: bool,
+    pub start_date: String,
+    pub end_date: String,
+    pub total_limit: i32,
+}
+
+impl Default for WshEventData {
+    fn default() -> Self {
+        Self {
+            con_id: UNSET_INTEGER,
+            filter: "".to_string(),
+            fill_watchlist: false,
+            fill_portfolio: false,
+            fill_competitors: false,
+            start_date: "".to_string(),
+            end_date: "".to_string(),
+            total_limit: UNSET_INTEGER,
+        }
+    }
+}
+
+impl fmt::Display for WshEventData {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "WshEventData. con_id: {}, filter: {}, Fill Watchlist: {}, Fill Portfolio: {}, Fill Competitors: {}", self.con_id, self.filter, self.fill_watchlist, self.fill_portfolio, self.fill_competitors)
+    }
+}

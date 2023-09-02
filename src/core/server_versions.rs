@@ -101,6 +101,7 @@ pub const MIN_SERVER_VER_REPLACE_FA_END: i32 = 157;
 pub const MIN_SERVER_VER_DURATION: i32 = 158;
 pub const MIN_SERVER_VER_MARKET_DATA_IN_SHARES: i32 = 159;
 pub const MIN_SERVER_VER_POST_TO_ATS: i32 = 160;
+pub const MIN_SERVER_VER_WSHE_CALENDAR: i32 = 161;
 
 // 100+ messaging */
 // 100 = enhanced handshake, msg length prefixes

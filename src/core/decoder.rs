@@ -268,9 +268,8 @@ where
             Some(IncomingMessageIds::RerouteMktDepthReq) => {
                 self.process_reroute_mkt_depth_req(fields)?
             }
-
             Some(IncomingMessageIds::ReplaceFaEnd) => self.process_fa_end(fields)?,
-
+            Some(IncomingMessageIds::WshMetadata) => self.process_wsh_metadata_msg(fields)?,
             _ => panic!("Received unkown message id!!  Exiting..."),
         }
         Ok(())
@@ -2582,6 +2581,25 @@ where
             .lock()
             .expect(WRAPPER_POISONED_MUTEX)
             .replace_fa_end(req_id, text.as_str());
+
+        Ok(())
+    }
+
+    fn process_wsh_metadata_msg(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+        let mut fields_itr = fields.iter();
+
+        // throw away message_id
+        fields_itr.next();
+        // throw away version
+        fields_itr.next();
+
+        let req_id = decode_i32(&mut fields_itr)?;
+        let data_json = decode_string(&mut fields_itr)?;
+
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .wsh_event_data(req_id, data_json.as_str());
 
         Ok(())
     }

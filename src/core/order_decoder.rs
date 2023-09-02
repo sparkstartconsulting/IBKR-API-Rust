@@ -1072,7 +1072,6 @@ impl<'a> OrderDecoder<'a> {
     ) -> Result<(), IBKRApiLibError> {
         if self.server_version >= MIN_SERVER_VER_POST_TO_ATS {
             self.order.post_to_ats = decode_i32(fields_iter)?;
-            println!("Decoding post_to_ats {}", self.order.post_to_ats);
         }
         Ok(())
     }

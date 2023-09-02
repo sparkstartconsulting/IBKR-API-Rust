@@ -505,6 +505,10 @@ mod tests {
         fn replace_fa_end(&mut self, _req_id: i32, _text: &str) {
             todo!()
         }
+
+        fn wsh_event_data(&mut self, _req_id: i32, _data_json: &str) {
+            todo!()
+        }
     }
 
     //------------------------------------------------------------------------------------------------

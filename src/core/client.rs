@@ -1977,7 +1977,6 @@ where
         }
 
         if self.server_version() >= MIN_SERVER_VER_POST_TO_ATS {
-            println!("adding post_to_ats to place_order req");
             msg.push_str(&make_field(&order.post_to_ats)?);
         }
 
@@ -4501,7 +4500,7 @@ where
                 format!(
                     "{}{}",
                     TwsError::UpdateTws.message(),
-                    " t does not support matching symbols request."
+                    " It does not support matching symbols request."
                 ),
             ));
 
@@ -4533,6 +4532,58 @@ where
         msg.push_str(&make_field(&message_id)?);
 
         msg.push_str(&make_field(&api_only)?);
+
+        self.send_request(msg.as_str())?;
+        Ok(())
+    }
+
+    /// Request WshMetadata.
+    pub fn req_wsh_metadata(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
+        self.check_connected(NO_VALID_ID)?;
+
+        if self.server_version() < MIN_SERVER_VER_WSHE_CALENDAR {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                NO_VALID_ID,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support WSHE Calendar API."
+                ),
+            ));
+            return Err(err);
+        }
+
+        let mut msg = "".to_string();
+        let message_id = OutgoingMessageIds::ReqWshMetadata as i32;
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
+
+        self.send_request(msg.as_str())?;
+
+        Ok(())
+    }
+
+    pub fn cancel_wsh_metadata(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
+        self.check_connected(NO_VALID_ID)?;
+
+        if self.server_version() < MIN_SERVER_VER_WSHE_CALENDAR {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                NO_VALID_ID,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    "  It does not support WSHE Calendar API."
+                ),
+            ));
+            return Err(err);
+        }
+        
+        let mut msg = "".to_string();
+        let message_id = OutgoingMessageIds::CancelWshMetadata as i32;
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
 
         self.send_request(msg.as_str())?;
         Ok(())

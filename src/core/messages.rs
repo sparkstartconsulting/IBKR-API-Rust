@@ -112,6 +112,7 @@ pub enum IncomingMessageIds {
     CompletedOrder = 101,
     CompletedOrdersEnd = 102,
     ReplaceFaEnd = 103,
+    WshMetadata = 104,
 }
 
 //==================================================================================================
@@ -194,6 +195,10 @@ pub enum OutgoingMessageIds {
     ReqTickByTickData = 97,
     CancelTickByTickData = 98,
     ReqCompletedOrders = 99,
+    ReqWshMetadata = 100,
+    CancelWshMetadata = 101,
+    ReqWshEventData = 102,
+    CancelWshEventData = 103,
 }
 
 //==================================================================================================
