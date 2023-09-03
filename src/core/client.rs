@@ -4579,13 +4579,67 @@ where
             ));
             return Err(err);
         }
-        
+
         let mut msg = "".to_string();
         let message_id = OutgoingMessageIds::CancelWshMetadata as i32;
         msg.push_str(&make_field(&message_id)?);
         msg.push_str(&make_field(&req_id)?);
 
         self.send_request(msg.as_str())?;
+        Ok(())
+    }
+
+    pub fn req_wsh_event_data(
+        &mut self,
+        req_id: i32,
+        wsh_event_data: WshEventData,
+    ) -> Result<(), IBKRApiLibError> {
+        self.check_connected(NO_VALID_ID)?;
+
+        if self.server_version() < MIN_SERVER_VER_WSHE_CALENDAR {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                NO_VALID_ID,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support WSHE Calendar API."
+                ),
+            ));
+            return Err(err);
+        }
+
+        let mut msg = "".to_string();
+        let message_id = OutgoingMessageIds::ReqWshEventData as i32;
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
+        msg.push_str(&make_field(&wsh_event_data.con_id)?);
+
+        self.send_request(msg.as_str())?;
+
+        Ok(())
+    }
+
+    pub fn cancel_wsh_event_data(&mut self, req_id: i32) -> Result<(), IBKRApiLibError> {
+        self.check_connected(NO_VALID_ID)?;
+
+        if self.server_version() < MIN_SERVER_VER_WSHE_CALENDAR {
+            let err = IBKRApiLibError::ApiError(TwsApiReportableError::new(
+                NO_VALID_ID,
+                TwsError::UpdateTws.code().to_string(),
+                format!(
+                    "{}{}",
+                    TwsError::UpdateTws.message(),
+                    " It does not support WSHE Calendar API."
+                ),
+            ));
+            return Err(err);
+        }
+
+        let mut msg = "".to_string();
+        let message_id = OutgoingMessageIds::CancelWshEventData as i32;
+        msg.push_str(&make_field(&message_id)?);
+        msg.push_str(&make_field(&req_id)?);
         Ok(())
     }
 

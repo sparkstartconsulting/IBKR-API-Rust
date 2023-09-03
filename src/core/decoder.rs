@@ -270,6 +270,7 @@ where
             }
             Some(IncomingMessageIds::ReplaceFaEnd) => self.process_fa_end(fields)?,
             Some(IncomingMessageIds::WshMetadata) => self.process_wsh_metadata_msg(fields)?,
+            Some(IncomingMessageIds::WshEventData) => self.process_wsh_event_data_msg(fields)?,
             _ => panic!("Received unkown message id!!  Exiting..."),
         }
         Ok(())
@@ -2571,8 +2572,6 @@ where
 
         //throw away message_id
         fields_itr.next();
-        //throw away version
-        fields_itr.next();
 
         let req_id = decode_i32(&mut fields_itr)?;
         let text = decode_string(&mut fields_itr)?;
@@ -2590,7 +2589,22 @@ where
 
         // throw away message_id
         fields_itr.next();
-        // throw away version
+
+        let req_id = decode_i32(&mut fields_itr)?;
+        let data_json = decode_string(&mut fields_itr)?;
+
+        self.wrapper
+            .lock()
+            .expect(WRAPPER_POISONED_MUTEX)
+            .wsh_metadata(req_id, data_json.as_str());
+
+        Ok(())
+    }
+
+    fn process_wsh_event_data_msg(&mut self, fields: &[String]) -> Result<(), IBKRApiLibError> {
+        let mut fields_itr = fields.iter();
+
+        // throw away message_id
         fields_itr.next();
 
         let req_id = decode_i32(&mut fields_itr)?;

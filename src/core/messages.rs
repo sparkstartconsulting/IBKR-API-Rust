@@ -113,6 +113,7 @@ pub enum IncomingMessageIds {
     CompletedOrdersEnd = 102,
     ReplaceFaEnd = 103,
     WshMetadata = 104,
+    WshEventData = 105,
 }
 
 //==================================================================================================
