@@ -42,3 +42,5 @@
 pub mod core;
 pub mod examples;
 mod tests;
+
+pub use bigdecimal::BigDecimal;
